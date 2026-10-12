@@ -11,7 +11,7 @@
 > **本仓库**：[`ARCJ137442/jev-switch`](https://github.com/ARCJ137442/jev-switch)（public）<br>
 > **定位**：**Jev-Switch = 模型调用入口之间进行可配置转换的轻量网关**（Rust 内核 + React 控制台，支持本地/云端方向与 Tauri/Docker 交付）
 > **历史发布快照（截至 2026-09-27）**：当时最新正式版为 [v0.1.0 Release](https://github.com/ARCJ137442/jev-switch/releases/tag/v0.1.0)，包含 Windows MSI、NSIS、便携 ZIP 与 Docker 镜像。对应 Release gate 的 Rust、UI、Tauri 与版本检查通过；验收证据覆盖 2 家上游、9 条路由、7 个公开入口和 34 条调用记录。用户提供的 Tauri 截图整理为公开安全图册，并确认当时安装版“关窗留托盘、点菜单恢复”通过；这些材料不证明 Release 候选的精确 build identity、托盘 Exit 或退出后恢复。当前版本与能力以本文后续的 2026-09-30 产品基线、[发布手册](RELEASE.md)及对应核验记录为准。历史结论只适用于各自版本与覆盖范围。
-> **当前产品基线与维护阶段（2026-10-12）**：`v0.10.3` 为代理修复正式候选，`v0.10.2` 已预发布原子配置写入；上一个正式版为 `v0.10.1`。v0.10.x 的 provider 生命周期、readiness、按需启动、独立审计、主机命令开关与自动探测保留。新发行包实际推理与原生 UI 在发布后验证；此前 Windows 本地模型生命周期证据属于 v0.10.1。模型画像/属性路由排期 0.11.0，Graph 编辑、节点页、自由拖拽和演练场多模态展示仍属于后续计划。
+> **当前产品基线与维护阶段（2026-10-12）**：`v0.10.3` 代理修复已正式发布，CI、全平台构建与 Pages 刷新成功；`v0.10.2` 的原子配置写入保留。v0.10.x 的 provider 生命周期、readiness、按需启动、独立审计、主机命令开关与自动探测保留。新发行包实际推理与原生 UI 留作发布后验证；此前 Windows 本地模型生命周期证据属于 v0.10.1。模型画像/属性路由排期 0.11.0，Graph 编辑、节点页、自由拖拽和演练场多模态展示仍属于后续计划。
 
 ## 核心定位（一句话）
 
@@ -36,10 +36,10 @@
 | [verification/v0.9.3-release-candidate-2026-10-05.md](verification/v0.9.3-release-candidate-2026-10-05.md) | v0.9.3 Windows Authenticode 签名门禁、签名顺序与签名清单 | 已随 tag 触发；远端 CI/Release 结果待确认 |
 | [verification/v0.10.0-release-candidate-2026-10-05.md](verification/v0.10.0-release-candidate-2026-10-05.md) | v0.10.0 provider 生命周期、主机命令开关和预发布边界 | 预发布候选；自动化与本地 Laya/Standalone 验收通过，其他平台场景待完成 |
 | [verification/v0.10.1-release-2026-10-07.md](verification/v0.10.1-release-2026-10-07.md) | v0.10.1 provider 生命周期、自动探测、Laya/StartLux/OneJev 多轮启停与 Release 边界 | 正式版核验；Windows Standalone 本地服务启停人工通过，Android APK 按 Secrets 条件附加 |
-| [verification/v0.10.2-release-2026-10-08.md](verification/v0.10.2-release-2026-10-08.md) | v0.10.2 原子配置写入、非法图回滚、格式化/Clippy 与发布门禁 | GitHub 预发布候选；远端 CI/Release 结果待确认 |
-| [verification/v0.10.3-release-2026-10-12.md](verification/v0.10.3-release-2026-10-12.md) | v0.10.3 Windows 系统代理、回环直连与发布后验收边界 | 正式 fix 候选；构建/附件由 Release workflow 核验 |
+| [verification/v0.10.2-release-2026-10-08.md](verification/v0.10.2-release-2026-10-08.md) | v0.10.2 原子配置写入、非法图回滚、格式化/Clippy 与发布门禁 | 已预发布；历史候选记录，Release run 37723163271 成功 |
+| [verification/v0.10.3-release-2026-10-12.md](verification/v0.10.3-release-2026-10-12.md) | v0.10.3 Windows 系统代理、回环直连与发布后验收边界 | 正式发布成功；10 个附件齐全、CI/Pages 成功，运行验收待执行 |
 | [verification/typesafe-official-live-2026-09-29.md](verification/typesafe-official-live-2026-09-29.md) | TypeSafe 官方 key 的隔离单次实测，Noul/Choice/Score 与 usage | 当前源码直连 provider；不代表 Standalone/公开入口 E2E |
-| [verification/typesafe-system-proxy-2026-10-12.md](verification/typesafe-system-proxy-2026-10-12.md) | HTTP 451 的直连/系统代理对照、模型目录鉴权与回环直连修复 | 随 v0.10.3 候选；原 v0.10.2 实例作为调查对照 |
+| [verification/typesafe-system-proxy-2026-10-12.md](verification/typesafe-system-proxy-2026-10-12.md) | HTTP 451 的直连/系统代理对照、模型目录鉴权与回环直连修复 | 已随 v0.10.3 发布；原 v0.10.2 实例作为调查对照 |
 | [verification/standalone-lmstudio-e2e-2026-09-29.md](verification/standalone-lmstudio-e2e-2026-09-29.md) | 较早 Standalone 候选的冷启动、缓存、五页 WebView 与 LM Studio 本地 SystemOne UI 路由 trace | 该记录只属于文档顶部候选哈希；真实系统托盘点击和第二次双击聚焦仍待人工确认 |
 | [verification/typesafe-model-discovery-2026-09-29.md](verification/typesafe-model-discovery-2026-09-29.md) | TypeSafe `/v1/models` 实测与 daemon/UI 自动模型发现 | 管理时目录/鉴权检查；不替代推理调用 |
 | [verification/runtime-telemetry-2026-09-30.md](verification/runtime-telemetry-2026-09-30.md) | Dashboard 当前 daemon 会话遥测、流量曲线、adapter attempt latency 与资源卡的实现和验证边界 | Phase 1/2 已落地；Tauri WebView 精确资源仍未提供 |

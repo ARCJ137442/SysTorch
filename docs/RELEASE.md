@@ -6,7 +6,7 @@
 
 ## 当前版本与下一次发版
 
-截至 2026-10-12，当前正式 fix 候选为 `v0.10.3`，修复 Windows 系统代理读取并确保本地回环请求直连。`v0.10.2` 已作为预发布提供原子配置写入，上一正式版为 [`v0.10.1`](https://github.com/ARCJ137442/jev-switch/releases/tag/v0.10.1)。Release 继续提供 Windows Standalone/Portable/MSI/NSIS、Linux/Windows CLI、Docker 与条件可用的稳定签名 Android APK。v0.10.3 的源码回归和官方模型目录验证已通过，发行包真实推理与原生 UI 在发布后验证；本地 Laya、StartLux 和 OneJev 生命周期人工证据仍属于 v0.10.1。Windows 单实例按版本隔离；Android 使用专属稳定签名。版本、构建附件和验证状态见[0.10.3 核验](verification/v0.10.3-release-2026-10-12.md)。
+截至 2026-10-12，最新正式 fix 为 [v0.10.3](https://github.com/ARCJ137442/jev-switch/releases/tag/v0.10.3)，修复 Windows 系统代理读取并确保本地回环请求直连；CI、Release 构建与 Pages 刷新已成功。`v0.10.2` 的原子配置写入保留。发布页提供 Windows Standalone/Portable/MSI/NSIS、Linux/Windows CLI、Docker 和稳定签名 Android APK，共 10 个附件。源码回归和官方模型目录验证通过，发行包真实推理与原生 UI 留作发布后验证；本地 Laya、StartLux 和 OneJev 人工生命周期证据仍属于 v0.10.1。Windows 单实例按版本隔离；Android 使用专属稳定签名。版本、附件和验证状态见[0.10.3 核验](verification/v0.10.3-release-2026-10-12.md)。
 
 后续 Release 必须由用户确认版本号；tag 与以下五处去掉 `v` 后必须完全一致：
 
