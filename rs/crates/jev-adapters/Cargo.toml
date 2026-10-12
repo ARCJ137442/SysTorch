@@ -14,6 +14,11 @@ serde_json = { workspace = true }
 reqwest = { workspace = true }
 async-trait = { workspace = true }
 
+[target.'cfg(windows)'.dependencies]
+# reqwest defaults are disabled for Rustls; explicitly restore Windows proxy
+# discovery so upstream calls use the user's configured system proxy.
+reqwest = { workspace = true, features = ["system-proxy"] }
+
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util"] }
 wiremock = { workspace = true }

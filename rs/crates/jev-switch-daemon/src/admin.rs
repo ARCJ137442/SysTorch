@@ -2759,7 +2759,7 @@ pub async fn probe_provider(
     };
 
     let keys = known_keys_snapshot(&state);
-    let client = match reqwest::Client::builder()
+    let client = match jev_adapters::http_client::client_builder(&p.base)
         .timeout(Duration::from_secs(5))
         .connect_timeout(Duration::from_secs(3))
         .build()
@@ -2857,7 +2857,7 @@ async fn discover_models(kind: &str, base: &str, api_key: Option<&str>) -> Provi
         };
     }
     let keys = api_key.map(str::to_string).into_iter().collect::<Vec<_>>();
-    let client = match reqwest::Client::builder()
+    let client = match jev_adapters::http_client::client_builder(base)
         .timeout(Duration::from_secs(8))
         .connect_timeout(Duration::from_secs(3))
         .build()

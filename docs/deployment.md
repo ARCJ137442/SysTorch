@@ -388,3 +388,22 @@ curl http://127.0.0.1:11435/v1/admin/status
 
 **新增端点备案**（contracts/05 §1 端点表之外，同 §五 login 处理方式——契约文件不改，本节即备案）：
 `PUT /v1/admin/mode`、`PUT|GET /v1/admin/listen`、`PUT /v1/admin/password`、`GET /v1/admin/status`。错误体一律 §3 三键形状（listen 失败 = 400 解析 / 500 try-bind 失败 / 503 无 supervisor）。
+
+## 11. 上游 HTTP 451 与代理出口
+
+上游返回地区不可用时，先检查 daemon 的出口路径。浏览器使用系统代理不等于后台 Rust 客户端也使用代理，`CF-RAY` 机房位置也不代表客户端 IP 所在地区。先用提供商的模型目录探测验证网络与鉴权，不必重复发送付费模型请求。
+
+v0.10.2 没有编译 reqwest 的 Windows `system-proxy` feature。v0.10.3 源码恢复 Windows 系统代理读取，并让回环服务的调用、探测和 readiness 始终直连；构建与发行包验证状态见[0.10.3 核验](verification/v0.10.3-release-2026-10-12.md)。完整网络对照见[TypeSafe 系统代理调查](verification/typesafe-system-proxy-2026-10-12.md)。
+
+旧版可临时通过进程环境变量提供 HTTP 代理。在应用托盘中完整退出 Jev Switch，确认旧 daemon 已退出，再在同一 PowerShell 窗口中设置后启动 EXE：
+
+```powershell
+# 端口请替换成自己的 HTTP/混合代理端口。
+$env:HTTP_PROXY = 'http://127.0.0.1:7890'
+$env:HTTPS_PROXY = 'http://127.0.0.1:7890'
+$env:NO_PROXY = 'localhost,.localhost,127.0.0.0/8,::1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16'
+# 把占位符换成自己下载的 EXE 路径；这些设置只影响当前窗口及其新启动的子进程。
+& '<JEV_SWITCH_EXE>'
+```
+
+重新打开仍在托盘的旧进程不会继承新变量。使用此方法前检查现有代理环境变量，按自己的网络策略保留原有绕过列表；不要把代理地址误填成提供商 API 地址或网关 API 地址。

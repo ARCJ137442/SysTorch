@@ -845,7 +845,10 @@ impl LifecycleManager {
             return (ProbeState::Stopped, Some("readiness_not_configured".into()));
         };
         let timeout = command_timeout(provider.lifecycle.timeout_ms.min(5_000));
-        let client = match reqwest::Client::builder().timeout(timeout).build() {
+        let client = match jev_adapters::http_client::client_builder(url.as_str())
+            .timeout(timeout)
+            .build()
+        {
             Ok(client) => client,
             Err(_) => return (ProbeState::Unknown, Some("health_client_failed".into())),
         };

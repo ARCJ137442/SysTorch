@@ -48,7 +48,7 @@ impl LayaUpstream {
         base: String,
         api_key: Option<String>,
     ) -> Result<Self, JevError> {
-        let http = Client::builder()
+        let http = crate::http_client::client_builder(&base)
             .timeout(Duration::from_secs(60))
             .connect_timeout(Duration::from_secs(5))
             .build()

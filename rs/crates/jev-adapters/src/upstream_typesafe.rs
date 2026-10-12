@@ -55,7 +55,7 @@ impl TypeSafeUpstream {
         api_key: Option<String>,
         forward_extensions: bool,
     ) -> Result<Self, JevError> {
-        let http = Client::builder()
+        let http = crate::http_client::client_builder(&base)
             .timeout(Duration::from_secs(120))
             .connect_timeout(Duration::from_secs(10))
             .build()
@@ -300,6 +300,27 @@ mod tests {
             extensions: Default::default(),
             extra: Default::default(),
         }
+    }
+
+    #[tokio::test]
+    async fn region_denial_preserves_status_and_is_not_retryable() {
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/v1/systemone"))
+            .respond_with(ResponseTemplate::new(451).set_body_json(json!({
+                "title": "Typesafe is not available in your region.",
+                "status": 451
+            })))
+            .expect(1)
+            .mount(&server)
+            .await;
+        let upstream =
+            TypeSafeUpstream::new(format!("{}/v1/systemone", server.uri()), None).unwrap();
+        let error = upstream.evaluate(complete_request()).await.unwrap_err();
+        assert_eq!(error.http_status(), 451);
+        assert!(!error.retryable());
+        assert!(matches!(error, JevError::Upstream { status: 451, body, .. }
+            if body.contains("not available in your region")));
     }
 
     #[tokio::test]

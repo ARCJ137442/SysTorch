@@ -113,7 +113,8 @@ async fn start_server_with_registry(
 }
 
 async fn http_get(base: &str, path: &str, bearer: Option<&str>) -> Result<(u16, String), String> {
-    let client = reqwest::Client::new();
+    // These TCP listener fixtures must never be reached through a host proxy.
+    let client = reqwest::Client::builder().no_proxy().build().unwrap();
     let mut req = client.get(format!("{base}{path}"));
     if let Some(t) = bearer {
         req = req.header("authorization", format!("Bearer {t}"));
@@ -134,7 +135,7 @@ async fn http_put(
     json: serde_json::Value,
     bearer: Option<&str>,
 ) -> Result<(u16, String), String> {
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder().no_proxy().build().unwrap();
     let mut req = client
         .put(format!("{base}{path}"))
         .header("content-type", "application/json")
@@ -157,7 +158,7 @@ async fn http_post(
     path: &str,
     json: serde_json::Value,
 ) -> Result<(u16, String), String> {
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder().no_proxy().build().unwrap();
     match client
         .post(format!("{base}{path}"))
         .header("content-type", "application/json")
@@ -907,7 +908,12 @@ async fn retired_listener_cancels_unfinished_stream_at_drain_deadline() {
     )
     .await
     .unwrap();
-    let mut response = reqwest::get(format!("http://{}/stream", handle.bound()))
+    let mut response = reqwest::Client::builder()
+        .no_proxy()
+        .build()
+        .unwrap()
+        .get(format!("http://{}/stream", handle.bound()))
+        .send()
         .await
         .unwrap();
     assert!(response

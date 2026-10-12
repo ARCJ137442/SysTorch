@@ -8,6 +8,7 @@
 //! - [`upstream_vercel`] / [`upstream_laya`] / [`upstream_typesafe`]：HTTP 上游（`UpstreamAdapter` 实现，
 //!   capability 注册制 —— 能力表在各家 adapter 内，不再查 `capabilities_of`）
 
+pub mod http_client;
 pub mod upstream_laya;
 pub mod upstream_openrouter;
 pub mod upstream_typesafe;

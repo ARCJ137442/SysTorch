@@ -52,7 +52,7 @@ impl VercelUpstream {
                 message: "AI_GATEWAY_API_KEY is empty".into(),
             });
         }
-        let http = Client::builder()
+        let http = crate::http_client::client_builder(&base)
             .timeout(Duration::from_secs(120))
             .connect_timeout(Duration::from_secs(10))
             // 强制 IPv4 first：Cloudflare IPv6 在很多机器不可达（MVP 依赖系统 dns_order）

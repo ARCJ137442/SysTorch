@@ -40,7 +40,7 @@ impl OpenRouterUpstream {
         base: String,
         api_key: Option<String>,
     ) -> Result<Self, JevError> {
-        let http = Client::builder()
+        let http = crate::http_client::client_builder(&base)
             .timeout(Duration::from_secs(120))
             .connect_timeout(Duration::from_secs(10))
             .build()
