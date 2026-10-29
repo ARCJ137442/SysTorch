@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "jev-switch",
-  "mainBinaryName": "jev-switch",
-  "version": "0.10.3",
+  "productName": "SysTorch",
+  "mainBinaryName": "systorch",
+  "version": "0.11.0",
   "identifier": "io.github.arcj137442.jevswitch",
   "build": {
     "beforeDevCommand": "",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Jev Switch",
+        "title": "SysTorch",
         "url": "waiting.html",
         "width": 900,
         "height": 560,
@@ -32,7 +32,7 @@
     "active": true,
     "targets": ["nsis", "msi"],
     "icon": ["icons/icon.png", "icons/icon.ico"],
-    "externalBin": ["binaries/jev-switch-daemon"],
+    "externalBin": ["binaries/systorch-daemon"],
     "resources": {
       "../ui/dist": "ui/dist"
     },

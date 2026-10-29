@@ -1,0 +1,239 @@
+{
+  "date": "2026-10-24",
+  "status": "M0_LOCAL_PREVIEW_READY_FOR_REVIEW",
+  "base_revision": "11253af121c0e9f800b544af6c95cd6e4f613e1a",
+  "working_tree_dirty": true,
+  "version": "0.10.3",
+  "tests": {
+    "rust_baseline": {
+      "passed": 277,
+      "failed": 0,
+      "ignored": 1
+    },
+    "rust_final": {
+      "passed": 282,
+      "failed": 0,
+      "ignored": 1
+    },
+    "rust_ts_rs": {
+      "passed": 361,
+      "failed": 0,
+      "ignored": 1
+    },
+    "ui_baseline": {
+      "passed": 69,
+      "failed": 0
+    },
+    "ui_final": {
+      "passed": 82,
+      "failed": 0
+    }
+  },
+  "format_check": "PASS",
+  "clippy_default_all_targets_deny_warnings": "PASS",
+  "ui_lint": "PASS",
+  "ui_build": "PASS",
+  "browser": {
+    "browserVersion": "151.0.7922.34",
+    "date": "2026-10-23T20:13:23.324Z",
+    "scope": "M0 simulated browser only",
+    "cases": [
+      "first action is visible at 1440x1000",
+      "scenario and workspace matrix at 1440",
+      "first action is visible at 1024x800",
+      "scenario and workspace matrix at 1024",
+      "first action is visible at 390x844",
+      "scenario and workspace matrix at 390",
+      "first action is visible at 360x640",
+      "scenario and workspace matrix at 360",
+      "selection and annotations persist across navigation and reload",
+      "offline rejects submission but preserves draft and permits retry",
+      "stale revision and permissions disable submission",
+      "empty configuration leads to a visible simulated setup and back to Start",
+      "cancellation prevents delayed simulated completion",
+      "local source never falls back silently and reports readiness separately",
+      "IME and held Ctrl+Enter do not submit; ordinary Enter stays in textarea",
+      "default home and context-aware experiment return survive reload",
+      "reused DAG holds request brightness, fades response glow and does not replay on return",
+      "professional routes remain discoverable without replacing the preview or auto-connecting",
+      "untrusted JSON is text, not HTML or automatic URL fetch",
+      "10/100/137/200 percent layout bounds on desktop and mobile"
+    ],
+    "screenshots": [
+      "start-1440.png",
+      "desk-1440.png",
+      "coordinate-1440.png",
+      "coordinate-dark-1440.png",
+      "start-1024.png",
+      "desk-1024.png",
+      "coordinate-1024.png",
+      "coordinate-dark-1024.png",
+      "start-390.png",
+      "desk-390.png",
+      "coordinate-390.png",
+      "coordinate-dark-390.png",
+      "start-360.png",
+      "desk-360.png",
+      "coordinate-360.png",
+      "coordinate-dark-360.png",
+      "core-dag-after-response.png"
+    ],
+    "forbiddenRequests": [],
+    "errors": []
+  },
+  "route_editor_browser": {
+    "scope": "production RoutingPage + mocked HTTP only",
+    "cases": [
+      "stale browser editor preserves remotely added edge and adopts receipt",
+      "undo retains remote edge and submits only its own inverse edit",
+      "edits typed while saving are rebased and submitted after acknowledgement",
+      "conflict preserves draft backup and permits safe review of latest graph"
+    ],
+    "errors": [],
+    "blockedAssets": [
+      "https://fonts.googleapis.com"
+    ]
+  },
+  "isolated_runtime": {
+    "date": "2026-10-23T20:01:58.149Z",
+    "scope": "debug daemon, loopback synthetic HTTP only",
+    "binarySha256": "56db01b3c364b308c7f14361646eed0b468b04ff4e742952e069238d60e402cd",
+    "runs": [
+      {
+        "cycle": 1,
+        "kind": "first process start with new isolated DB",
+        "startupToHealthMs": 883.7379000000001,
+        "health": {
+          "status": "ok",
+          "version": "0.10.3",
+          "product": "jev-switch",
+          "api_revision": 1,
+          "build_revision": null
+        },
+        "requests": 20,
+        "p50Ms": 11.913400000000138,
+        "p95Ms": 16.071300000000065,
+        "daemonResource": {
+          "available": true,
+          "memory_bytes": 22175744,
+          "cpu_percent": 0.00011131021165056154,
+          "source": "daemon-process",
+          "precision": "process-snapshot"
+        },
+        "shellResource": {
+          "available": false,
+          "memory_bytes": null,
+          "cpu_percent": null,
+          "source": "tauri-shell-not-exposed",
+          "precision": "unavailable"
+        },
+        "persistedPriority": 11
+      },
+      {
+        "cycle": 2,
+        "kind": "process restart with existing isolated DB",
+        "startupToHealthMs": 43.94550000000004,
+        "health": {
+          "status": "ok",
+          "version": "0.10.3",
+          "product": "jev-switch",
+          "api_revision": 1,
+          "build_revision": null
+        },
+        "requests": 20,
+        "p50Ms": 11.209299999999985,
+        "p95Ms": 24.93439999999987,
+        "daemonResource": {
+          "available": true,
+          "memory_bytes": 21925888,
+          "cpu_percent": 6.678563659079373e-05,
+          "source": "daemon-process",
+          "precision": "process-snapshot"
+        },
+        "shellResource": {
+          "available": false,
+          "memory_bytes": null,
+          "cpu_percent": null,
+          "source": "tauri-shell-not-exposed",
+          "precision": "unavailable"
+        },
+        "persistedPriority": 12
+      },
+      {
+        "cycle": 3,
+        "kind": "process restart with existing isolated DB",
+        "startupToHealthMs": 43.45489999999995,
+        "health": {
+          "status": "ok",
+          "version": "0.10.3",
+          "product": "jev-switch",
+          "api_revision": 1,
+          "build_revision": null
+        },
+        "requests": 20,
+        "p50Ms": 11.747100000000046,
+        "p95Ms": 16.593900000000076,
+        "daemonResource": {
+          "available": true,
+          "memory_bytes": 22024192,
+          "cpu_percent": 0.00013357058924157172,
+          "source": "daemon-process",
+          "precision": "process-snapshot"
+        },
+        "shellResource": {
+          "available": false,
+          "memory_bytes": null,
+          "cpu_percent": null,
+          "source": "tauri-shell-not-exposed",
+          "precision": "unavailable"
+        },
+        "persistedPriority": 13
+      }
+    ],
+    "realModelCalls": 0,
+    "syntheticUpstreamCalls": 60,
+    "status": "PASS"
+  },
+  "source_sha256": {
+    "rs/crates/jev-core/src/adapter.rs": "d402cf41cae8e00aa5a422ea8c31b8e9ce0f614f35858ad066deb6a92b378214",
+    "rs/crates/jev-core/src/router.rs": "a2dbff84b699e1a798b444674b7a081b0cd4344370b89ba246fdd5e4542e6e97",
+    "rs/crates/jev-switch-daemon/src/admin.rs": "4a8cd0aa8a28c9da0dd62acd81940d324673694b83d7500b8763f518c9161c15",
+    "rs/crates/jev-switch-daemon/src/admin/endpoints.rs": "a0f00e1bf81b3e25d21fb297b4bd975cdb1930ec3f122f9afdc3554226dfa174",
+    "rs/crates/jev-switch-daemon/src/lib.rs": "4c9f2e61b92226de259897ecec45e27a111a3f5c15810ff882a5ea1126602463",
+    "rs/crates/jev-switch-daemon/tests/endpoints_runtime.rs": "628867225728e195d71493e7ed16c19f66780ff96b766bcecc22630440160ef9",
+    "rs/crates/jev-switch-daemon/tests/integration_http.rs": "642c6c85b863423dc14669a09178fd8afdeb44e810c6fd9d398a4cc338cacd35",
+    "scripts/verify-isolated-gateway.mjs": "5b1d1140b52c68974ce7d0ca8db98211189dfb108862b310081162d4885a90bb",
+    "scripts/verify-route-editor.mjs": "fb424d7a8e2a6973bc5d1e674304dc1eca4de440a4fea3b61fbe9cd3c0fce7b6",
+    "scripts/verify-systorch-preview.mjs": "e24adaf7626046c15056c89faf090fe42f3fca51d047ee602fef47b314ecb7c6",
+    "ui/src/api/admin.ts": "3efa0ea0f132d39f56ddd64d2f27038bc486212e5eb03f788115ced1e3e0342d",
+    "ui/src/api/routeEdits.ts": "7d9c8c6c1af80fd7ba1da313af25b453a18a9dc0afbf2888dd6b4d348e31dbb2",
+    "ui/src/components/routing/RouteTableForm.tsx": "2d67670e1b92d1a6345718a0d35055e3dcb28e5d716243939447b186c045d7e9",
+    "ui/src/components/routing/dag.css": "5819cca3679958c340d9a5ddf0f716568ebd41f26d995eab8d515fb6f65bdd0e",
+    "ui/src/components/routing/documentHistory.ts": "5851eec89fcd01e5a571fa2093b7057a80c5f77560476819ac9e6df40681142f",
+    "ui/src/generated/RouteMutation.ts": "94b02803a4ed6f78f83e61db9dbec3f322eb9cc2f6273376cd9d9f8da180af75",
+    "ui/src/i18n/routing.ts": "92e68a2f7f04e36f4340940be7c6732d047ebb3edd8cd27ec3537a845b388014",
+    "ui/src/pages/RoutingPage.tsx": "a1351460a9974ace422e72199c34038fb87aa241ced5cdc89617123b309c9823",
+    "ui/src/prototypes/systorch/CoreWorkbench.tsx": "920caab040db013084e4eb411d188274a0a86fe1ea73ea6b1cc8e5960c33e711",
+    "ui/src/prototypes/systorch/SysTorchPreview.tsx": "8827662c58a5e73c6a84645517e93cc67e67c318b0f7653ad6d48763045926d8",
+    "ui/src/prototypes/systorch/main.tsx": "22e24398b31d3144346f8d142734526cdc4dddb263a43b75bd3af92c65bb84e3",
+    "ui/src/prototypes/systorch/model.ts": "68710487c17f979dd4dfcd6dc4c37237965eea41e91a53b2a56c69e9ef97dc57",
+    "ui/src/prototypes/systorch/preview.css": "54737b3de42a9c8f87f4bac3a45949e1f7a07bed88c3bf5b5fa67c065293deb8",
+    "ui/systorch-preview.html": "c93de08532bd13003dd682243f9cd7525c421e5f90cdbe29346414aadcc6fbe1",
+    "ui/tests/route-edits.test.mjs": "bbe24e44908e087bcdbf19382287235cc6cb2f4c285546a916aea979bb5d80a0",
+    "ui/tests/systorch-preview.test.mjs": "c34b4208e3fa4e94b93ecea7f9e78d66050da82f062ff1c3363a92a7389f98ae"
+  },
+  "unverified": [
+    "new native Tauri and Android candidate",
+    "full WebView process-tree resources",
+    "real model requests",
+    "persistent human decision API",
+    "human usability acceptance"
+  ],
+  "delivery": {
+    "new_worktree": false,
+    "commit": false,
+    "push": false,
+    "release": false,
+    "preview_url": "http://127.0.0.1:5173/systorch-preview.html"
+  }
+}

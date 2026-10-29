@@ -1,14 +1,13 @@
-name: Release
+name: SysTorch Release
 
 # 发版流水线（任务 #45 · docs/12 §四-线3「GitHub Release 便携分发」）
 #
 # 触发：
-#   - push tag `v*`     → 全量发版（测试门禁 → Windows 桌面 + ghcr 镜像 → GitHub Release）
+#   - push tag `v*`     → 发布门禁 → Windows Standalone + signed Android APK → GitHub Release
 #   - workflow_dispatch → 干跑：构建产物但**不推 ghcr、不建 Release**（验流水线本身）
 #
 # 测试门禁不在本文件重复实现 —— 以 `workflow_call` 复用 ci.yml。
-# Windows 上 `cargo test` 与 `cargo build` 同 target-dir 会撞文件锁
-# （实测 error: failed to remove file jev-switch.exe / os error 5），
+# Windows 上 `cargo test` 与 `cargo build` 同 target-dir 会撞文件锁，
 # 故后端测试留在 ubuntu 的 ci.yml；Windows 顺序运行壳测试与构建，rs/ 与 src-tauri/
 # 是两个互不相干的 Cargo 工程（各自 target 目录）→ 结构上不会撞锁。
 
@@ -32,8 +31,8 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
-  JEV_BUILD_REVISION: ${{ github.sha }}
-  # sidecar 落地时剥 target-triple；**不可**与壳主二进制 jev-switch.exe 同名
+  SYSTORCH_BUILD_REVISION: ${{ github.sha }}
+  # Sidecar loses the target triple when packaged; it must differ from systorch.exe
   # （WiX ICE30 两组件同装一文件名 → MSI 失败），见 docs/deployment.md §9.4-2
   SIDECAR_TRIPLE: x86_64-pc-windows-msvc
 
@@ -103,7 +102,7 @@ jobs:
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "publish=$PUBLISH" >> "$GITHUB_OUTPUT"
-          if [ "$VERSION" = "0.10.2" ] || [[ "$VERSION" == *-* ]]; then
+          if [ "$VERSION" = "0.10.2" ] || [ "$VERSION" = "0.11.0" ] || [[ "$VERSION" == *-* ]]; then
             echo "prerelease=true" >> "$GITHUB_OUTPUT"
           else
             echo "prerelease=false" >> "$GITHUB_OUTPUT"
@@ -159,7 +158,7 @@ jobs:
           if ([string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE_PASSWORD)) {
             throw 'Missing WINDOWS_CERTIFICATE_PASSWORD. The release tag is intentionally blocked instead of publishing unsigned Windows artifacts.'
           }
-          $certificatePath = Join-Path $env:RUNNER_TEMP 'jev-switch-windows-release.pfx'
+          $certificatePath = Join-Path $env:RUNNER_TEMP 'systorch-windows-release.pfx'
           & .\scripts\prepare-windows-signing.ps1 `
             -Base64Payload $env:WINDOWS_CERTIFICATE_BASE64 `
             -OutputPath $certificatePath
@@ -180,7 +179,7 @@ jobs:
       # 命名必须带 target-triple（externalBin 约定），且**不可**与壳 bin 同名
       # （WiX ICE30 → MSI 失败，见 docs/deployment.md §9.4-2）
       - name: 构建 daemon（sidecar）
-        run: cargo build --release --locked --manifest-path rs/Cargo.toml -p jev-switch-daemon
+        run: cargo build --release --locked --manifest-path rs/Cargo.toml -p systorch-daemon
 
       - name: 签名 daemon（进入 sidecar 前）
         if: steps.signing.outputs.enabled == 'true'
@@ -189,7 +188,7 @@ jobs:
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
         run: |
           & .\scripts\sign-windows-artifacts.ps1 `
-            -Path 'rs/target/release/jev-switch.exe' `
+            -Path 'rs/target/release/systorch-daemon.exe' `
             -CertificatePath $env:WINDOWS_CERTIFICATE_PATH `
             -CertificatePassword $env:WINDOWS_CERTIFICATE_PASSWORD `
             -MetadataPath "windows-signing-${{ needs.meta.outputs.version }}.json"
@@ -199,8 +198,8 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force src-tauri/binaries | Out-Null
-          Copy-Item rs/target/release/jev-switch.exe `
-            "src-tauri/binaries/jev-switch-daemon-${{ env.SIDECAR_TRIPLE }}.exe" -Force
+          Copy-Item rs/target/release/systorch-daemon.exe `
+            "src-tauri/binaries/systorch-daemon-${{ env.SIDECAR_TRIPLE }}.exe" -Force
           Get-ChildItem src-tauri/binaries
 
       # cargo test 编译 Tauri build script，它要求 ui/dist 已存在；fresh runner 不会继承 gate job 的产物。
@@ -222,7 +221,7 @@ jobs:
           WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
         run: |
           & .\scripts\sign-windows-artifacts.ps1 `
-            -Path 'src-tauri/target/release/jev-switch.exe' `
+            -Path 'src-tauri/target/release/systorch.exe' `
             -CertificatePath $env:WINDOWS_CERTIFICATE_PATH `
             -CertificatePassword $env:WINDOWS_CERTIFICATE_PASSWORD `
             -MetadataPath "windows-signing-${{ needs.meta.outputs.version }}.json"
@@ -264,10 +263,10 @@ jobs:
           # The Cargo target cache also contains bundle outputs. Give each run/attempt
           # a fresh portable directory so a restored cache cannot trip the packager's
           # deliberate no-overwrite guard.
-          $portable = "src-tauri/target/release/bundle/portable/jev-switch-${{ needs.meta.outputs.version }}-${{ github.run_id }}-${{ github.run_attempt }}"
+          $portable = "src-tauri/target/release/bundle/portable/systorch-${{ needs.meta.outputs.version }}-${{ github.run_id }}-${{ github.run_attempt }}"
           .\scripts\package-portable.ps1 -Destination $portable -MsiPath $msi[0].FullName -NsisPath $nsis[0].FullName
           # Build a separate one-file Tauri application from the same verified daemon/UI inputs.
-          $standalone = "src-tauri/target/release/bundle/standalone/jev-switch-standalone-${{ needs.meta.outputs.version }}-windows-x64.exe"
+          $standalone = "src-tauri/target/release/bundle/standalone/SysTorch-${{ needs.meta.outputs.version }}-windows-x64.exe"
           .\scripts\build-standalone.ps1 -PortableDirectory $portable -OutputPath $standalone
 
           if ($env:WINDOWS_SIGNING_ENABLED -eq 'true') {
@@ -281,8 +280,9 @@ jobs:
           }
 
           # Compress only after every executable and installer has its final signature.
-          $zip = "jev-switch-portable-${{ needs.meta.outputs.version }}-windows-x64.zip"
+          $zip = "SysTorch-${{ needs.meta.outputs.version }}-portable-windows-x64.zip"
           Compress-Archive -Path (Join-Path $portable '*') -DestinationPath $zip -CompressionLevel Optimal
+          Copy-Item -LiteralPath $standalone -Destination "SysTorch-${{ needs.meta.outputs.version }}-windows-x64.exe" -Force
           Get-FileHash -LiteralPath $zip -Algorithm SHA256
           Get-FileHash -LiteralPath $standalone -Algorithm SHA256
 
@@ -290,19 +290,19 @@ jobs:
         if: steps.signing.outputs.enabled == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: jev-switch-windows-signing-${{ needs.meta.outputs.version }}
+          name: systorch-windows-signing-${{ needs.meta.outputs.version }}
           path: windows-signing-${{ needs.meta.outputs.version }}.json
           if-no-files-found: error
 
       - name: 上传安装包
         uses: actions/upload-artifact@v4
         with:
-          name: jev-switch-windows-${{ needs.meta.outputs.version }}
+          name: systorch-windows-${{ needs.meta.outputs.version }}
           path: |
-            src-tauri/target/release/bundle/msi/jev-switch_${{ needs.meta.outputs.version }}_x64_en-US.msi
-            src-tauri/target/release/bundle/nsis/jev-switch_${{ needs.meta.outputs.version }}_x64-setup.exe
-            jev-switch-portable-*-windows-x64.zip
-            src-tauri/target/release/bundle/standalone/jev-switch-standalone-*-windows-x64.exe
+            src-tauri/target/release/bundle/msi/*_${{ needs.meta.outputs.version }}_x64_en-US.msi
+            src-tauri/target/release/bundle/nsis/*_${{ needs.meta.outputs.version }}_x64-setup.exe
+            SysTorch-${{ needs.meta.outputs.version }}-portable-windows-x64.zip
+            SysTorch-${{ needs.meta.outputs.version }}-windows-x64.exe
             windows-signing-status.txt
           if-no-files-found: error
 
@@ -315,25 +315,25 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux-x64
-            executable: rs/target/release/jev-switch-cli
+            executable: rs/target/release/systorch-cli
           - os: windows-latest
             platform: windows-x64
-            executable: rs/target/release/jev-switch-cli.exe
+            executable: rs/target/release/systorch-cli.exe
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - name: 构建 CLI
-        run: cargo build --release --locked --manifest-path rs/Cargo.toml -p jev-switch-cli
+        run: cargo build --release --locked --manifest-path rs/Cargo.toml -p systorch-cli
       - name: 准备 CLI 产物
         shell: bash
         run: |
           mkdir -p dist
-          cp "${{ matrix.executable }}" "dist/jev-switch-cli-${{ needs.meta.outputs.version }}-${{ matrix.platform }}${{ matrix.platform == 'windows-x64' && '.exe' || '' }}"
+          cp "${{ matrix.executable }}" "dist/systorch-cli-${{ needs.meta.outputs.version }}-${{ matrix.platform }}${{ matrix.platform == 'windows-x64' && '.exe' || '' }}"
       - name: 上传 CLI
         uses: actions/upload-artifact@v4
         with:
-          name: jev-switch-cli-${{ needs.meta.outputs.version }}-${{ matrix.platform }}
+          name: systorch-cli-${{ needs.meta.outputs.version }}-${{ matrix.platform }}
           path: dist/*
           if-no-files-found: error
 
@@ -382,19 +382,22 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          build-args: JEV_BUILD_REVISION=${{ github.sha }}
+          build-args: SYSTORCH_BUILD_REVISION=${{ github.sha }}
           push: ${{ needs.meta.outputs.publish == 'true' }}
-          tags: |
-            ghcr.io/${{ steps.img.outputs.repo }}:${{ needs.meta.outputs.version }}
-            ghcr.io/${{ steps.img.outputs.repo }}:latest
+          tags: ghcr.io/${{ steps.img.outputs.repo }}:${{ needs.meta.outputs.version }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Update stable latest tag
+        if: needs.meta.outputs.publish == 'true' && needs.meta.outputs.prerelease != 'true'
+        shell: bash
+        run: docker buildx imagetools create --tag "${{ steps.img.outputs.image }}:latest" "${{ steps.img.outputs.image }}:${{ needs.meta.outputs.version }}"
 
   # ── 6. GitHub Release（仅 tag 触发） ──────────────────────────────
   release:
     name: GitHub Release
     needs: [meta, windows, docker, cli, android]
-    if: always() && needs.meta.outputs.publish == 'true' && needs.windows.result == 'success' && needs.docker.result == 'success' && needs.cli.result == 'success' && needs.android.result == 'success'
+    if: always() && needs.meta.outputs.publish == 'true' && needs.windows.result == 'success' && needs.docker.result == 'success' && needs.cli.result == 'success' && needs.android.result == 'success' && needs.android.outputs.apk_available == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -402,21 +405,30 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: jev-switch-windows-*
-          merge-multiple: true
-          path: dist
+          name: systorch-windows-${{ needs.meta.outputs.version }}
+          path: windows-artifacts
 
       - uses: actions/download-artifact@v4
         with:
-          pattern: jev-switch-cli-${{ needs.meta.outputs.version }}-*
-          merge-multiple: true
-          path: dist
+          name: systorch-android-aarch64
+          path: android-artifacts
 
-      - uses: actions/download-artifact@v4
-        if: needs.android.outputs.apk_available == 'true'
-        with:
-          name: jev-switch-android-aarch64
-          path: dist
+      - name: Stage the two public release assets
+        shell: bash
+        env:
+          VERSION: ${{ needs.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          windows="windows-artifacts/SysTorch-${VERSION}-windows-x64.exe"
+          android="android-artifacts/SysTorch-${VERSION}-android-aarch64.apk"
+          test -f "$windows"
+          test -f "$android"
+          cp "$windows" release-assets/
+          cp "$android" release-assets/
+          count=$(find release-assets -maxdepth 1 -type f | wc -l)
+          test "$count" -eq 2
+          sha256sum release-assets/*
 
       - name: 创建 Release
         uses: softprops/action-gh-release@v2
@@ -424,64 +436,10 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: v${{ needs.meta.outputs.version }}
           prerelease: ${{ needs.meta.outputs.prerelease == 'true' }}
-          generate_release_notes: true
+          generate_release_notes: false
           overwrite_files: true
-          files: dist/**/*
-          body: |
-            ## 版本说明
-
-            本次为 `${{ needs.meta.outputs.version }}` ${{ needs.meta.outputs.prerelease == 'true' && '预发布预览版' || '正式版本' }}。Windows 资产随包提供 `windows-signing-status.txt`；若仓库变量 `WINDOWS_SIGNING_REQUIRED` 未开启，该清单会明确标记 Windows 包未使用 Authenticode。Android APK（如签名 Secrets 已配置）随包提供 commit、版本码、签名指纹和 SHA-256 manifest。
-
-            ## 本版内容
-
-            - 修复 Windows 后台请求未采用系统代理的问题：恢复 reqwest `system-proxy`，公网上游调用、API 探测与模型目录发现遵循用户已经配置的代理。
-            - `localhost`、127/8、IPv6 回环和映射回环的本地服务调用、探测与 readiness 始终直连，避免代理错误页被误判为服务可达。
-            - TypeSafe HTTP 451 保留上游状态码与错误正文，按非重试错误处理；不修改 Jev 请求 JSON、Bearer 鉴权或 TLS 校验。
-            - 同步代理故障排查与旧版临时恢复指南，保留原子配置写入、路由、历史和生命周期能力。
-
-            ## 用户叙事与对照场景
-
-            ### 云端上游：让后台请求采用已配置的系统代理
-
-            - **起点**：Windows 用户已开启系统代理，浏览器使用预期的海外出口；Jev Switch 配置了官方 TypeSafe 地址、API key 和 `jev-latest`。
-            - **问题**：daemon 关闭 reqwest 默认 features 时漏启用系统代理支持，后台仍然直连；没有正文的 GET 也返回地区不可用的 HTTP 451，容易被误认为模型格式或凭据问题。
-            - **操作**：完整退出旧 APP（包括托盘驻留），安装或启动本版，保持原提供商地址和凭据；先刷新提供商模型目录，再到演练场执行一次实际调用。
-            - **结果**：本地修复对照中，Rust 客户端通过现有代理进入官方鉴权处理；使用现有凭据访问模型目录返回 HTTP 200、2 个模型，未发送付费推理请求。
-            - **对照**：同机直连返回 451，现有代理路径通过地区门禁；本机 Laya、StartLux、OneJev 等回环服务继续直连，不依赖公网上游代理。
-            - **边界**：代理必须由用户正确配置，本版不提供代理节点、不承诺地区持续可用。旧进程必须退出后重新启动，新 EXE 不会更新旧进程已创建的 HTTP 客户端。
-
-            ## 验证范围与发布后检查
-
-            Rust 默认/ts-rs 测试、Clippy、fmt、本地服务探测和监听回归已通过；本页附件由同一 tag 的 Release workflow 构建。模型目录 HTTP 200 是网络与鉴权证据，不等于模型推理成功。
-
-            **发行包启动后的真实 TypeSafe 推理、原生 UI 和本地模型状态抽查留到发布后验证，当前尚未完成。** 本次没有新增 Android/Linux 的系统代理行为，也没有重复执行先前本地服务的整套人工验收。调查证据见 [TypeSafe 系统代理核验](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/docs/verification/typesafe-system-proxy-2026-10-12.md)，完整变化见 [CHANGELOG](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/CHANGELOG.md)。
-
-            ## 安装
-
-            **Windows 桌面**：下载下方 `.msi`（或 NSIS `.exe`）双击安装。
-            **Windows 便携版**：下载 `.zip` 并解压，双击其中的 `jev-switch.exe`；它与同次构建的安装包共享壳、daemon 与 UI 资源，不运行安装器。
-            **Windows 独立版**：下载 `jev-switch-standalone-*-windows-x64.exe` 并双击；首次启动会把内嵌 daemon/UI 校验后释放到当前用户的版本化运行缓存，应用数据仍保存在 `%APPDATA%\\jev-switch`。
-            **Headless CLI**：下载对应平台的 `jev-switch-cli-*`；Termux/Android arm64 请在设备上执行 `cargo install --path rs/crates/jev-switch-cli --locked`，避免把主机二进制误当成 Android 包。
-            **Android**：仓库配置四个稳定签名 Secrets 后，Release 会附带 `jev-switch-<version>-android-aarch64.apk` 与 manifest；未配置时 Android job 会明确跳过，但 Windows/CLI/Docker 仍会正常发布。首次从历史 debug-signed APK 升级到稳定签名包时，需先卸载旧版本一次。
-
-            **Docker（Bash）**：先将 `JEV_ADMIN_PASSWORD` 设置为自己的管理员密码。
-            下例挂载持久数据卷，并只在宿主机回环地址提供控制台。
-
-            ```bash
-            : "${JEV_ADMIN_PASSWORD:?请先设置管理员密码}"
-            export JEV_ADMIN_PASSWORD
-            docker pull ${{ needs.docker.outputs.image }}:${{ needs.meta.outputs.version }}
-            docker run -d --name jev-switch \
-              -p 127.0.0.1:11435:11435 \
-              --restart unless-stopped --stop-timeout 15 \
-              -e JEV_SWITCH_MODE=cloud -e JEV_BIND=0.0.0.0:11435 \
-              -e JEV_ADMIN_PASSWORD -v jev-switch-data:/data \
-              ${{ needs.docker.outputs.image }}:${{ needs.meta.outputs.version }}
-            ```
-
-            打开 `http://127.0.0.1:11435`，用管理员密码登录，再到 Token 管理创建调用 Token。
-            远程部署、反向代理和配置导入见 `docs/deployment.md`。
-            发版流程与排查见 `docs/RELEASE.md`。
+          files: release-assets/*
+          body_path: docs/releases/${{ needs.meta.outputs.version }}.md
 
       # A release created with GITHUB_TOKEN does not emit a follow-up release
       # workflow run. workflow_dispatch is the supported non-recursive exception.

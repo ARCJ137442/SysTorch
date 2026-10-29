@@ -1,11 +1,13 @@
 import { Component, StrictMode, type ErrorInfo, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-import { initLang } from './i18n';
+import { initLang, t } from './i18n';
 import './styles/tokens.css';
 import './index.css';
 import { applyThemePreference, followSystemTheme, readThemePreference } from './theme';
 import { applyUiScale, readUiScale } from './settings/preferences';
+import { getAndroidGatewayStatus, isAndroidTauri, type AndroidGatewayStatus } from './api/androidGateway';
+import { readApiBasePreference, saveApiBasePreference } from './api/base';
 
 /* Resolve the theme before the first render and follow OS changes in system mode. */
 applyThemePreference(readThemePreference(), false);
@@ -58,7 +60,7 @@ class RootErrorBoundary extends Component<BoundaryProps, BoundaryState> {
           }}
         >
           <div style={{ fontWeight: 700, marginBottom: 8 }}>
-            Jev Switch UI crashed
+            SysTorch UI crashed
           </div>
           <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{msg}</pre>
         </div>
@@ -68,10 +70,38 @@ class RootErrorBoundary extends Component<BoundaryProps, BoundaryState> {
   }
 }
 
-createRoot(rootEl).render(
+async function renderApp() {
+  const loading = rootEl?.querySelector('[role="status"]');
+  if (loading) loading.textContent = t('decision.loading');
+  // Resolve the owned listener before any page fetch, including the new Start
+  // page. Never overwrite an explicitly selected external gateway.
+  if (isAndroidTauri()) {
+    // The first document can load before Android's native invocation handler is
+    // ready. An early read may never receive its callback. Retry only this
+    // read-only handshake with a bounded deadline; never replay a mutation.
+    let status: AndroidGatewayStatus | null = null;
+    for (let attempt = 0; attempt < 6 && status === null; attempt++) {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        status = await Promise.race([
+          getAndroidGatewayStatus(),
+          new Promise<null>(resolve => { timer = setTimeout(() => resolve(null), 2000); }),
+        ]);
+      } catch { /* Native errors do not leave the entire app permanently blank. */ }
+      finally { clearTimeout(timer); }
+    }
+    if (status?.running && status.bind && !readApiBasePreference()) {
+      const port = status.bind.slice(status.bind.lastIndexOf(':') + 1);
+      try { saveApiBasePreference(`http://127.0.0.1:${port}`); }
+      catch { (window as unknown as { __JEV_BASE__: string }).__JEV_BASE__ = `http://127.0.0.1:${port}`; }
+    }
+  }
+  createRoot(rootEl!).render(
   <StrictMode>
     <RootErrorBoundary>
       <App />
     </RootErrorBoundary>
   </StrictMode>,
 );
+}
+void renderApp();

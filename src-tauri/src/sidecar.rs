@@ -1,9 +1,9 @@
-//! Sidecar：打包进资源的 `jev-switch.exe`（daemon release 产物）启停与就绪探测。
+//! Sidecar: start, stop and readiness-probe the packaged `systorch-daemon.exe`.
 //!
 //! 契约对齐：
-//! - `JEV_SWITCH_CONFIG` → `%APPDATA%\jev-switch\providers.toml`（首启播种模板、已有不覆盖）
-//! - `JEV_SWITCH_MODE` **不设** = local 态（docs/deployment.md §三）
-//! - `JEV_UI_DIST` → 打包的 `ui/dist`（daemon ServeDir 同源托管，webview 直载同源 UI）
+//! - `SYSTORCH_CONFIG` → `%APPDATA%\SysTorch\providers.toml`; legacy data stays readable
+//! - `SYSTORCH_MODE` unset = local mode
+//! - `SYSTORCH_UI_DIST` points at packaged `ui/dist`
 //! - 就绪 = `/health` 的服务身份、接口修订和版本均兼容，随后切入控制台
 
 use std::path::{Path, PathBuf};
@@ -16,28 +16,74 @@ use crate::runtime_probe::{self, RuntimeProbe};
 use crate::ShellState;
 
 /// webview 目标 origin（local 态绑 127.0.0.1:11435 —— contracts/05 §1）。
+#[cfg(not(feature = "m1-preview"))]
 pub const UI_ORIGIN: &str = "http://127.0.0.1:11435";
+#[cfg(feature = "m1-preview")]
+pub const UI_ORIGIN: &str = "http://127.0.0.1:11436";
+
+#[cfg(not(feature = "m1-preview"))]
+const CONFIG_DIR: &str = "SysTorch";
+#[cfg(feature = "m1-preview")]
+const CONFIG_DIR: &str = "systorch-m1-preview";
+#[cfg(not(feature = "m1-preview"))]
+const LEGACY_CONFIG_DIR: &str = "jev-switch";
+#[cfg(feature = "m1-preview")]
+const LEGACY_CONFIG_DIR: &str = "jev-switch-m1-preview";
+
+fn listener_address() -> std::net::SocketAddr {
+    UI_ORIGIN
+        .trim_start_matches("http://")
+        .parse()
+        .expect("owned listener address")
+}
 
 /// WebView2 keeps HTTP cache across shell restarts; bind the index URL to this package's UI bytes.
 pub fn ui_entry_url() -> String {
-    format!("{UI_ORIGIN}/?jev-ui={}", env!("JEV_UI_CACHE_KEY"))
+    format!("{UI_ORIGIN}/?systorch-ui={}", env!("SYSTORCH_UI_CACHE_KEY"))
 }
 
 /// 首启播种的默认配置（示例值 only：`api_key_env` 形式，无真实密钥）。
 const DEFAULT_CONFIG: &str = include_str!("default_providers.toml");
 
-/// 配置目录：`%APPDATA%\jev-switch`；无 APPDATA（异常环境）回退 `~/.jev-switch`。
+/// Prefer a SysTorch directory for new installs, but keep using an existing
+/// legacy directory so the SQLite database, owner key and provider config stay paired.
 pub fn config_dir() -> PathBuf {
     if let Some(appdata) = std::env::var_os("APPDATA") {
         if !appdata.is_empty() {
-            return PathBuf::from(appdata).join("jev-switch");
+            let base = PathBuf::from(appdata);
+            return compatible_config_dir(&base.join(CONFIG_DIR), &base.join(LEGACY_CONFIG_DIR));
         }
     }
     let home = std::env::var_os("HOME")
         .or_else(|| std::env::var_os("USERPROFILE"))
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("."));
-    home.join(".jev-switch")
+    compatible_config_dir(
+        &home.join(format!(".{}", CONFIG_DIR.to_ascii_lowercase())),
+        &home.join(format!(".{LEGACY_CONFIG_DIR}")),
+    )
+}
+
+fn compatible_config_dir(canonical: &Path, legacy: &Path) -> PathBuf {
+    if [
+        "providers.toml",
+        "systorch.db",
+        "jev-switch.db",
+        "systorch-owner.key",
+    ]
+    .iter()
+    .any(|name| canonical.join(name).exists())
+    {
+        return canonical.to_path_buf();
+    }
+    if legacy.join("providers.toml").exists()
+        || legacy.join("jev-switch.db").exists()
+        || legacy.join("systorch.db").exists()
+        || legacy.join("systorch-owner.key").exists()
+    {
+        return legacy.to_path_buf();
+    }
+    canonical.to_path_buf()
 }
 
 /// 首次启动落地导入模板；已有文件不覆盖，首次导入后以 SQLite 配置为准。
@@ -45,7 +91,7 @@ pub fn seed_config(dir: &Path) -> std::io::Result<PathBuf> {
     std::fs::create_dir_all(dir)?;
     let path = dir.join("providers.toml");
     if !path.exists() {
-        std::fs::write(&path, DEFAULT_CONFIG)?;
+        std::fs::write(&path, crate::config_seed::text(DEFAULT_CONFIG))?;
     }
     Ok(path)
 }
@@ -53,27 +99,26 @@ pub fn seed_config(dir: &Path) -> std::io::Result<PathBuf> {
 /// 解析 sidecar 可执行文件：打包布局 + dev 布局多候选兜底。
 ///
 /// 打包态：externalBin 落资源目录（具体子路径随平台，逐一探测）。
-/// dev 态：`src-tauri/binaries/jev-switch-<triple>.exe` 或仓库 `rs/target/release/`。
+/// Dev fallback: the canonical SysTorch daemon binary, then the retired binary alias.
 pub fn resolve_sidecar_exe(app: &AppHandle) -> Option<PathBuf> {
     #[cfg(feature = "standalone")]
     {
         let runtime_dir = app.try_state::<ShellState>()?.runtime_dir.clone()?;
-        let daemon = runtime_dir.join("jev-switch-daemon.exe");
-        return daemon.is_file().then_some(daemon);
+        let daemon = runtime_dir.join("systorch-daemon.exe");
+        daemon.is_file().then_some(daemon)
     }
 
     #[cfg(not(feature = "standalone"))]
     {
-        // 打包名 = jev-switch-daemon.exe（**不能**与壳主二进制 jev-switch.exe 同名：
-        // WiX ICE30 两组件同装一个文件名 → MSI light 失败；externalBin 落地时剥 triple）
-        let daemon_plain = "jev-switch-daemon.exe";
+        // The daemon name must differ from the `systorch.exe` shell binary (WiX ICE30).
+        let daemon_plain = "systorch-daemon.exe";
         let daemon_triple = format!(
-            "jev-switch-daemon-{}-pc-windows-msvc.exe",
+            "systorch-daemon-{}-pc-windows-msvc.exe",
             arch_triple_prefix()
         );
-        // dev 兜底：rs workspace 的 bin 名仍是 jev-switch.exe
+        // Keep the retired executable name as a last-resort dev compatibility alias.
         #[cfg(debug_assertions)]
-        let dev_plain = "jev-switch.exe";
+        let dev_plain = "systorch-daemon.exe";
         #[cfg(debug_assertions)]
         let dev_triple = format!("jev-switch-{}-pc-windows-msvc.exe", arch_triple_prefix());
         let names: [&str; 2] = [daemon_triple.as_str(), daemon_plain];
@@ -89,9 +134,9 @@ pub fn resolve_sidecar_exe(app: &AppHandle) -> Option<PathBuf> {
         if let Ok(exe) = std::env::current_exe() {
             if let Some(dir) = exe.parent() {
                 for name in names {
-                candidates.push(dir.join("binaries").join(name));
-                candidates.push(dir.join("bin").join(name));
-                candidates.push(dir.join(name));
+                    candidates.push(dir.join("binaries").join(name));
+                    candidates.push(dir.join("bin").join(name));
+                    candidates.push(dir.join(name));
                 }
                 // 仓库路径仅供 debug 开发；安装包不能回退到工作目录中的旧内核。
                 #[cfg(debug_assertions)]
@@ -148,7 +193,7 @@ pub fn resolve_ui_dist(app: &AppHandle) -> Option<PathBuf> {
     {
         let runtime_dir = app.try_state::<ShellState>()?.runtime_dir.clone()?;
         let ui_dist = runtime_dir.join("ui/dist");
-        return ui_dist.join("index.html").is_file().then_some(ui_dist);
+        ui_dist.join("index.html").is_file().then_some(ui_dist)
     }
 
     #[cfg(not(feature = "standalone"))]
@@ -179,7 +224,7 @@ pub fn resolve_ui_dist(app: &AppHandle) -> Option<PathBuf> {
 }
 
 fn probe_daemon() -> RuntimeProbe {
-    runtime_probe::probe("127.0.0.1:11435".parse().unwrap())
+    runtime_probe::probe(listener_address())
 }
 
 /// spawn sidecar 并启动就绪轮询线程。
@@ -199,7 +244,7 @@ fn start_with_probe(
         || {
             set_status(
                 &reuse_app,
-                "检测到已运行的 daemon（127.0.0.1:11435），直接接入…",
+                &format!("检测到已运行的 daemon（{}），直接接入…", listener_address()),
             );
             spawn_watch(reuse_app);
         },
@@ -219,14 +264,14 @@ fn dispatch_startup_probe(
             on_reuse();
             Ok(())
         }
-        RuntimeProbe::Occupied(reason) => Err(format!("127.0.0.1:11435：{reason}")),
+        RuntimeProbe::Occupied(reason) => Err(format!("{}：{reason}", listener_address())),
         RuntimeProbe::Unavailable => on_spawn(),
     }
 }
 
 fn spawn_sidecar(app: &AppHandle, config_path: &Path) -> Result<(), String> {
     let exe = resolve_sidecar_exe(app).ok_or_else(|| {
-        "找不到随包内核（jev-switch-daemon.exe）。请按 docs/deployment.md「Tauri 桌面」节重新构建。".to_string()
+        "找不到随包内核（systorch-daemon.exe）。请按 docs/deployment.md「Tauri 桌面」节重新构建。".to_string()
     })?;
     let ui_dist =
         resolve_ui_dist(app).ok_or("缺少随包控制台 ui/dist/index.html，请重新构建桌面包")?;
@@ -242,10 +287,13 @@ fn spawn_sidecar(app: &AppHandle, config_path: &Path) -> Result<(), String> {
         .map_err(|e| format!("无法初始化内核日志：{e}"))?;
 
     let mut cmd = Command::new(&exe);
-    cmd.env("JEV_SWITCH_CONFIG", config_path)
+    cmd.env("SYSTORCH_CONFIG", config_path)
+        .env("JEV_SWITCH_CONFIG", config_path)
+        .env("SYSTORCH_UI_DIST", &ui_dist)
         .env("JEV_UI_DIST", &ui_dist)
+        .env("SYSTORCH_DATA_DIR", data_dir)
         .env("JEV_SWITCH_DATA_DIR", data_dir)
-        // JEV_SWITCH_MODE 不设 = local（docs/deployment.md §三）
+        // SYSTORCH_MODE / legacy JEV_SWITCH_MODE unset = local mode.
         .current_dir(config_path.parent().unwrap_or(Path::new(".")))
         .stdin(Stdio::null())
         .stdout(Stdio::from(log))
@@ -287,12 +335,15 @@ fn spawn_watch(app: AppHandle) {
             match probe_daemon() {
                 RuntimeProbe::Ready => {
                     if let Some(w) = app.get_webview_window("main") {
-                        let _ = w.eval(&format!("location.replace('{}')", ui_entry_url()));
+                        if w.eval(format!("location.replace('{}')", ui_entry_url()))
+                            .is_ok()
+                        {
+                            return;
+                        }
                     }
-                    return;
                 }
                 RuntimeProbe::Occupied(reason) => {
-                    set_status(&app, &format!("127.0.0.1:11435：{reason}"));
+                    set_status(&app, &format!("{}：{reason}", listener_address()));
                     return;
                 }
                 RuntimeProbe::Unavailable => {}
@@ -336,9 +387,8 @@ pub fn set_status_window(w: &WebviewWindow, msg: &str) {
     let safe = msg
         .replace('\\', "\\\\")
         .replace('\'', "\\'")
-        .replace('\r', " ")
-        .replace('\n', " ");
-    let _ = w.eval(&format!(
+        .replace(['\r', '\n'], " ");
+    let _ = w.eval(format!(
         "(()=>{{const e=document.getElementById('status');if(e)e.textContent='{}';}})()",
         safe
     ));
@@ -393,10 +443,10 @@ mod tests {
     #[test]
     fn ui_entry_url_is_scoped_to_the_embedded_app_and_ui_build() {
         let url = ui_entry_url();
-        assert!(url.starts_with(&format!("{UI_ORIGIN}/?jev-ui=")));
+        assert!(url.starts_with(&format!("{UI_ORIGIN}/?systorch-ui=")));
         assert!(url.contains(env!("CARGO_PKG_VERSION")));
-        assert!(url.contains(env!("JEV_UI_CACHE_KEY")));
-        assert_ne!(url, format!("{UI_ORIGIN}/?jev-ui=0.4.1-legacy-cache"));
+        assert!(url.contains(env!("SYSTORCH_UI_CACHE_KEY")));
+        assert_ne!(url, format!("{UI_ORIGIN}/?systorch-ui=0.4.1-legacy-cache"));
     }
 
     #[test]
@@ -440,7 +490,7 @@ mod tests {
         );
 
         let error = result.expect_err("an incompatible service must stop startup");
-        assert!(error.contains("11435"));
+        assert!(error.contains(&listener_address().port().to_string()));
         assert!(error.contains("non-Jev service"));
         assert!(!reused.get());
         assert!(!spawned.get());
@@ -524,6 +574,7 @@ mod tests {
                     app.handle(),
                     &app.config().app.windows[0],
                 )?
+                .focused(false)
                 .data_directory(window_profile.clone())
                 .build()?;
                 start_with_probe(
@@ -535,7 +586,7 @@ mod tests {
                         Err("sidecar spawn disabled in live reuse test".into())
                     },
                 )
-                .map_err(|error| std::io::Error::new(std::io::ErrorKind::Other, error))?;
+                .map_err(std::io::Error::other)?;
                 Ok(())
             })
             .build(context)
@@ -569,7 +620,7 @@ mod tests {
                         let loaded_local_ui = window.url().is_ok_and(|url| {
                             url.scheme() == "http"
                                 && url.host_str() == Some("127.0.0.1")
-                                && url.port() == Some(11435)
+                                && url.port() == Some(listener_address().port())
                                 && url.path() == "/"
                         });
                         if loaded_local_ui {
@@ -685,6 +736,7 @@ mod tests {
                     app.handle(),
                     &app.config().app.windows[0],
                 )?
+                .focused(false)
                 .data_directory(window_profile.clone())
                 .build()?;
                 start_with_probe(

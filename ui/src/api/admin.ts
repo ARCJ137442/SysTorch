@@ -1,3 +1,5 @@
+import { normalizeRoute, planRouteEdits, applyRouteEdits, routeEditsAcknowledged, type Route } from './routeEdits';
+export { normalizeRoute, routeEdgeId, type Route } from './routeEdits';
 import { getBase } from '../api';
 import { t as tI18n } from '../i18n/core';
 import { PROVIDERS_FIXTURE } from '../fixtures/providers.mock';
@@ -13,7 +15,6 @@ import type { ProviderInput } from '../generated/ProviderInput';
 import type { ProbeResult } from '../generated/ProbeResult';
 import type { ProviderModelsResult } from '../generated/ProviderModelsResult';
 import type { RouteMutation as GeneratedRouteMutation } from '../generated/RouteMutation';
-import type { RouteEdge as GeneratedRouteEdge } from '../generated/RouteEdge';
 import type { LanAccessResponse as GeneratedLanAccessResponse } from '../generated/LanAccessResponse';
 import type { GatewayControlResponse as GeneratedGatewayControlResponse } from '../generated/GatewayControlResponse';
 import type { TelemetrySnapshot } from '../generated/TelemetrySnapshot';
@@ -530,16 +531,6 @@ export const putGatewayControl = (running: boolean) => request<GatewayControlRes
 
 /* ---------- routes（GET compatibility view + atomic transaction writes） ---------- */
 
-export interface Route {
-  left: string;
-  match: 'exact' | 'prefix';
-  right: string;
-  upstream_model?: string | null;
-  priority: number;
-  sticky?: 'none' | 'session';
-  on_error?: 'next' | 'fail';
-}
-
 export interface RoutesResponse {
   routes: Route[];
 }
@@ -577,40 +568,6 @@ export class AdminApiError extends Error {
 /** 边的稳定标识：left => right（UI 假定该对唯一） */
 export function edgeKey(left: string, right: string): string {
   return `${left}=>${right}`;
-}
-
-/** Canonical mutation identity keeps same-target model ports distinct. */
-export function routeEdgeId(route: Route): string {
-  const match = route.match === 'prefix' ? 'prefix' : 'exact';
-  return JSON.stringify([route.left, route.right, match, route.upstream_model ?? null]);
-}
-
-/** 归一化：固定键序 + 默认值（保证 JSON 深比较/UNSAVED 判定稳定） */
-export function normalizeRoute(r: Route): Route {
-  const out: Route = {
-    left: r.left,
-    match: r.match === 'prefix' ? 'prefix' : 'exact',
-    right: r.right,
-    priority: typeof r.priority === 'number' && Number.isFinite(r.priority) ? r.priority : 10,
-    sticky: r.sticky === 'session' ? 'session' : 'none',
-    on_error: r.on_error === 'fail' ? 'fail' : 'next',
-  };
-  if (typeof r.upstream_model === 'string' && r.upstream_model.length > 0) {
-    out.upstream_model = r.upstream_model;
-  }
-  return out;
-}
-
-function toRouteEdge(route: Route): GeneratedRouteEdge {
-  return {
-    left: route.left,
-    match: route.match,
-    right: route.right,
-    upstream_model: route.upstream_model ?? null,
-    priority: route.priority,
-    sticky: route.sticky ?? 'none',
-    on_error: route.on_error ?? 'next',
-  };
 }
 
 /** 本地环检（transaction 前检环；服务端 400 时同样返回边键集合） */
@@ -673,42 +630,28 @@ export async function listRoutes(): Promise<RoutesResponse> {
   return request<RoutesResponse>('/v1/admin/routes');
 }
 
-export async function putRoutes(routes: Route[]): Promise<RoutesResponse> {
-  const normalized = routes.map(normalizeRoute);
-  // 环 = 400（contracts/05：DAG 含环则 400）— mock 服务端校验，环边键回传供标红
-  const cycleEdges = findCyclicEdgeKeys(normalized);
-  if (cycleEdges.length > 0) {
-    throw new AdminApiError(tI18n('routing.cycle'), 400, cycleEdges);
-  }
+/** Save explicit editor intent, with edge-level preconditions checked by SQLite. */
+export async function saveRouteEdits(edit: { baseline: Route[]; routes: Route[] }): Promise<RoutesResponse> {
+  const operations = planRouteEdits(edit);
+  if (operations.length === 0) return { routes: edit.baseline };
   if (adminMode === 'mock') {
     await delay(150);
-    mockRoutes = normalized.map((r) => ({ ...r }));
-    return { routes: mockRoutes.map((r) => ({ ...r })) };
+    const next = applyRouteEdits(mockRoutes, operations);
+    const cycleEdges = findCyclicEdgeKeys(next);
+    if (cycleEdges.length) throw new AdminApiError(tI18n('routing.cycle'), 400, cycleEdges);
+    mockRoutes = next;
+    return { routes: mockRoutes.map(route => ({ ...route })) };
   }
-  const current = (await listRoutes()).routes.map(normalizeRoute);
-  const currentById = new Map(current.map((route) => [routeEdgeId(route), route]));
-  const nextById = new Map(normalized.map((route) => [routeEdgeId(route), route]));
-  const operations: RouteMutation[] = [];
-  for (const [id] of currentById) {
-    if (!nextById.has(id)) operations.push({ op: 'delete', edge_id: id });
-  }
-  for (const [id, route] of nextById) {
-    const previous = currentById.get(id);
-    if (!previous) operations.push({ op: 'create', route: toRouteEdge(route) });
-    else if (JSON.stringify(previous) !== JSON.stringify(route)) operations.push({ op: 'update', edge_id: id, route: toRouteEdge(route) });
-  }
-  if (operations.length === 0) return { routes: current };
   try {
-    return await request<RoutesResponse>('/v1/admin/routes/transaction', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ operations }),
+    const result = await request<RoutesResponse>('/v1/admin/routes/transaction', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ operations }),
     });
-  } catch (e) {
-    // 旧整表 PUT 已不再暴露；保留环错误的前端标记与可读提示。
-    const msg = (e as Error).message;
-    if (msg.includes('环')) throw new AdminApiError(msg, 400, findCyclicEdgeKeys(normalized));
-    throw e;
+    if (!routeEditsAcknowledged(result.routes, operations)) throw new Error(tI18n('dag.saveMismatch'));
+    return result;
+  } catch (error) {
+    if (error instanceof AdminApiError && error.status === 409) throw new AdminApiError(tI18n('dag.editConflict'), 409);
+    if ((error as Error).message.includes('环')) throw new AdminApiError((error as Error).message, 400, findCyclicEdgeKeys(edit.routes));
+    throw error;
   }
 }
 

@@ -18,7 +18,7 @@
 }
 
 .app-shell__brand { grid-area: brand; white-space: nowrap; }
-.app-shell__nav { grid-area: nav; min-width: 0; overflow: visible; flex-wrap: nowrap; }
+.app-shell__nav { grid-area: nav; min-width: 0; overflow: visible; flex-wrap: wrap; }
 .app-shell__nav-link { position: relative; }
 .app-shell__nav-link--active::after {
   position: absolute;
@@ -108,7 +108,10 @@
 
 @media (max-width: 960px) {
   .dashboard-layout-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .app-shell__header-inner {
+}
+
+/* Measured CSS width follows UI zoom; viewport media queries do not. */
+  .app-shell--compact .app-shell__header-inner {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas: 'brand actions' 'nav identity';
     column-gap: 0.5rem;
@@ -116,47 +119,39 @@
     padding: 0.5rem 1rem;
   }
 
-  .app-shell__nav { max-width: 100%; flex-wrap: wrap; row-gap: 0.2rem; }
-  .app-shell__identity-label { max-width: clamp(7rem, 24vw, 13rem); }
-  .app-shell__identity-action { font-size: var(--text-xs); }
-  .app-shell__header-inner .app-shell__actions { gap: 0.5rem; }
-  .app-shell__footer-inner { gap: 0.65rem; padding-right: 0.5rem; padding-left: 0.5rem; }
-}
+  .app-shell--compact .app-shell__nav { max-width: 100%; flex-wrap: wrap; row-gap: 0.2rem; }
+  .app-shell--compact .app-shell__identity-label { max-width: clamp(7rem, 24vw, 13rem); }
+  .app-shell--compact .app-shell__identity-action { font-size: var(--text-xs); }
+  .app-shell--compact .app-shell__header-inner .app-shell__actions { gap: 0.5rem; }
+  .app-shell--compact .app-shell__footer-inner { gap: 0.65rem; padding-right: 0.5rem; padding-left: 0.5rem; }
 
 @media (max-width: 540px) {
   .dashboard-layout-grid { grid-template-columns: minmax(0, 1fr); }
   .dashboard-layout-grid > * { grid-column: 1 / -1 !important; }
-  .app-shell__header-inner {
+  .page-container { padding: 0.875rem 0.75rem 1.5rem; }
+}
+  .app-shell--mobile .app-shell__header-inner {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas: 'brand' 'actions' 'identity' 'nav';
     row-gap: 0.25rem;
     padding: 0.45rem 0.75rem;
   }
-  .app-shell__nav { flex-wrap: wrap; overflow: visible; }
-  .app-shell__nav a { padding: 0.35rem 0.5rem; font-size: var(--text-xs) !important; }
-  .app-shell__identity-label { max-width: min(72vw, 24rem); }
-  .app-shell__identity-action { font-size: 0.6875rem; }
-  .app-shell__identity { justify-self: start; }
-  .app-shell__header-inner .app-shell__actions { gap: 0.375rem; justify-self: start; }
-  .app-shell__actions > span[aria-live='polite'] > .tabular { display: none; }
-  .app-shell__actions > span[aria-live='polite'] { gap: 0.25rem; font-size: var(--text-xs) !important; }
-  .app-shell__runtime-label { max-width: 12rem; overflow: hidden; text-overflow: ellipsis; }
-  .app-shell__footer-inner { gap: 0.5rem; padding: 0.4rem 0.5rem; }
-  .app-shell__footer-page { display: none; }
-  .app-shell__footer-daemon { font-size: 0; }
-  .app-shell__footer-daemon > span { width: 0.5rem; height: 0.5rem; }
-  .page-container { padding: 0.875rem 0.75rem 1.5rem; }
-}
-
-@media (max-width: 540px) {
-  .app-shell__nav-link--active::after { right: 0.5rem; bottom: -0.25rem; left: 0.5rem; }
-  .app-shell__runtime-label { max-width: 9rem; }
-}
-
-@media (max-width: 360px) {
-  .app-shell__identity-label { max-width: calc(100vw - 8rem); }
-  .app-shell__actions > span[aria-live='polite'] > .tabular { display: none; }
-}
+  .app-shell--mobile .app-shell__nav { flex-wrap: wrap; overflow: visible; }
+  .app-shell--mobile .app-shell__nav a { padding: 0.35rem 0.5rem; font-size: var(--text-xs) !important; }
+  .app-shell--mobile .app-shell__identity-label { max-width: min(72vw, 24rem); }
+  .app-shell--mobile .app-shell__identity-action { font-size: 0.6875rem; }
+  .app-shell--mobile .app-shell__identity { justify-self: start; }
+  .app-shell--mobile .app-shell__header-inner .app-shell__actions { gap: 0.375rem; justify-self: start; }
+  .app-shell--mobile .app-shell__actions > span[aria-live='polite'] > .tabular { display: none; }
+  .app-shell--mobile .app-shell__actions > span[aria-live='polite'] { gap: 0.25rem; font-size: var(--text-xs) !important; }
+  .app-shell--mobile .app-shell__runtime-label { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; }
+  .app-shell--mobile .app-shell__footer-inner { gap: 0.5rem; padding: 0.4rem 0.5rem; }
+  .app-shell--mobile .app-shell__footer-page { display: none; }
+  .app-shell--mobile .app-shell__footer-daemon { font-size: 0; }
+  .app-shell--mobile .app-shell__footer-daemon > span { width: 0.5rem; height: 0.5rem; }
+  .app-shell--mobile .app-shell__nav-link--active::after { right: 0.5rem; bottom: -0.25rem; left: 0.5rem; }
+  .app-shell--tiny .app-shell__nav-label { display: none; }
+  .app-shell--tiny .app-shell__identity-label { max-width: calc(100% - 4rem); }
 
 @media (max-height: 620px) {
   .app-shell__header-inner { padding-top: 0.35rem; padding-bottom: 0.35rem; row-gap: 0.25rem; }
@@ -168,4 +163,18 @@
   .app-shell__footer { display: none; }
   .app-shell__toasts { max-height: calc(100dvh - 0.5rem); }
   .admin-login-overlay { align-items: flex-start; }
+}
+
+/* The Start workspace owns navigation and session history in its own drawer. */
+.app-shell--start .app-shell__nav { display: none; }
+.app-shell--start .app-shell__header-inner {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: 'brand identity actions';
+}
+@media (max-width: 540px) {
+  .app-shell--start .app-shell__header-inner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: 'brand actions';
+  }
+  .app-shell--start .app-shell__identity { display: none; }
 }

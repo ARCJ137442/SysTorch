@@ -1,0 +1,1103 @@
+//! ListenSupervisor / mode 热切 —— **真实 TCP** 集成护栏（零进程重启铁证组）。
+//!
+//! 与 `integration_http.rs`（oneshot、不绑端口）分工：本文件全程经
+//! `listen::start` 起真实 listener + reqwest 客户端，覆盖：
+//! 1. local 态非 loopback peer → 403（显式 bind=0.0.0.0 的 peer 兜底）
+//! 2. `PUT /listen` 热 Rebind：旧端口 refused、新端口服务、`auto` 改回、bind 落盘
+//! 3. mode 翻转联动 Rebind（成对默认同端口 127.0.0.1 ⇄ 0.0.0.0 —— 阶段 2 交接）：
+//!    LAN 从 refused → 可达+401 → 切回 refused；同请求 200→401→200 即时翻转
+//! 4. try-bind 失败保旧（目标端口被占 → 500，旧端口继续服务，文件不写）
+//! 5. 在途请求不中断（慢上游请求中途 rebind → 仍 200 完成）
+//! 6. `PUT /password` 真实 TCP 矩阵：cloud+会话 ✅ / cloud+LAN 无会话 ❌401 /
+//!    cloud+loopback 无会话 ✅ / 改密后旧 session 401
+//!
+//! 全程只用**临时端口**（ephemeral），绝不碰 11435（用户本机 daemon 在跑）。
+//! LAN 探测用本机局域网 IP（UDP connect 技巧取网卡地址，不发包）；环境无
+//! 局域网地址时相关断言段提前返回（本机开发环境已实跑记录于交付报告）。
+
+use axum::body::Body;
+use axum::http::Request;
+use http_body_util::BodyExt;
+use jev_core::adapter::{Registry, UpstreamAdapter};
+use jev_core::router::RouteEdge;
+use jev_core::upstream::{Capabilities, JevError, QuestionType};
+use jev_protocol::{JevRequest, JevResponse};
+use std::path::PathBuf;
+use std::sync::Arc;
+use std::time::Duration;
+use systorch_daemon::config::Config;
+use systorch_daemon::listen::{self, ListenHandle, ListenPlan, PairDefaults};
+use systorch_daemon::{build_app, build_state, AppState};
+use tower::ServiceExt;
+
+/// 测试假凭据（真实值永不进测试/提交）。
+const FAKE_TOK: &str = "tok-test-rebind-aaaa";
+const FAKE_PW: &str = "pw-test-rebind-1";
+
+/* ══════════════════════════════════════════════════════════════════
+夹具
+══════════════════════════════════════════════════════════════════ */
+
+fn temp_config(name: &str, content: &str) -> PathBuf {
+    static N: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let seq = N.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let dir = std::env::temp_dir().join(format!(
+        "jev-rebind-{}-{}-{}",
+        name,
+        std::process::id(),
+        seq
+    ));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("providers.toml");
+    std::fs::write(&path, content).unwrap();
+    path
+}
+
+fn cleanup(path: &std::path::Path) {
+    if let Some(dir) = path.parent() {
+        let _ = std::fs::remove_dir_all(dir);
+    }
+}
+
+/// 临时端口（bind :0 取号即放；测试间碰撞概率可忽略）。
+fn ephemeral_port() -> u16 {
+    std::net::TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap()
+        .port()
+}
+
+/// 本机 RFC1918/link-local IPv4（UDP connect 不发包，只读取出口源地址）。
+/// 有些开发机的默认出口绑定到公网/虚拟适配器；这不代表可从私网 peer
+/// 做 LAN opt-in 验收，因此返回 None 并跳过依赖私网 peer 的断言。
+fn lan_ip() -> Option<std::net::Ipv4Addr> {
+    let s = std::net::UdpSocket::bind("0.0.0.0:0").ok()?;
+    s.connect("8.8.8.8:80").ok()?;
+    match s.local_addr().ok()?.ip() {
+        std::net::IpAddr::V4(v4)
+            if (v4.is_private() || v4.is_link_local())
+                && !v4.is_loopback()
+                && !v4.is_unspecified() =>
+        {
+            Some(v4)
+        }
+        _ => None,
+    }
+}
+
+/// 起真实服务：temp config → state → app → ListenSupervisor。
+async fn start_server(
+    name: &str,
+    cfg_content: &str,
+    plan: ListenPlan,
+) -> (AppState, ListenHandle, PathBuf) {
+    let path = temp_config(name, cfg_content);
+    let cfg = Config::load(&path).expect("load temp config");
+    let state = build_state(cfg, path.clone());
+    let app = build_app(state.clone());
+    let handle = listen::start(app, plan, &state.listen)
+        .await
+        .expect("start listen");
+    (state, handle, path)
+}
+
+/// 携自定义 Registry 起服务（慢上游等 fake 用）。
+async fn start_server_with_registry(
+    name: &str,
+    registry: Registry,
+    cfg_content: &str,
+    plan: ListenPlan,
+) -> (AppState, ListenHandle, PathBuf) {
+    let path = temp_config(name, cfg_content);
+    let mut state = build_state(Config::load(&path).unwrap(), path.clone());
+    // 换成测试 Registry（AppState 字段 pub，直接替换 Arc）
+    state.registry = Arc::new(registry);
+    let app = build_app(state.clone());
+    let handle = listen::start(app, plan, &state.listen)
+        .await
+        .expect("start listen");
+    (state, handle, path)
+}
+
+async fn http_get(base: &str, path: &str, bearer: Option<&str>) -> Result<(u16, String), String> {
+    // These TCP listener fixtures must never be reached through a host proxy.
+    let client = reqwest::Client::builder().no_proxy().build().unwrap();
+    let mut req = client.get(format!("{base}{path}"));
+    if let Some(t) = bearer {
+        req = req.header("authorization", format!("Bearer {t}"));
+    }
+    match req.send().await {
+        Ok(resp) => {
+            let status = resp.status().as_u16();
+            let body = resp.text().await.unwrap_or_default();
+            Ok((status, body))
+        }
+        Err(e) => Err(format!("transport error: {e}")),
+    }
+}
+
+async fn http_put(
+    base: &str,
+    path: &str,
+    json: serde_json::Value,
+    bearer: Option<&str>,
+) -> Result<(u16, String), String> {
+    let client = reqwest::Client::builder().no_proxy().build().unwrap();
+    let mut req = client
+        .put(format!("{base}{path}"))
+        .header("content-type", "application/json")
+        .body(serde_json::to_string(&json).unwrap());
+    if let Some(t) = bearer {
+        req = req.header("authorization", format!("Bearer {t}"));
+    }
+    match req.send().await {
+        Ok(resp) => {
+            let status = resp.status().as_u16();
+            let body = resp.text().await.unwrap_or_default();
+            Ok((status, body))
+        }
+        Err(e) => Err(format!("transport error: {e}")),
+    }
+}
+
+async fn http_post(
+    base: &str,
+    path: &str,
+    json: serde_json::Value,
+) -> Result<(u16, String), String> {
+    let client = reqwest::Client::builder().no_proxy().build().unwrap();
+    match client
+        .post(format!("{base}{path}"))
+        .header("content-type", "application/json")
+        .body(serde_json::to_string(&json).unwrap())
+        .send()
+        .await
+    {
+        Ok(resp) => {
+            let status = resp.status().as_u16();
+            let body = resp.text().await.unwrap_or_default();
+            Ok((status, body))
+        }
+        Err(e) => Err(format!("transport error: {e}")),
+    }
+}
+
+/// 断言连接被拒（热切后旧端口必须 refused —— 而非超时/404）。
+async fn assert_refused(base: &str, path: &str, what: &str) {
+    match http_get(base, path, None).await {
+        Ok((s, b)) => panic!("{what}: 期望连接拒绝，却拿到 {s}: {b}"),
+        Err(e) => assert!(
+            e.contains("error"),
+            "{what}: 期望 transport error，得到 {e}"
+        ),
+    }
+}
+
+/// 最小 local 配置（无密码、带调用 token）。
+fn local_cfg() -> String {
+    format!(
+        r#"
+mode = "local"
+auth_tokens = ["{FAKE_TOK}"]
+[providers.laya]
+kind = "laya"
+base = "http://127.0.0.1:1/v1/systemone"
+enabled = true
+
+[router]
+"laya-english" = "laya"
+"#
+    )
+}
+
+/// 带密码的 local 配置（激活 cloud 的既有密码场景）。
+fn local_with_pw_cfg() -> String {
+    format!(
+        r#"
+mode = "local"
+auth_tokens = ["{FAKE_TOK}"]
+admin_password = "{FAKE_PW}"
+[providers.laya]
+kind = "laya"
+base = "http://127.0.0.1:1/v1/systemone"
+enabled = true
+
+[router]
+"laya-english" = "laya"
+"#
+    )
+}
+
+/// 同端口成对默认对（真实语义：local 127.0.0.1:P ⇄ cloud 0.0.0.0:P）。
+fn same_port_pair(port: u16) -> PairDefaults {
+    PairDefaults {
+        local: std::net::SocketAddr::from(([127, 0, 0, 1], port)),
+        cloud: std::net::SocketAddr::from(([0, 0, 0, 0], port)),
+    }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+① local 态非 loopback peer → 403（显式 bind 兜底 —— 方案二残留保护）
+══════════════════════════════════════════════════════════════════ */
+
+#[tokio::test]
+async fn local_mode_non_loopback_peer_is_403_over_real_tcp() {
+    let Some(lan) = lan_ip() else {
+        eprintln!("SKIP（本环境无局域网 IP，未执行 LAN 403 断言）");
+        return;
+    };
+    let port = ephemeral_port();
+    // 显式 bind 0.0.0.0 + local —— LAN 可达但应用层 peer 校验必须 403
+    let plan = ListenPlan {
+        addr: std::net::SocketAddr::from(([0, 0, 0, 0], port)),
+        explicit: true,
+        defaults: standard_plan_addr(),
+    };
+    // 配置里真的写 bind 键（显式绑定的真值源；与 plan 一致）
+    let cfg = format!("bind = \"0.0.0.0:{port}\"\n{}", local_with_pw_cfg());
+    let (_state, handle, path) = start_server("peer403", &cfg, plan).await;
+    let lan_base = format!("http://{lan}:{port}");
+    let loop_base = format!("http://127.0.0.1:{port}");
+
+    // loopback → 200（local 现状语义）
+    let (s, b) = http_get(&loop_base, "/v1/models", None).await.unwrap();
+    assert_eq!(s, 200, "loopback local 免 token: {b}");
+
+    // LAN → 403 + 三键 + 文案（真实 TCP peer = 局域网 IP）
+    let (s, b) = http_get(&lan_base, "/v1/models", None).await.unwrap();
+    assert_eq!(s, 403, "local 非 loopback 必须 403: {b}");
+    let v: serde_json::Value = serde_json::from_str(&b).unwrap();
+    let obj = v.as_object().expect("403 是对象");
+    assert_eq!(obj.len(), 3, "错误体恰三键: {b}");
+    assert!(
+        v["error"]
+            .as_str()
+            .unwrap()
+            .contains("local mode: loopback only"),
+        "{b}"
+    );
+    assert_eq!(v["upstream"], serde_json::Value::Null, "{b}");
+    assert_eq!(v["retryable"], false, "{b}");
+
+    // admin 域同样 403（peer 兜底先于一切）
+    let (s, b) = http_get(&lan_base, "/v1/admin/providers", None)
+        .await
+        .unwrap();
+    assert_eq!(s, 403, "admin LAN 也要 403: {b}");
+    // health 探活不受 peer 限制（公开门）
+    let (s, b) = http_get(&lan_base, "/health", None).await.unwrap();
+    assert_eq!(s, 200, "health 双态放行: {b}");
+
+    // 显式 bind：mode 翻转不 Rebind（响应 skipped + bound 不变）
+    let before = handle.bound();
+    let (s, b) = http_put(
+        &loop_base,
+        "/v1/admin/mode",
+        serde_json::json!({"mode":"cloud"}),
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(s, 200, "{b}");
+    let v: serde_json::Value = serde_json::from_str(&b).unwrap();
+    assert_eq!(v["rebind"]["skipped"], "explicit bind", "{b}");
+    assert_eq!(handle.bound(), before, "显式 bind 地址不动");
+    let on_disk = std::fs::read_to_string(&path).unwrap();
+    assert!(
+        on_disk.contains("bind = "),
+        "显式 bind 应在配置中: {on_disk}"
+    );
+    cleanup(&path);
+}
+
+#[tokio::test]
+async fn lan_access_requires_opt_in_and_restores_loopback_after_disable() {
+    let port = ephemeral_port();
+    let loop_addr: std::net::SocketAddr = format!("127.0.0.1:{port}").parse().unwrap();
+    let plan = ListenPlan {
+        addr: loop_addr,
+        explicit: false,
+        defaults: PairDefaults {
+            local: loop_addr,
+            cloud: loop_addr,
+        },
+    };
+    let (state, handle, path) = start_server("lan-access", &local_cfg(), plan).await;
+    let loop_base = format!("http://127.0.0.1:{port}");
+    let (status, body) = http_get(&loop_base, "/v1/admin/lan-access", None)
+        .await
+        .unwrap();
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&body).unwrap()["enabled"],
+        false
+    );
+
+    let (status, body) = http_put(
+        &loop_base,
+        "/v1/admin/lan-access",
+        serde_json::json!({"enabled":true}),
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(status, 200, "LAN opt-in should rebind successfully: {body}");
+    assert_eq!(handle.bound().ip(), std::net::Ipv4Addr::UNSPECIFIED);
+    assert!(state
+        .auth
+        .lan_access_enabled
+        .load(std::sync::atomic::Ordering::SeqCst));
+    let saved = std::fs::read_to_string(&path).unwrap();
+    assert!(saved.contains("lan_access_enabled = true"), "{saved}");
+    assert!(
+        saved.contains(&format!("bind = \"0.0.0.0:{port}\"")),
+        "{saved}"
+    );
+
+    if let Some(ip) = lan_ip() {
+        let lan_base = format!("http://{ip}:{port}");
+        let (status, body) = http_get(&lan_base, "/v1/admin/status", None).await.unwrap();
+        assert_eq!(
+            status, 401,
+            "private peer must authenticate for local-mode management after opt-in: {body}"
+        );
+        let (status, body) = http_get(&lan_base, "/v1/models", None).await.unwrap();
+        assert_eq!(
+            status, 200,
+            "private peer should reach model discovery after opt-in: {body}"
+        );
+    }
+
+    let (status, body) = http_put(
+        &loop_base,
+        "/v1/admin/lan-access",
+        serde_json::json!({"enabled":false}),
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(handle.bound(), loop_addr);
+    assert!(!state
+        .auth
+        .lan_access_enabled
+        .load(std::sync::atomic::Ordering::SeqCst));
+    let saved = std::fs::read_to_string(&path).unwrap();
+    assert!(!saved.contains("lan_previous_bind"), "{saved}");
+    assert!(!saved.contains("lan_access_enabled = true"), "{saved}");
+    cleanup(&path);
+}
+
+/// standard_plan 的 defaults 引用（0.0.0.0:11435 不会真用到 —— 仅占位；
+/// 本测试 plan 已显式给出 defaults）。收敛成小助手避免重复。
+fn standard_plan_addr() -> PairDefaults {
+    PairDefaults::standard()
+}
+
+/* ══════════════════════════════════════════════════════════════════
+② PUT /listen 热 Rebind：旧端口 refused、新端口 200、auto 改回、bind 落盘
+══════════════════════════════════════════════════════════════════ */
+
+#[tokio::test]
+async fn put_listen_hot_rebind_moves_port_without_restart() {
+    let port_a = ephemeral_port();
+    let port_b = ephemeral_port();
+    let addr_a: std::net::SocketAddr = format!("127.0.0.1:{port_a}").parse().unwrap();
+    // 成对默认锚定 A（auto 改回目标）；初始 plan 非显式
+    let plan = ListenPlan {
+        addr: addr_a,
+        explicit: false,
+        defaults: PairDefaults {
+            local: addr_a,
+            cloud: addr_a,
+        },
+    };
+    let (_state, handle, path) = start_server("hotport", &local_cfg(), plan).await;
+    let base_a = format!("http://127.0.0.1:{port_a}");
+    let base_b = format!("http://127.0.0.1:{port_b}");
+
+    // A 正常服务
+    let (s, b) = http_get(&base_a, "/health", None).await.unwrap();
+    assert_eq!(s, 200, "{b}");
+
+    // 热切到 B（显式化）
+    let (s, b) = http_put(
+        &base_a,
+        "/v1/admin/listen",
+        serde_json::json!({"addr": format!("127.0.0.1:{port_b}")}),
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(s, 200, "rebind 应成功: {b}");
+    let v: serde_json::Value = serde_json::from_str(&b).unwrap();
+    assert_eq!(v["addr"], format!("127.0.0.1:{port_b}"));
+    assert_eq!(v["rebound"], true, "{b}");
+
+    // 旧端口 refused、新端口 200 —— **同一进程**（handle/state 未变）
+    assert_refused(&base_a, "/health", "旧端口 A").await;
+    let (s, b) = http_get(&base_b, "/health", None).await.unwrap();
+    assert_eq!(s, 200, "新端口 B 服务: {b}");
+    assert_eq!(handle.bound().port(), port_b);
+    // GET listen 查询
+    let (s, b) = http_get(&base_b, "/v1/admin/listen", None).await.unwrap();
+    assert_eq!(s, 200, "{b}");
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&b).unwrap()["addr"],
+        format!("127.0.0.1:{port_b}")
+    );
+    // status.bind 实时反映 Rebind 后地址 + bind_explicit 已翻 true
+    let (s, b) = http_get(&base_b, "/v1/admin/status", None).await.unwrap();
+    assert_eq!(s, 200, "{b}");
+    let v: serde_json::Value = serde_json::from_str(&b).unwrap();
+    assert_eq!(
+        v["bind"],
+        format!("127.0.0.1:{port_b}"),
+        "status.bind 实时: {b}"
+    );
+    assert_eq!(v["bind_explicit"], true, "PUT listen 显式化后: {b}");
+    assert_eq!(v["mode"], "local", "{b}");
+    // bind 显式落盘
+    let on_disk = std::fs::read_to_string(&path).unwrap();
+    assert!(
+        on_disk.contains(&format!("bind = \"127.0.0.1:{port_b}\"")),
+        "{on_disk}"
+    );
+
+    // addr=auto → 改回成对默认（本 plan = A），bind 键移除
+    let (s, b) = http_put(
+        &base_b,
+        "/v1/admin/listen",
+        serde_json::json!({"addr":"auto"}),
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(s, 200, "{b}");
+    assert_refused(&base_b, "/health", "B 在 auto 后").await;
+    let (s, b) = http_get(&base_a, "/health", None).await.unwrap();
+    assert_eq!(s, 200, "auto 改回 A: {b}");
+    let on_disk = std::fs::read_to_string(&path).unwrap();
+    assert!(
+        !on_disk.contains("bind = "),
+        "auto 应移除 bind 键: {on_disk}"
+    );
+    assert!(!handle.is_explicit(), "auto 后回到非显式");
+    // status 回到 A + 显式标志复位
+    let (s, b) = http_get(&base_a, "/v1/admin/status", None).await.unwrap();
+    assert_eq!(s, 200, "{b}");
+    let v: serde_json::Value = serde_json::from_str(&b).unwrap();
+    assert_eq!(v["bind"], format!("127.0.0.1:{port_a}"), "{b}");
+    assert_eq!(v["bind_explicit"], false, "{b}");
+    cleanup(&path);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+③ mode 翻转联动 Rebind（同端口成对默认 —— 阶段 2 优雅交接）+ 即时鉴权翻转
+══════════════════════════════════════════════════════════════════ */
+
+#[tokio::test]
+async fn mode_flip_triggers_rebind_and_instant_auth_flip_real_tcp() {
+    let Some(lan) = lan_ip() else {
+        eprintln!("SKIP（本环境无局域网 IP，未执行 LAN 可达性断言）");
+        return;
+    };
+    let port = ephemeral_port();
+    let plan = ListenPlan {
+        addr: std::net::SocketAddr::from(([127, 0, 0, 1], port)),
+        explicit: false, // 非显式 → mode 翻转必须联动 Rebind
+        defaults: same_port_pair(port),
+    };
+    let (_state, handle, path) = start_server("modeflip", &local_with_pw_cfg(), plan).await;
+    let loop_base = format!("http://127.0.0.1:{port}");
+    let lan_base = format!("http://{lan}:{port}");
+
+    // local：LAN refused（内核级关闭 127.0.0.1 绑定）；loopback 免 token 200
+    assert_refused(&lan_base, "/health", "local 态 LAN").await;
+    let (s, b) = http_get(&loop_base, "/v1/models", None).await.unwrap();
+    assert_eq!(s, 200, "切前 local: {b}");
+
+    // local → cloud（loopback 直达 mode 端点；config 已有密码 → 无需带）
+    let (s, b) = http_put(
+        &loop_base,
+        "/v1/admin/mode",
+        serde_json::json!({"mode":"cloud"}),
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(s, 200, "{b}");
+    let v: serde_json::Value = serde_json::from_str(&b).unwrap();
+    assert_eq!(v["mode"], "cloud");
+    assert_eq!(v["persisted"], true);
+    assert_eq!(v["rebind"]["ok"], true, "非显式必须 Rebind: {b}");
+    assert_eq!(
+        v["rebind"]["to"],
+        format!("0.0.0.0:{port}"),
+        "cloud 成对默认: {b}"
+    );
+    assert_eq!(handle.bound().to_string(), format!("0.0.0.0:{port}"));
+
+    // LAN 现在可达 + 401（cloud 鉴权；from refused → reachable 是方案一铁证）
+    let (s, b) = http_get(&lan_base, "/v1/models", None).await.unwrap();
+    assert_eq!(s, 401, "cloud LAN 可达且要 token: {b}");
+    // 同请求即时翻转：loopback 无 token 401 / 带 token 200
+    let (s, b) = http_get(&loop_base, "/v1/models", None).await.unwrap();
+    assert_eq!(s, 401, "切后 401: {b}");
+    let (s, b) = http_get(&loop_base, "/v1/models", Some(FAKE_TOK))
+        .await
+        .unwrap();
+    assert_eq!(s, 200, "{b}");
+
+    // cloud → local：需 admin 会话（防匿名拆锁）
+    let (s, b) = http_put(
+        &loop_base,
+        "/v1/admin/mode",
+        serde_json::json!({"mode":"local"}),
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(s, 401, "cloud 翻转无会话必须 401: {b}");
+    let (s, b) = http_post(
+        &loop_base,
+        "/v1/admin/login",
+        serde_json::json!({"password": FAKE_PW}),
+    )
+    .await
+    .unwrap();
+    assert_eq!(s, 200, "{b}");
+    let session = serde_json::from_str::<serde_json::Value>(&b).unwrap()["token"]
+        .as_str()
+        .unwrap()
+        .to_string();
+    let (s, b) = http_put(
+        &loop_base,
+        "/v1/admin/mode",
+        serde_json::json!({"mode":"local"}),
+        Some(&session),
+    )
+    .await
+    .unwrap();
+    assert_eq!(s, 200, "{b}");
+    let v: serde_json::Value = serde_json::from_str(&b).unwrap();
+    assert_eq!(v["rebind"]["ok"], true, "{b}");
+    assert_eq!(
+        v["rebind"]["to"],
+        format!("127.0.0.1:{port}"),
+        "local 成对默认: {b}"
+    );
+    assert_eq!(handle.bound().to_string(), format!("127.0.0.1:{port}"));
+
+    // 切回：LAN 再次 refused；loopback 无 token 恢复 200
+    assert_refused(&lan_base, "/health", "local 态 LAN（切回后）").await;
+    let (s, b) = http_get(&loop_base, "/v1/models", None).await.unwrap();
+    assert_eq!(s, 200, "切回 local 即时恢复: {b}");
+    let on_disk = std::fs::read_to_string(&path).unwrap();
+    assert!(on_disk.contains("mode = \"local\""), "{on_disk}");
+    cleanup(&path);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+④ try-bind 失败保旧：占用目标端口 → 500 + 旧端口继续服务 + 文件不写
+══════════════════════════════════════════════════════════════════ */
+
+#[tokio::test]
+async fn try_bind_failure_keeps_old_listener_and_config() {
+    let port_a = ephemeral_port();
+    let port_busy = ephemeral_port();
+    let addr_a: std::net::SocketAddr = format!("127.0.0.1:{port_a}").parse().unwrap();
+    let plan = ListenPlan {
+        addr: addr_a,
+        explicit: false,
+        defaults: PairDefaults {
+            local: addr_a,
+            cloud: addr_a,
+        },
+    };
+    let (_state, _handle, path) = start_server("bindfail", &local_cfg(), plan).await;
+    let base_a = format!("http://127.0.0.1:{port_a}");
+
+    // 第三方占住目标端口
+    let squatter = std::net::TcpListener::bind(("127.0.0.1", port_busy)).unwrap();
+
+    let (s, b) = http_put(
+        &base_a,
+        "/v1/admin/listen",
+        serde_json::json!({"addr": format!("127.0.0.1:{port_busy}")}),
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(s, 500, "try-bind 失败 → 500（带病不上线）: {b}");
+    let v: serde_json::Value = serde_json::from_str(&b).unwrap();
+    assert!(
+        v["error"].as_str().unwrap().contains("rebind failed"),
+        "{b}"
+    );
+    assert_eq!(v.as_object().unwrap().len(), 3, "错误体三键: {b}");
+
+    // 旧端口继续服务（一字未动）；文件未写 bind
+    let (s, b) = http_get(&base_a, "/health", None).await.unwrap();
+    assert_eq!(s, 200, "失败后旧监听必须健在: {b}");
+    let on_disk = std::fs::read_to_string(&path).unwrap();
+    assert!(
+        !on_disk.contains(&format!("127.0.0.1:{port_busy}")),
+        "失败不得落盘: {on_disk}"
+    );
+    drop(squatter);
+
+    // 非法地址字符串 → 400
+    let (s, b) = http_put(
+        &base_a,
+        "/v1/admin/listen",
+        serde_json::json!({"addr":"not-an-addr"}),
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(s, 400, "{b}");
+    cleanup(&path);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+⑤ 在途请求不中断：慢上游请求中途 Rebind → 仍 200 完成
+══════════════════════════════════════════════════════════════════ */
+
+#[tokio::test]
+async fn overlapping_bind_failure_restores_old_listener_promptly() {
+    let port = ephemeral_port();
+    let addr = std::net::SocketAddr::from(([0, 0, 0, 0], port));
+    let plan = ListenPlan {
+        addr,
+        explicit: false,
+        defaults: same_port_pair(port),
+    };
+    let (_state, handle, path) = start_server("overlap-restore", &local_cfg(), plan).await;
+    let before = std::fs::read_to_string(&path).unwrap();
+    // 文档保留地址未配置为本机接口。旧 wildcard 与目标同端口属于重叠域，
+    // 但释放旧 listener 仍不能使目标地址有效，必须走恢复旧地址的路径。
+    // 不依赖 Windows/Linux 对 wildcard 与具体 IP 端口共享规则相同。
+    let unavailable = format!("192.0.2.1:{port}");
+    assert!(
+        std::net::TcpListener::bind(&unavailable).is_err(),
+        "test address must not be assigned locally"
+    );
+    let base = format!("http://127.0.0.1:{port}");
+    let (status, body) = tokio::time::timeout(
+        Duration::from_secs(2),
+        http_put(
+            &base,
+            "/v1/admin/listen",
+            serde_json::json!({"addr":unavailable}),
+            None,
+        ),
+    )
+    .await
+    .expect("failed handoff must restore and reply without waiting for this request")
+    .unwrap();
+    assert_eq!(status, 500, "{body}");
+    assert_eq!(handle.bound(), addr);
+    assert_eq!(http_get(&base, "/health", None).await.unwrap().0, 200);
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), before);
+    handle.shutdown().await.unwrap();
+    cleanup(&path);
+}
+
+/// 由测试显式放行的上游，证明 rebind 返回时原请求仍然在途。
+struct SlowFake {
+    entered: Arc<tokio::sync::Notify>,
+    release: Arc<tokio::sync::Notify>,
+}
+
+#[async_trait::async_trait]
+impl UpstreamAdapter for SlowFake {
+    fn id(&self) -> &str {
+        "slow"
+    }
+    fn capabilities(&self) -> Capabilities {
+        Capabilities {
+            question_types: &[QuestionType::Noul],
+            has_confidence: false,
+            has_usage: false,
+            noul_via_boolean: false,
+            retryable_status: &[408, 429, 500, 502, 503, 504],
+        }
+    }
+    async fn evaluate(&self, _req: JevRequest) -> Result<JevResponse, JevError> {
+        self.entered.notify_one();
+        self.release.notified().await;
+        serde_json::from_str(r#"{"answers":{}}"#).map_err(|e| JevError::BadResponse {
+            upstream_id: "slow".into(),
+            message: e.to_string(),
+        })
+    }
+}
+
+#[tokio::test]
+async fn in_flight_request_survives_rebind() {
+    let port_a = ephemeral_port();
+    let port_b = ephemeral_port();
+    let addr_a: std::net::SocketAddr = format!("127.0.0.1:{port_a}").parse().unwrap();
+
+    let mut reg = Registry::new(vec![RouteEdge {
+        left: "jev".into(),
+        r#match: Default::default(),
+        right: "slow".into(),
+        upstream_model: None,
+        priority: 10,
+        sticky: Default::default(),
+        on_error: Default::default(),
+    }]);
+    let entered = Arc::new(tokio::sync::Notify::new());
+    let release = Arc::new(tokio::sync::Notify::new());
+    reg.register(Box::new(SlowFake {
+        entered: entered.clone(),
+        release: release.clone(),
+    }));
+
+    let plan = ListenPlan {
+        addr: addr_a,
+        explicit: false,
+        defaults: PairDefaults {
+            local: addr_a,
+            cloud: addr_a,
+        },
+    };
+    let (state, handle, path) =
+        start_server_with_registry("inflight", reg, &local_cfg(), plan).await;
+    // `/v1/systemone` now serves only configured public endpoints. This TCP
+    // lifecycle test owns the fake `jev` endpoint, so seed it explicitly.
+    {
+        let conn = state.db_conn.lock().unwrap();
+        systorch_daemon::db::endpoints::create(&conn, "jev", "follow_global", true).unwrap();
+        state.service_endpoints.write().unwrap().insert(
+            "jev".into(),
+            systorch_daemon::db::endpoints::get_by_id(&conn, "jev")
+                .unwrap()
+                .unwrap(),
+        );
+    }
+    let base_a = format!("http://127.0.0.1:{port_a}");
+    let base_b = format!("http://127.0.0.1:{port_b}");
+
+    // 发一个显式暂停在上游的 systemone。
+    let body = serde_json::json!({
+        "model": "jev",
+        "state": "hi",
+        "questions": {
+            "q": {"type":"noul","instructions":"x","criteria":{"true":"y","false":"n"}}
+        }
+    });
+    let in_flight = tokio::spawn({
+        let base = base_a.clone();
+        async move { http_post(&base, "/v1/systemone", body).await }
+    });
+
+    tokio::time::timeout(Duration::from_secs(2), entered.notified())
+        .await
+        .expect("request reached upstream");
+    // 切换不应等待这个请求，更不能等待切换请求自己退出旧服务。
+    let (s, b) = tokio::time::timeout(
+        Duration::from_secs(2),
+        http_put(
+            &base_a,
+            "/v1/admin/listen",
+            serde_json::json!({"addr": format!("127.0.0.1:{port_b}")}),
+            None,
+        ),
+    )
+    .await
+    .expect("rebind response must not wait for old connections to drain")
+    .unwrap();
+    assert_eq!(s, 200, "rebind 本身成功: {b}");
+    assert!(
+        !in_flight.is_finished(),
+        "old upstream request must still be running"
+    );
+    assert_refused(&base_a, "/health", "旧监听已停止接收").await;
+    release.notify_one();
+
+    // 在途请求仍 200 完成（不因换监听被掐）
+    let result = in_flight.await.expect("join in-flight").expect("transport");
+    assert_eq!(result.0, 200, "在途请求必须完整跑完: {}", result.1);
+
+    // 新端口接管
+    let (s, b) = http_get(&base_b, "/health", None).await.unwrap();
+    assert_eq!(s, 200, "rebind 后新端口: {b}");
+    handle.shutdown().await.unwrap();
+    cleanup(&path);
+}
+
+#[tokio::test]
+async fn same_port_mode_handoff_responds_before_drain_timeout() {
+    let port = ephemeral_port();
+    let pair = same_port_pair(port);
+    let plan = ListenPlan {
+        addr: pair.local,
+        explicit: false,
+        defaults: pair,
+    };
+    let (_state, handle, path) = start_server("prompt-mode", &local_with_pw_cfg(), plan).await;
+    let base = format!("http://127.0.0.1:{port}");
+    let (status, body) = tokio::time::timeout(
+        Duration::from_secs(2),
+        http_put(
+            &base,
+            "/v1/admin/mode",
+            serde_json::json!({"mode":"cloud"}),
+            None,
+        ),
+    )
+    .await
+    .expect("same-port mode switch must acknowledge the released listener promptly")
+    .unwrap();
+    assert_eq!(status, 200, "{body}");
+    assert_eq!(handle.bound(), pair.cloud);
+    assert_eq!(http_get(&base, "/v1/models", None).await.unwrap().0, 401);
+    handle.shutdown().await.unwrap();
+    cleanup(&path);
+}
+
+#[tokio::test]
+async fn retired_listener_cancels_unfinished_stream_at_drain_deadline() {
+    use axum::{
+        response::sse::{Event, Sse},
+        routing::get,
+        Router,
+    };
+    use std::convert::Infallible;
+    struct DropSignal(Arc<tokio::sync::Notify>);
+    impl Drop for DropSignal {
+        fn drop(&mut self) {
+            self.0.notify_one();
+        }
+    }
+
+    let dropped = Arc::new(tokio::sync::Notify::new());
+    let app = Router::new().route(
+        "/stream",
+        get({
+            let dropped = dropped.clone();
+            move || {
+                let guard = DropSignal(dropped.clone());
+                async move {
+                    let stream = futures_util::stream::unfold(
+                        (guard, false),
+                        |(guard, started)| async move {
+                            if started {
+                                std::future::pending::<()>().await;
+                            }
+                            Some((
+                                Ok::<_, Infallible>(Event::default().data("open")),
+                                (guard, true),
+                            ))
+                        },
+                    );
+                    Sse::new(stream)
+                }
+            }
+        }),
+    );
+    let addr = "127.0.0.1:0".parse().unwrap();
+    let slot = Arc::new(std::sync::OnceLock::new());
+    let handle = listen::start(
+        app,
+        ListenPlan {
+            addr,
+            explicit: false,
+            defaults: PairDefaults {
+                local: addr,
+                cloud: addr,
+            },
+        },
+        &slot,
+    )
+    .await
+    .unwrap();
+    let mut response = reqwest::Client::builder()
+        .no_proxy()
+        .build()
+        .unwrap()
+        .get(format!("http://{}/stream", handle.bound()))
+        .send()
+        .await
+        .unwrap();
+    assert!(response
+        .chunk()
+        .await
+        .unwrap()
+        .unwrap()
+        .starts_with(b"data: open"));
+    let previous = handle.bound();
+    handle.rebind(addr).await.unwrap();
+    assert_ne!(handle.bound(), previous);
+    assert!(tokio::net::TcpStream::connect(previous).await.is_err());
+
+    // 在真实连接建立与换端口后推进虚拟时钟，不实际等待十秒。
+    tokio::time::pause();
+    tokio::time::advance(listen::DRAIN_TIMEOUT + Duration::from_millis(1)).await;
+    tokio::time::timeout(Duration::from_secs(1), dropped.notified())
+        .await
+        .expect("retired connection body must be dropped at the deadline");
+    tokio::time::resume();
+    drop(response);
+    handle.shutdown().await.unwrap();
+}
+
+/* ══════════════════════════════════════════════════════════════════
+⑥ PUT /password 真实 TCP 矩阵（cloud：会话 / LAN 无会话 / loopback 无会话）
+══════════════════════════════════════════════════════════════════ */
+
+#[tokio::test]
+async fn put_password_real_tcp_auth_matrix() {
+    let Some(lan) = lan_ip() else {
+        eprintln!("SKIP（本环境无局域网 IP，未执行 LAN 401 断言）");
+        return;
+    };
+    let port = ephemeral_port();
+    let cfg = format!(
+        r#"
+mode = "cloud"
+auth_tokens = ["{FAKE_TOK}"]
+admin_password = "{FAKE_PW}"
+[providers.laya]
+kind = "laya"
+base = "http://127.0.0.1:1/v1/systemone"
+enabled = true
+
+[router]
+"laya-english" = "laya"
+"#
+    );
+    let plan = ListenPlan {
+        addr: std::net::SocketAddr::from(([0, 0, 0, 0], port)),
+        explicit: true, // 钉住 0.0.0.0（本测只关心鉴权矩阵，不动监听）
+        defaults: standard_plan_addr(),
+    };
+    let (_state, _handle, path) = start_server("pwdmatrix", &cfg, plan).await;
+    let loop_base = format!("http://127.0.0.1:{port}");
+    let lan_base = format!("http://{lan}:{port}");
+
+    // 会话（loopback login）
+    let (s, b) = http_post(
+        &loop_base,
+        "/v1/admin/login",
+        serde_json::json!({"password": FAKE_PW}),
+    )
+    .await
+    .unwrap();
+    assert_eq!(s, 200, "{b}");
+    let session = serde_json::from_str::<serde_json::Value>(&b).unwrap()["token"]
+        .as_str()
+        .unwrap()
+        .to_string();
+
+    // ① cloud + 有效会话（LAN）→ 200（轮换到 pw2，旧会话随之作废）
+    let (s, b) = http_put(
+        &lan_base,
+        "/v1/admin/password",
+        serde_json::json!({"password":"pw-test-matrix-2"}),
+        Some(&session),
+    )
+    .await
+    .unwrap();
+    assert_eq!(s, 200, "cloud+会话（LAN）放行: {b}");
+
+    // ② 旧 session 已作废 —— LAN 无会话 → 401；带死会话也 401
+    let (s, b) = http_put(
+        &lan_base,
+        "/v1/admin/password",
+        serde_json::json!({"password":"pw-test-matrix-x"}),
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(s, 401, "cloud+LAN 无会话必须 401: {b}");
+    let (s, b) = http_put(
+        &lan_base,
+        "/v1/admin/password",
+        serde_json::json!({"password":"pw-test-matrix-x"}),
+        Some(&session),
+    )
+    .await
+    .unwrap();
+    assert_eq!(s, 401, "死会话 401: {b}");
+
+    // ③ cloud + loopback 无会话 → 200（忘密恢复语义；轮换到 pw3）
+    let (s, b) = http_put(
+        &loop_base,
+        "/v1/admin/password",
+        serde_json::json!({"password":"pw-test-matrix-3"}),
+        None,
+    )
+    .await
+    .unwrap();
+    assert_eq!(s, 200, "cloud+loopback 无会话放行: {b}");
+    let v: serde_json::Value = serde_json::from_str(&b).unwrap();
+    assert_eq!(v["updated"], true);
+    assert_eq!(v["env_override_active"], false, "{b}");
+
+    // ④ 密码代际：pw3 登录 ✅、pw2/pw1 登录 ❌、pw2 会话（若再造）也已全废
+    let (s, b) = http_post(
+        &loop_base,
+        "/v1/admin/login",
+        serde_json::json!({"password":"pw-test-matrix-3"}),
+    )
+    .await
+    .unwrap();
+    assert_eq!(s, 200, "最终密码登录: {b}");
+    let (s, _) = http_post(
+        &loop_base,
+        "/v1/admin/login",
+        serde_json::json!({"password":"pw-test-matrix-2"}),
+    )
+    .await
+    .unwrap();
+    assert_eq!(s, 401, "上一手密码 401");
+    let (s, _) = http_post(
+        &loop_base,
+        "/v1/admin/login",
+        serde_json::json!({"password": FAKE_PW}),
+    )
+    .await
+    .unwrap();
+    assert_eq!(s, 401, "最初密码 401");
+
+    // 文件 = 最终密码（中途值全被覆盖）
+    let on_disk = std::fs::read_to_string(&path).unwrap();
+    assert!(on_disk.contains("pw-test-matrix-3"), "{on_disk}");
+    assert!(!on_disk.contains("pw-test-matrix-2"), "{on_disk}");
+    cleanup(&path);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+⑦ oneshot 基座冒烟（listen 槽缺失路径：PUT listen → 503）
+══════════════════════════════════════════════════════════════════ */
+
+#[tokio::test]
+async fn put_listen_without_supervisor_is_503() {
+    let path = temp_config("nosup", &local_cfg());
+    let state = build_state(Config::load(&path).unwrap(), path.clone());
+    let app = build_app(state);
+    let resp = app
+        .oneshot(
+            Request::builder()
+                .method("PUT")
+                .uri("/v1/admin/listen")
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"addr":"127.0.0.1:1"}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(resp.status().as_u16(), 503, "无 supervisor → 503");
+    let bytes = resp.into_body().collect().await.unwrap().to_bytes();
+    let v: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert!(
+        v["error"].as_str().unwrap().contains("listen supervisor"),
+        "{v}"
+    );
+    cleanup(&path);
+}

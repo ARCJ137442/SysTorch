@@ -1,12 +1,14 @@
 # Agent instructions
 
 - Read and follow [`CLAUDE.md`](CLAUDE.md) for project boundaries, commands, and current documentation entry points.
-- Use [`docs/design/ENDPOINT-GATEWAY-ALIGNMENT-PLAN.md`](docs/design/ENDPOINT-GATEWAY-ALIGNMENT-PLAN.md) for current decisions and implementation state.
+- Use [`docs/design/SYSTORCH-IMPLEMENTATION-PLAN.md`](docs/design/SYSTORCH-IMPLEMENTATION-PLAN.md) for current Start/Decision Desk implementation and status. The Jev gateway alignment plan is a dated historical record with preserved protocol decisions.
 - Use [`ROADMAP.md`](ROADMAP.md) for future directions only; roadmap items are not current release promises.
 - Use [`docs/design/ROADMAP-EXECUTION-PLANS.md`](docs/design/ROADMAP-EXECUTION-PLANS.md) for current-code execution breakdowns; these plans are not release promises.
-- Use [`docs/design/USER-FEEDBACK-ITERATION-PLAN-NEXT.md`](docs/design/USER-FEEDBACK-ITERATION-PLAN-NEXT.md) as the next user-feedback implementation checklist; update its status when work begins, and do not treat it as current capability or a release promise.
+- Treat [`docs/design/USER-FEEDBACK-ITERATION-PLAN-NEXT.md`](docs/design/USER-FEEDBACK-ITERATION-PLAN-NEXT.md) as an archived v0.7–0.10 feedback checklist; do not treat its old status as current. Add new work and status to the current SysTorch implementation plan.
 - Treat old progress and verification records as evidence for their stated revision and scope, never as current build status.
 - Keep current capability claims aligned with the source: built-in upstream adapters are Vercel, Laya, TypeSafe SystemOne, and OpenRouter. OpenRouter is an upstream translation adapter, not a general OpenAI/Anthropic gateway entrance. TypeSafe local use requires a SystemOne-compatible HTTP endpoint.
+- Use SysTorch as the current product brand in UI, docs, package display names, and new release assets. Keep Jev / System One for the protocol/model family; retain old Jev Switch names only in historical records or explicit upgrade/protocol compatibility fields. See docs/design/SYSTORCH-BRAND-MIGRATION.md.
+- v0.11.0 is a GitHub prerelease candidate until its tagged workflow, two public assets, and Pages refresh are verified. It remains unaudited by maintainer hands-on testing until the maintainer tests it.
 - Keep the GitHub About description bilingual in the format `English sentence | 中文一句话介绍`; verify it against the current product positioning during release/documentation maintenance.
 - Treat Android as a supported APK distribution channel for ordinary mobile users without Termux, with lower maintenance priority than Windows desktop. The APK must contain an Android-buildable daemon core, start or restore the local gateway unless the user explicitly stopped it, and expose in-app start/stop. Use one app-specific stable release keystore across builds; never reuse another app's key. Keep service, notification, tile, network, touch, and lifecycle claims tied to their actual device evidence. See `docs/design/ROADMAP-PLAN-ANDROID-EXPERIMENTAL.md`.
 - Preserve unrelated user changes. Do not commit, push, publish, or change GitHub settings without explicit authorization.

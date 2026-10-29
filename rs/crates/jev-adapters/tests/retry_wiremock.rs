@@ -47,6 +47,7 @@ fn noul_request(model: &str) -> JevRequest {
         model: model.to_string(),
         state: serde_json::json!("hi"),
         questions: q,
+        assets: None,
         extensions: Default::default(),
         extra: Default::default(),
     }

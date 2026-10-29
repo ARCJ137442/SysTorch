@@ -4,4 +4,4 @@ import type { RouteEdge } from "./RouteEdge";
 /**
  * 原子路由事务。客户端只提交要发生的边操作，不提交完整边表。
  */
-export type RouteMutation = { "op": "create", route: RouteEdge, } | { "op": "update", edge_id: string, route: RouteEdge, } | { "op": "delete", edge_id: string, };
+export type RouteMutation = { "op": "create", route: RouteEdge, } | { "op": "update", edge_id: string, route: RouteEdge, expected?: RouteEdge, } | { "op": "delete", edge_id: string, expected?: RouteEdge, };

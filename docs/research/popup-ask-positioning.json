@@ -1,0 +1,74 @@
+{
+  "title": "Jev 决策产品重定位",
+  "questions": [
+    {
+      "id": "brand_architecture",
+      "header": "品牌架构",
+      "question": "主品牌是否应脱离 Jev，同时用副标题和兼容标签保留协议归属？",
+      "options": [
+        {
+          "label": "独立品牌",
+          "description": "主品牌采用不含 Jev 的短名称，副标题写 System One Decision Workspace，Jev 作为兼容能力标签。",
+          "preview": "我会按长期品牌迁移设计命名层级，并保留 Jev Switch、jev-switch ID 和旧 API 的兼容说明。"
+        },
+        {
+          "label": "保留 Jev",
+          "description": "继续使用 Jev Switch 或 Jev Studio，让生态识别度优先。",
+          "preview": "我会围绕 Jev 生态做品牌强化，但要接受产品名与单一供应商/首发模型绑定更深的代价。"
+        },
+        {
+          "label": "TouchJev",
+          "description": "采用接近 TouchAI 的亲近叫法，突出把 Jev 带给普通用户。",
+          "preview": "我会把 TouchJev 作为候选品牌深入评估，同时检查它与 TouchAI、TypeSafe 官方归属和未来多 System One 模型的冲突。"
+        }
+      ],
+      "multiSelect": false
+    },
+    {
+      "id": "start_composer",
+      "header": "开始输入",
+      "question": "开始页面的输入区，第一版应如何让用户完成一个 System One 决策？",
+      "options": [
+        {
+          "label": "结构化编辑",
+          "description": "保留情境输入，并在同一输入区显式编辑 Choice、Noul、Score 问题和选项。",
+          "preview": "我会优先保证无需普通 LLM API 也能完成请求；结果可解释、可复用，但自由聊天感会弱一些。"
+        },
+        {
+          "label": "模板优先",
+          "description": "先选择决策模板，再填写情境和少量参数；高级用户可展开修改问题。",
+          "preview": "我会把首次行动做得最快，适合常见判断场景；代价是模板目录、版本和自定义边界要更早设计。"
+        },
+        {
+          "label": "自由输入",
+          "description": "先提供类似聊天框的自由文本输入，结构化问题放到发送前或结果后补充。",
+          "preview": "我会优先追求聊天式亲和感，但必须明确不能偷偷调用普通 LLM 来把自由文本转成问题，否则会违反 Jev-only 边界。"
+        }
+      ],
+      "multiSelect": false
+    },
+    {
+      "id": "product_center",
+      "header": "产品重心",
+      "question": "下一阶段对外产品应把哪一种价值放在第一视线？",
+      "options": [
+        {
+          "label": "工作台与网关",
+          "description": "同一产品同时服务人和软件：开始页负责立即决策，网关/API/路由图负责持续接入与治理。",
+          "preview": "我会按双面产品设计信息架构，让人类体验和开发者能力共享同一份入口、图和历史，而不是做两套互相割裂的产品。"
+        },
+        {
+          "label": "决策工作台",
+          "description": "优先成为最好用的 Jev / System One 体验、实验和比较工具，网关作为底层能力。",
+          "preview": "我会先打磨开始、模板、结果解释和模型比较，API 与复杂图治理按工作台真实需求逐步露出。"
+        },
+        {
+          "label": "决策网关",
+          "description": "优先成为 Jev 服务的本地/云端运行入口，控制台和开始页主要服务开发者与运维者。",
+          "preview": "我会优先巩固 Graph API、原子配置、生命周期、审计和 Agent 兼容，普通用户入口的投入会后置。"
+        }
+      ],
+      "multiSelect": false
+    }
+  ]
+}

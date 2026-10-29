@@ -16,7 +16,7 @@ bind: string,
  */
 bind_explicit: boolean, 
 /**
- * env `JEV_SWITCH_MODE` 活跃（下次启动覆盖文件 mode）。
+ * Canonical/legacy mode environment override active (takes precedence next start).
  */
 env_override_active: boolean, 
 /**

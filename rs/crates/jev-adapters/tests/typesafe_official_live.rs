@@ -69,6 +69,7 @@ async fn official_typesafe_systemone_accepts_native_request_and_all_answer_types
                 Answer::Noul(_) => "noul",
                 Answer::Choice { .. } => "choice",
                 Answer::Score { .. } => "score",
+                Answer::Box(_) => "box",
             };
             format!("{id}:{kind}")
         })

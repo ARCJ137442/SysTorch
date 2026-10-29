@@ -1,10 +1,11 @@
-# Jev-Switch 文档仓库 — gitignore
+# SysTorch 项目 — gitignore
 
 # 构建产物与本地依赖
 /target/
 **/target/
 node_modules/
 ui/dist/
+.vite/
 .venv/
 
 # OS / 编辑器

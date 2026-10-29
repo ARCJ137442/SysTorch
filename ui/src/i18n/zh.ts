@@ -7,9 +7,11 @@ import { dashboardZh } from './dashboard';
 import { questionEditorZh } from './questionEditor';
 import { accessZh } from './access';
 import { configFileZh } from './configFile';
+import { decisionsZh } from './decisions';
 
 /** 中文词典 — 键集必须与 en 完全一致（类型强制）。 */
 export const zh: Record<keyof typeof en, string> = {
+  ...decisionsZh,
   ...routingZh,
   ...playgroundZh,
   ...providersZh,
@@ -390,8 +392,8 @@ export const zh: Record<keyof typeof en, string> = {
   'settings.autoProbe': '自动探测提供商连通性',
   'settings.autoProbeHint': '后台探测会访问已配置的提供商地址。关闭后可避免例行流量或触发上游限流；手动探测仍可使用。',
   'settings.apiAddress': '网关 API 地址',
-  'settings.apiAddressHint': '留空时跟随当前控制台来源。填写 HTTP(S) 地址后，此客户端将连接另一 Jev Switch 服务。',
-  'settings.androidApiAddressHint': '留空时连接本机内置网关。填写 HTTP(S) 地址可连接其他 Jev Switch 服务；请用下方诊断区确认真实的 /health 状态。',
+  'settings.apiAddressHint': '留空时跟随当前控制台来源。填写 HTTP(S) 地址后，此客户端将连接另一 SysTorch 服务。',
+  'settings.androidApiAddressHint': '留空时连接本机内置网关。填写 HTTP(S) 地址可连接其他 SysTorch 服务；请用下方诊断区确认真实的 /health 状态。',
   'settings.apiAddressPlaceholder': 'https://gateway.example',
   'settings.saveAddress': '保存地址',
   'settings.resetAddress': '跟随当前来源',
@@ -439,7 +441,7 @@ export const zh: Record<keyof typeof en, string> = {
   'settings.buildInfoHint': 'UI 提交号在前端构建时嵌入；后端提交号由正在运行的服务报告。开发构建或缺少提交信息时会明确显示。',
   'settings.notAvailable': '不可用',
   'settings.about': '关于',
-  'settings.aboutVersion': 'Jev Switch {version}',
+  'settings.aboutVersion': 'SysTorch {version}',
   'settings.aboutHint': '轻量、可追溯的 Jev 原生网关，面向本地调试与可复用上游路由。',
   'settings.githubProject': 'GitHub 项目',
   'settings.githubReleases': '发行版',
@@ -465,9 +467,9 @@ export const zh: Record<keyof typeof en, string> = {
   'stats.title': '统计',
   'stats.subtitle': '调用历史、Token 用量和请求结果。',
   'mobile.connectTitle': '选择网关',
-  'mobile.connectHint': '本机网关默认关闭。你可以在仪表盘启动，也可以让此控制台连接另一 Jev Switch 服务。',
+  'mobile.connectHint': '本机网关会自动启动，除非你曾明确停止。可以在仪表盘控制启停，也可以连接另一 SysTorch 服务。',
   'mobile.address': '网关地址',
-  'mobile.addressRequired': '请输入 Jev Switch 服务的 HTTPS 地址或手机可访问的局域网地址。',
+  'mobile.addressRequired': '请输入 SysTorch 服务的 HTTPS 地址或手机可访问的局域网地址。',
   'mobile.connect': '连接',
   'mobile.or': '或',
   'mobile.useLocal': '使用本机',

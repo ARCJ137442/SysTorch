@@ -8,14 +8,14 @@ $tauriRoot = Join-Path $repoRoot 'src-tauri'
 $tauriConfig = Get-Content -LiteralPath (Join-Path $tauriRoot 'tauri.conf.json') -Raw | ConvertFrom-Json
 $packageVersion = [string]$tauriConfig.version
 $targetTriple = 'x86_64-pc-windows-msvc'
-$daemonReleasePath = Join-Path $repoRoot 'rs/target/release/jev-switch.exe'
-$sidecarPath = Join-Path $tauriRoot "binaries/jev-switch-daemon-$targetTriple.exe"
+$daemonReleasePath = Join-Path $repoRoot 'rs/target/release/systorch-daemon.exe'
+$sidecarPath = Join-Path $tauriRoot "binaries/systorch-daemon-$targetTriple.exe"
 $packageScript = Join-Path $PSScriptRoot 'package-portable.ps1'
 
 Write-Host 'Building the Windows daemon release binary...'
 Push-Location $repoRoot
 try {
-    & cargo build --release --manifest-path rs/Cargo.toml -p jev-switch-daemon --locked
+    & cargo build --release --manifest-path rs/Cargo.toml -p systorch-daemon --locked
     if ($LASTEXITCODE -ne 0) {
         throw "Daemon release build failed with exit code $LASTEXITCODE."
     }
@@ -48,7 +48,7 @@ if (-not $PortableDestination) {
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss-fff'
     $portableParent = Join-Path $tauriRoot 'target/release/bundle/portable'
     New-Item -ItemType Directory -Path $portableParent -Force | Out-Null
-    $PortableDestination = Join-Path $portableParent "jev-switch-$stamp"
+    $PortableDestination = Join-Path $portableParent "systorch-$stamp"
 }
 
 Write-Host 'Packaging the no-installer runtime from these same release inputs...'
@@ -59,7 +59,7 @@ Write-Host 'Packaging the no-installer runtime from these same release inputs...
 
 $portableManifestPath = Join-Path ([IO.Path]::GetFullPath($PortableDestination)) 'build-manifest.json'
 $portableManifest = Get-Content -LiteralPath $portableManifestPath -Raw | ConvertFrom-Json
-$standalonePath = Join-Path $tauriRoot "target/release/bundle/standalone/jev-switch-standalone-$($portableManifest.version)-windows-x64.exe"
+$standalonePath = Join-Path $tauriRoot "target/release/bundle/standalone/systorch-standalone-$($portableManifest.version)-windows-x64.exe"
 & (Join-Path $PSScriptRoot 'build-standalone.ps1') `
     -PortableDirectory $PortableDestination `
     -OutputPath $standalonePath
@@ -68,7 +68,7 @@ Write-Output "MSI: $($msiArtifacts[0].FullName)"
 Write-Output "MSI SHA-256: $((Get-FileHash -LiteralPath $msiArtifacts[0].FullName -Algorithm SHA256).Hash)"
 Write-Output "NSIS: $($nsisArtifacts[0].FullName)"
 Write-Output "NSIS SHA-256: $((Get-FileHash -LiteralPath $nsisArtifacts[0].FullName -Algorithm SHA256).Hash)"
-Write-Output "Portable executable: $(Join-Path ([IO.Path]::GetFullPath($PortableDestination)) 'jev-switch.exe')"
+Write-Output "Portable executable: $(Join-Path ([IO.Path]::GetFullPath($PortableDestination)) 'systorch.exe')"
 Write-Output "Portable manifest: $portableManifestPath"
 Write-Output "Portable MSI hash: $($portableManifest.installers.($msiArtifacts[0].Name))"
 Write-Output "Standalone executable: $standalonePath"

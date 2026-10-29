@@ -1,4 +1,4 @@
-# Jev-Switch 部署（Docker 云部署线 · 任务 #43）
+# SysTorch 部署参考
 
 > **作者**：MiMo（`mimo-v2.6-flash`，本次执行）· 如实披露
 > **日期**：2026-09-23 · **关联**：`docs/12` §一/§二.3/§二.6/§二.7/§四线1 · `docs/contracts/05`（HTTP）· `docs/contracts/04`（密钥）
@@ -6,13 +6,18 @@
 
 ---
 
+## 当前版本：SysTorch 0.11.0
+
+本文件保留历史 Docker/本地上游和运行时核验细节。新部署统一使用 SysTorch 镜像、systorch 容器名及 SYSTORCH_* 环境变量；JEV_* 与 JEV_SWITCH_* 只作为旧实例和脚本的兼容别名。公开 Windows/Android 预发布附件与升级边界见[发版手册](RELEASE.md)。
+
+SysTorch keeps Jev / System One as protocol names. Product UI, package, and deployment guidance use SysTorch. Legacy Android applicationId, Windows data directory, owner key, and historical environment names remain solely for in-place upgrade compatibility.
 ## 一、快速开始（单命令）
 
 ```bash
 # 1. 准备凭据（.env 已被 .gitignore 覆盖，密钥不进仓库）
 cat > .env <<'EOF'
-JEV_AUTH_TOKENS=tok-replace-me
-JEV_ADMIN_PASSWORD=replace-me
+SYSTORCH_AUTH_TOKENS=tok-replace-me
+SYSTORCH_ADMIN_PASSWORD=replace-me
 # AI_GATEWAY_API_KEY=sk-…        # 可选：Vercel 上游
 EOF
 
@@ -35,7 +40,7 @@ Rust 构建会先按锁文件检查本机 BuildKit 依赖缓存；完整时直�
 
 ### 本地 Laya 上游（Linux / WSL）
 
-本仓库的 `scripts/laya_multi_server.py` 可作为 Jev-Switch 的本地 Laya 上游。它要求运行环境已经安装 Laya、PyTorch、FastAPI 和 Uvicorn，并从本地 Hugging Face 快照加载权重；启动过程不会为了补齐模型而联网。路径解析由 `scripts/laya_runtime_config.py` 负责：
+本仓库的 scripts/laya_multi_server.py 可作为 SysTorch 的本地 Laya 上游。它要求运行环境已经安装 Laya、PyTorch、FastAPI 和 Uvicorn，并从本地 Hugging Face 快照加载权重；启动过程不会为了补齐模型而联网。路径解析由 scripts/laya_runtime_config.py 负责：
 
 1. `LOCAL_LAYA_SNAPSHOT`（若设置）是最高优先级，直接指向完整快照目录；
 2. 否则使用 `HUGGINGFACE_HUB_CACHE`；
@@ -54,7 +59,7 @@ export LOCAL_LAYA_SNAPSHOT="$HOME/.cache/huggingface/hub/models--convaiinnovatio
 python scripts/laya_multi_server.py --host 127.0.0.1 --port 18765 --device cpu
 ```
 
-然后把 Switch 的 Laya provider 地址配置为 `http://127.0.0.1:18765/v1/systemone`，并确认 `GET /health` 与 `GET /v1/models` 成功。容器或跨主机部署时，`127.0.0.1` 仍指向 **daemon 所在机器**；需要按实际拓扑改成容器服务名或 LAN 地址。`LOCAL_LAYA_SNAPSHOT`、`HF_HOME` 和 `HUGGINGFACE_HUB_CACHE` 都由外部 Laya 启动脚本/运行环境管理，Jev Switch 不注入这些变量。
+然后把 SysTorch 的 Laya provider 地址配置为 http://127.0.0.1:18765/v1/systemone，并确认 GET /health 与 GET /v1/models 成功。容器或跨主机部署时，127.0.0.1 仍指向 daemon 所在机器；需要按实际拓扑改成容器服务名或 LAN 地址。LOCAL_LAYA_SNAPSHOT、HF_HOME 和 HUGGINGFACE_HUB_CACHE 都由外部 Laya 启动脚本/运行环境管理，SysTorch 不注入这些变量。
 
 Unix daemon 同时处理 SIGINT 和 SIGTERM。Docker/Compose 停机时先关闭监听，已受理请求继续完成；连接排空上限为 10 秒，超时后取消未完成连接。Compose 设置 `stop_grace_period: 15s`，给内核排空和退出留出时间；直接使用 `docker run` 时可设置 `--stop-timeout 15`。此行为不承诺撤销上游已经执行的计算或费用。
 
@@ -407,3 +412,11 @@ $env:NO_PROXY = 'localhost,.localhost,127.0.0.0/8,::1,10.0.0.0/8,172.16.0.0/12,1
 ```
 
 重新打开仍在托盘的旧进程不会继承新变量。使用此方法前检查现有代理环境变量，按自己的网络策略保留原有绕过列表；不要把代理地址误填成提供商 API 地址或网关 API 地址。
+
+## M1 个人 Choice 本地候选（未发行）
+
+M1 Standalone 和 APK 可与正式版并存，默认使用 `127.0.0.1:11436`。Windows 配置目录是 `%APPDATA%/jev-switch-m1-preview`；Android 应用 ID 为 `io.github.arcj137442.jevswitch.m1preview`，有独立沙箱。测试包不自动读取正式版模型配置，单独验证人工作答无需任何模型或上游 key。需要模型对比时在保留的提供商／入口页配置，避免把正式版的监听地址直接覆盖进测试包。
+
+人工 API 始终要求明确身份，旧 local 免 Token 规则只适用于原模型调用路径。本机主人由原生桥授权，外部调用方使用受管理 Token；操作、加密／留存、离线整套备份与缺失密钥恢复见[契约 08](contracts/08-持久Choice契约.md)。设置 JSON 备份不包含任务或主人密钥，单任务 JSON 导出则是明确选择的未加密内容文件。
+
+当前不包含远端主人配对向导、任务通知、多用户分派或人工 DAG 策略。完全退出后无法接收新连接，但已接收任务可在下次启动恢复。Windows EXE 沿用未签名测试流程；Android 使用本地 M1 专属测试密钥，不是正式 APK 的稳定发行密钥。

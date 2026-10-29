@@ -17,7 +17,7 @@ pub fn prepare_runtime() -> Result<PathBuf, String> {
                     .to_string()
             })?;
         prepare_runtime_at(
-            &local_app_data.join("Jev-Switch").join("runtime"),
+            &local_app_data.join("SysTorch").join("runtime"),
             env!("CARGO_PKG_VERSION"),
             EMBEDDED_ASSETS,
         )
@@ -54,7 +54,7 @@ fn prepare_runtime_at(
     let backup_dir = version_root.join(format!(".corrupt-{suffix}"));
     if staging_dir.exists() || backup_dir.exists() {
         return Err(
-            "A standalone runtime repair path already exists; close Jev-Switch and retry.".into(),
+            "A standalone runtime repair path already exists; close SysTorch and retry.".into(),
         );
     }
 
@@ -73,7 +73,7 @@ fn prepare_runtime_at(
         fs::rename(&runtime_dir, &backup_dir).map_err(|error| {
             let _ = fs::remove_dir_all(&staging_dir);
             format!(
-                "Cannot replace the damaged standalone runtime at {}. Close Jev-Switch and retry: {error}",
+                "Cannot replace the damaged standalone runtime at {}. Close SysTorch and retry: {error}",
                 runtime_dir.display()
             )
         })?;
@@ -121,7 +121,7 @@ fn validate_assets(assets: &[EmbeddedAsset]) -> Result<(), String> {
         }
     }
 
-    for required in ["jev-switch-daemon.exe", "ui/dist/index.html"] {
+    for required in ["systorch-daemon.exe", "ui/dist/index.html"] {
         if !assets.iter().any(|asset| asset.path == required) {
             return Err(format!(
                 "The standalone executable is missing required asset '{required}'."
@@ -213,7 +213,7 @@ mod tests {
 
     static TEST_ASSETS: &[EmbeddedAsset] = &[
         EmbeddedAsset {
-            path: "jev-switch-daemon.exe",
+            path: "systorch-daemon.exe",
             bytes: b"trusted daemon bytes",
         },
         EmbeddedAsset {
@@ -240,9 +240,9 @@ mod tests {
         let second = prepare_runtime_at(&root, env!("CARGO_PKG_VERSION"), TEST_ASSETS).unwrap();
 
         assert_eq!(first, second);
-        assert!(first.starts_with(&root.join(env!("CARGO_PKG_VERSION"))));
+        assert!(first.starts_with(root.join(env!("CARGO_PKG_VERSION"))));
         assert_eq!(
-            fs::read(first.join("jev-switch-daemon.exe")).unwrap(),
+            fs::read(first.join("systorch-daemon.exe")).unwrap(),
             TEST_ASSETS[0].bytes
         );
         assert_eq!(
@@ -256,11 +256,11 @@ mod tests {
     fn missing_or_corrupt_cache_files_are_released_again() {
         let root = isolated_root();
         let runtime = prepare_runtime_at(&root, env!("CARGO_PKG_VERSION"), TEST_ASSETS).unwrap();
-        fs::write(runtime.join("jev-switch-daemon.exe"), b"damaged daemon").unwrap();
+        fs::write(runtime.join("systorch-daemon.exe"), b"damaged daemon").unwrap();
 
         let repaired = prepare_runtime_at(&root, env!("CARGO_PKG_VERSION"), TEST_ASSETS).unwrap();
         assert_eq!(
-            fs::read(repaired.join("jev-switch-daemon.exe")).unwrap(),
+            fs::read(repaired.join("systorch-daemon.exe")).unwrap(),
             TEST_ASSETS[0].bytes
         );
         assert!(repaired.join("ui/dist/index.html").is_file());
@@ -295,7 +295,7 @@ mod tests {
         let root = isolated_root();
         let runtime =
             prepare_runtime_at(&root, env!("CARGO_PKG_VERSION"), EMBEDDED_ASSETS).unwrap();
-        let daemon = fs::read(runtime.join("jev-switch-daemon.exe")).unwrap();
+        let daemon = fs::read(runtime.join("systorch-daemon.exe")).unwrap();
         let html = fs::read_to_string(runtime.join("ui/dist/index.html")).unwrap();
 
         assert!(daemon.starts_with(b"MZ"));

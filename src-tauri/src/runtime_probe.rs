@@ -1,4 +1,4 @@
-//! Verify that the listener is a compatible Jev daemon before opening its UI.
+//! Verify that the listener is a compatible SysTorch daemon before opening its UI.
 
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpStream};
@@ -47,17 +47,24 @@ fn validate_response(response: &[u8], expected_version: &str) -> RuntimeProbe {
         return RuntimeProbe::Occupied("端口已占用，但服务未就绪".into());
     }
     let Ok(body) = serde_json::from_slice::<serde_json::Value>(&response[header_end + 4..]) else {
-        return RuntimeProbe::Occupied("端口已占用，健康响应不是 Jev 服务身份数据".into());
+        return RuntimeProbe::Occupied("端口已占用，健康响应不是 SysTorch 服务身份数据".into());
     };
-    if body["product"] != "jev-switch" || body["status"] != "ok" {
+    let brand_matches = body["brand"] == "SysTorch" || body["product"] == "jev-switch";
+    if !brand_matches || body["status"] != "ok" {
         return RuntimeProbe::Occupied(
-            "端口上的服务不是可识别的 Jev-Switch 内核，请检查已有服务".into(),
+            "端口上的服务不是可识别的 SysTorch 内核，请检查已有服务".into(),
         );
     }
     if body["api_revision"].as_u64() != Some(1) || body["version"] != expected_version {
         return RuntimeProbe::Occupied(format!(
-            "已有 Jev-Switch 内核与桌面版本 {expected_version} 不兼容，请更新或停止旧内核后重试"
+            "已有 SysTorch 内核与桌面版本 {expected_version} 不兼容，请更新或停止旧内核后重试"
         ));
+    }
+    // A local preview can share the release version with an older candidate.
+    // Never attach this new shell to an old candidate's UI or owner capability.
+    #[cfg(feature = "m1-preview")]
+    if body["build_revision"].as_str() != Some(env!("SYSTORCH_BUILD_REVISION")) {
+        return RuntimeProbe::Occupied("已有内核属于其他测试构建；请完整退出旧版（含托盘），再启动 SysTorch。配置与待回答任务会原位保留".into());
     }
     RuntimeProbe::Ready
 }
@@ -68,7 +75,10 @@ mod tests {
     use std::net::TcpListener;
     use std::thread;
 
-    fn response(body: serde_json::Value) -> Vec<u8> {
+    fn response(mut body: serde_json::Value) -> Vec<u8> {
+        if body["build_revision"].is_null() {
+            body["build_revision"] = env!("SYSTORCH_BUILD_REVISION").into();
+        }
         format!("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{body}").into_bytes()
     }
 
@@ -147,7 +157,7 @@ mod tests {
                 "product": "jev-switch",
                 "version": env!("CARGO_PKG_VERSION"),
                 "api_revision": 1,
-                "build_revision": null
+                "build_revision": env!("SYSTORCH_BUILD_REVISION")
             })
             .to_string();
             write!(
@@ -161,5 +171,15 @@ mod tests {
 
         assert_eq!(probe(address), RuntimeProbe::Ready);
         server.join().unwrap();
+    }
+
+    #[cfg(feature = "m1-preview")]
+    #[test]
+    fn preview_rejects_an_older_same_version_build() {
+        let health = serde_json::json!({"status":"ok", "product":"jev-switch", "version":env!("CARGO_PKG_VERSION"), "api_revision":1, "build_revision":"m1-local-20261024.1"});
+        assert!(matches!(
+            validate_response(&response(health), env!("CARGO_PKG_VERSION")),
+            RuntimeProbe::Occupied(_)
+        ));
     }
 }

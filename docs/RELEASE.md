@@ -1,216 +1,108 @@
-# 发版手册
+# SysTorch 发版手册 / Release guide
 
-**流水线**：`.github/workflows/release.yml`（测试门禁复用 `ci.yml`）
+流水线位于 .github/workflows/release.yml；Android 稳定签名构建位于 .github/workflows/android.yml。GitHub 仓库为 [ARCJ137442/SysTorch](https://github.com/ARCJ137442/SysTorch)，官网为 [arcj137442.github.io/SysTorch](https://arcj137442.github.io/SysTorch/)。
 
----
+The release pipelines are .github/workflows/release.yml and .github/workflows/android.yml. The repository is [ARCJ137442/SysTorch](https://github.com/ARCJ137442/SysTorch), and the website is [arcj137442.github.io/SysTorch](https://arcj137442.github.io/SysTorch/).
 
-## 当前版本与下一次发版
+## 当前版本 / Current release
 
-截至 2026-10-12，最新正式 fix 为 [v0.10.3](https://github.com/ARCJ137442/jev-switch/releases/tag/v0.10.3)，修复 Windows 系统代理读取并确保本地回环请求直连；CI、Release 构建与 Pages 刷新已成功。`v0.10.2` 的原子配置写入保留。发布页提供 Windows Standalone/Portable/MSI/NSIS、Linux/Windows CLI、Docker 和稳定签名 Android APK，共 10 个附件。源码回归和官方模型目录验证通过，发行包真实推理与原生 UI 留作发布后验证；本地 Laya、StartLux 和 OneJev 人工生命周期证据仍属于 v0.10.1。Windows 单实例按版本隔离；Android 使用专属稳定签名。版本、附件和验证状态见[0.10.3 核验](verification/v0.10.3-release-2026-10-12.md)。
+0.11.0 是 SysTorch 的预发布版本。发布页只提供两个面向用户的附件：Windows x64 Standalone EXE 与稳定签名 Android arm64 APK。CI 仍验证 Rust、UI、Tauri、CLI、Docker 和 Android 构建，但 CLI、安装器、便携 ZIP、签名状态清单及 Android manifest 不作为此版本的 Release 附件。
 
-后续 Release 必须由用户确认版本号；tag 与以下五处去掉 `v` 后必须完全一致：
+Version 0.11.0 is a SysTorch pre-release. The public release contains exactly two assets: the Windows x64 Standalone EXE and stable-signed Android arm64 APK. CI still validates Rust, UI, Tauri, CLI, Docker, and Android builds; CLI packages, installers, portable ZIPs, signing status files, and the Android manifest are not attached to this release.
 
-- `ui/package.json` 的 `version`
-- `src-tauri/tauri.conf.json` 的 `version`
-- `src-tauri/tauri.android.conf.json` 的 `version`
-- `rs/Cargo.toml` 的 `[workspace.package].version`
-- `src-tauri/Cargo.toml` 的 `[package].version`
+| 平台 / Platform | 附件 / Asset | 身份与限制 / Identity and limits |
+|---|---|---|
+| Windows x64 | SysTorch-0.11.0-windows-x64.exe | 单文件 Standalone；目前没有 Authenticode 证书，Windows 可能显示未知发布者。 |
+| Android arm64 | SysTorch-0.11.0-android-aarch64.apk | 使用现有稳定签名；显示名为 SysTorch，applicationId 保持旧值以支持覆盖升级与原沙箱数据。 |
 
-每次发布资料前还要核对 GitHub 仓库 About 简介仍采用“英文一句话 | 中文一句话介绍”格式，且与当前 [README](../README.md) 和已发布能力一致。当前实施与验收状态以[入口网关主计划](design/ENDPOINT-GATEWAY-ALIGNMENT-PLAN.md)为准；未来能力只以[路线图](../ROADMAP.md)为准。v0.5.0 在前一版本基础上整理高频 UI 图标、provider probe 并发、共享 health 状态、遥测后台调度、Routing/Playground/Settings/Statistics 体验、Android daemon library 与历史 debug APK，并加入 LAN opt-in、网关启停、统计分页/矩阵与 CLI 发布；后续正式 Android APK 使用固定签名密钥，由同一主 Release 流水线构建和校验证书。Awesome Jev 的可选徽章只在清单实际收录并发布条目后添加，开放 PR 不等于已收录。
+发布状态、CI run、SHA-256、签名指纹及未完成人工项目必须更新在 [0.11.0 核验记录](verification/v0.11.0-pre-release-2026-10-30.md)。新版本发布为 GitHub prerelease；版本号本身仍是 SemVer 0.11.0，不加 pre 后缀。
 
-每个版本的发布说明还必须讲清楚“为什么做、用户怎么用、结果如何、与什么对照、边界在哪里”。版本对应的 `CHANGELOG.md` 段落必须包含 `用户叙事与对照场景`、至少一个 `起点`、`问题`、`操作`、`结果`、`对照`、`边界`，并在核验文档中给出至少一个从起点到结果的具体故事。Release workflow 的 `meta` job 会检查这些字段，缺少时阻止 tag 发布。
+Record the release status, CI run, SHA-256, signer fingerprint, and remaining hands-on checks in the [0.11.0 verification record](verification/v0.11.0-pre-release-2026-10-30.md). Publish it as a GitHub prerelease; the SemVer remains 0.11.0 without a pre suffix.
 
-Rust 与 npm 锁文件也要跟随版本/依赖变动更新：`rs/Cargo.lock`、`src-tauri/Cargo.lock`、`ui/package-lock.json`。Cargo 锁文件由普通 `cargo check` 更新；npm 锁文件可用 `npm install --package-lock-only --prefix ui` 更新。随后用下列锁文件严格模式确认没有漂移：
+## 版本一致性 / Version consistency
 
-```bash
-# 把 <VERSION> 替换为本次已确认的 SemVer，例如 0.7.2；统一修改上述五处版本字段
-cargo check --manifest-path rs/Cargo.toml --workspace
-cargo check --manifest-path src-tauri/Cargo.toml
-npm install --package-lock-only --prefix ui
+发布前，下列版本必须与 tag 去掉 v 后完全一致：
 
-# 与 CI 相同的锁文件检查
-cargo test --manifest-path rs/Cargo.toml --workspace --locked
-cargo test --manifest-path rs/Cargo.toml --workspace --features ts-rs --locked
+Before publishing, these version fields must match the tag without its leading v:
+
+- ui/package.json
+- src-tauri/tauri.conf.json
+- src-tauri/tauri.android.conf.json
+- rs/Cargo.toml workspace package version
+- src-tauri/Cargo.toml package version
+- rs/Cargo.lock、src-tauri/Cargo.lock 和 ui/package-lock.json 应与 manifest 同步
+
+Release meta job 还检查 CHANGELOG.md 中有版本章节和完整用户叙事：起点、问题、操作、结果、对照、边界。预发布标签通过 workflow 输出标记为 GitHub prerelease。
+
+The release meta job also requires a version section and a complete user narrative in CHANGELOG.md: starting point, problem, action, result, comparison, and boundary. The workflow marks this tag as a GitHub prerelease.
+
+## 发版前验证 / Pre-release validation
+
+在当前分支和最终提交上运行：
+
+Run these commands on the final commit:
+
+~~~powershell
+cargo fmt --manifest-path rs/Cargo.toml --all -- --check
+cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
+cargo test --manifest-path rs/Cargo.toml --workspace --locked --offline
+cargo test --manifest-path rs/Cargo.toml --workspace --features ts-rs --locked --offline
+cargo clippy --manifest-path rs/Cargo.toml --workspace --all-targets --locked --offline -- -D warnings
 cargo test --manifest-path src-tauri/Cargo.toml --locked
 npm ci --prefix ui
-npm run lint --prefix ui
 npm test --prefix ui
+npm run lint --prefix ui
 npm run build --prefix ui
+~~~
 
-# 检查所有变更（含未跟踪的新文件），只暂存本次要发布的文件
-git status --short --untracked-files=all
-# 根据上面的清单，把本次要发布的每个路径显式写入 git add 命令
-git diff --cached --check
-git diff --cached --stat
-git diff --cached
+按发布范围再验证 Android manifest、权限、签名和 Tauri/浏览器界面。CI 成功只能证明自动化覆盖的检查，不能替代 Windows 人工启动、Android 真机安装、相机/相册权限、后台生命周期或真实上游调用验收。
 
-VERSION='X.Y.Z'  # 占位示例；替换为下一版经维护者确认的 SemVer
-git commit -m "chore: bump ${VERSION}"
-git tag "v${VERSION}"
-git push origin main "v${VERSION}"    # 推 tag 触发发版
-```
+Run Android manifest, permission, signature, and Tauri/browser checks appropriate to the release. Passing CI only proves the checks it runs; it does not replace Windows hands-on launch, Android device installation, camera/gallery permissions, background lifecycle, or real upstream-call acceptance.
 
-不要用 `git commit -am` 代替显式暂存：它只包含已跟踪文件，新增的迁移、测试、`ui/src/generated` 类型、源码或文档不会进入 tag。Workflow 只构建 tag 对应的提交，工作树里未提交的修改不会参与发版。CI 的 ts-rs 门禁会同时检查生成目录中的已跟踪差异和未跟踪文件。
+## Android 稳定签名 / Android stable signing
 
-CI 与 release Windows job 都用 `npm ci`，Rust workspace 测试用 `--locked`；release Windows job 的 daemon build 和壳测试也用 `--locked`。Tauri bundle 命令本身没有显式传 `--locked`，因此前面的锁文件检查必须通过。
+保持仓库已配置的四个 Actions Secrets：ANDROID_KEYSTORE_BASE64、ANDROID_KEYSTORE_PASSWORD、ANDROID_KEY_ALIAS、ANDROID_KEY_PASSWORD。它们必须指向同一把历史稳定密钥。不能为了新产品名生成另一把 key、卸载现有应用或清理数据。Android applicationId、owner key、应用数据库和 WebView 存储是迁移兼容锚点；显示名称与 Kotlin namespace 使用 SysTorch。
 
-Actions 页查看实际进度；构建耗时受 runner、网络及依赖缓存影响。
+Keep the four configured Actions secrets: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, and ANDROID_KEY_PASSWORD. They must refer to the same stable historical key. Do not generate a different key, uninstall the existing app, or clear app data for the rebrand. Android applicationId, owner key, app database, and WebView storage are migration anchors; the displayed name and Kotlin namespace use SysTorch.
 
----
+Release job 只在签名 APK 构建成功时继续发布。Android 构建产物包含签名 APK 与内部 manifest；Release staging 只复制 APK 到公开附件。CI 将 signer SHA-256 与既有稳定指纹 5A8CB27A0C4484F140EDE57500B6ADC14DB7C66B9B52D607E8E422420DEDA1AB 比较，并在发布核验中记录，不上传 keystore 或密码。
 
-## 流水线结构
+The release job proceeds only after the signed APK succeeds. The Android build artifact contains the APK and an internal manifest; release staging copies only the APK into the public assets. CI compares the signer SHA-256 with the established fingerprint 5A8CB27A0C4484F140EDE57500B6ADC14DB7C66B9B52D607E8E422420DEDA1AB and records it in verification. Never upload the keystore or passwords.
 
-```
-meta（版本门禁）
-  └─ gate（复用 ci.yml：cargo test --workspace ×2 + ts-rs 门禁 + tsc + UI 回归 + vite build）
-       ├─ windows（daemon release → sidecar → 壳身份回归 → tauri build → msi/nsis/Portable/Standalone）
-       ├─ cli（Linux + Windows headless 客户端）
-       ├─ docker（buildx → ghcr.io，tag 版本号 + latest）
-       ├─ android（有四个签名 Secret 时生成 APK；没有时清晰跳过）
-       └─ release（下载 Windows/CLI，按需下载 Android → 建 GitHub Release，自动 changelog）
-```
+## Windows Authenticode / Windows code signing
 
-后端 workspace 测试在 Ubuntu 跑。Windows 作业放置 sidecar 后，串行执行独立
-`src-tauri/` 工程的服务身份与产物解析回归，再构建安装包。两工程各用自己的
-`target/`，不会把正在运行的 daemon 当构建输出覆盖。
+当前 WINDOWS_SIGNING_REQUIRED 未开启，因此 Windows EXE 无 Authenticode 签名，Release 说明必须如实告知。若之后要切换正式签名，在 GitHub Actions Variables 设置 WINDOWS_SIGNING_REQUIRED=true，并在 Actions Secrets 配置 WINDOWS_CERTIFICATE_BASE64 与 WINDOWS_CERTIFICATE_PASSWORD。缺少受信任证书时不能宣称“已签名”。
 
-Windows job 缓存 Cargo `target/`，其中也可能留有先前构建的 bundle 文件。便携运行目录按 workflow run ID/attempt 唯一命名；上传 ZIP 写在 workspace 根目录，避免命中缓存中的旧目标目录，同时保持 Release 附件名稳定。
+WINDOWS_SIGNING_REQUIRED is currently not enabled, so the Windows EXE is not Authenticode-signed. The release notes must say so. To enable signing later, set the GitHub Actions variable WINDOWS_SIGNING_REQUIRED=true and configure WINDOWS_CERTIFICATE_BASE64 and WINDOWS_CERTIFICATE_PASSWORD secrets. Do not claim the app is signed when a trusted certificate is missing.
 
-桌面壳只接入 `/health` 中 `product=jev-switch`、`api_revision=1` 且版本与壳一致的
-内核。CI 将提交 SHA 写入 `JEV_BUILD_REVISION`，用于关联运行产物；它不包含密钥。
-没有身份字段的旧 Demo 不能因 HTTP 200 而被新版壳误接入。
+## 提交和发布 / Commit and publish
 
----
+1. 核对根目录规则、当前实施计划与代码差异；保留旧 ID、协议和存储兼容性。
+2. 只暂存该版本需要的源码、图标、文档和工作流；排除 .tmp、.vite、构建目录、密钥和本机配置。
+3. 检查 git diff --cached --check、git diff --cached --stat 与完整 staged diff。若 whitespace 检查只标到 ts-rs 原样生成的 ui/src/generated 文件，不要手工改类型；以 CI 再生成后的 diff 门禁为准。
+4. 提交到当前 main，推送 origin；origin 必须为 https://github.com/ARCJ137442/SysTorch.git。
+5. 确认 main CI 通过后，创建并推送 v0.11.0 tag。
+6. 等待 Release workflow 所有必需 jobs 结束；失败时修复原因并重新验证。
+7. 核对 GitHub prerelease 状态、页面说明和公开资产数量；必须恰好只有一个 Windows EXE 与一个 Android APK。
+8. 下载两个资产到临时目录，核对 SHA-256、Windows 签名状态、APK signer SHA-256 和 APK applicationId；不得把临时目录或签名材料提交。
+9. Release published 事件触发 Pages；确认首页展示 0.11.0 预发布标识和这两个正确附件。
 
-## Windows 最终连续验收：先便携运行，必要时再升级安装版
+1. Review the repository rules, active plan, and diff; preserve legacy IDs, protocols, and storage compatibility.
+2. Stage only source, icons, docs, and workflows for this release. Exclude .tmp, .vite, build folders, secrets, and machine-local configuration.
+3. Review git diff --cached --check, the staged stat, and the full staged diff. If whitespace checking flags only canonical ts-rs output under ui/src/generated, do not hand-edit generated types; use the CI regeneration diff gate as the source of truth.
+4. Commit on main and push origin; verify origin is https://github.com/ARCJ137442/SysTorch.git.
+5. Wait for main CI to pass, then create and push tag v0.11.0.
+6. Wait for all required Release jobs; fix failures and revalidate if needed.
+7. Verify GitHub prerelease status, release text, and public asset count: exactly one Windows EXE and one Android APK.
+8. Download both assets to a temporary directory and verify SHA-256, Windows signing status, APK signer SHA-256, and APK applicationId. Never commit build scratch space or signing material.
+9. The published Release event refreshes Pages; confirm the site shows the 0.11.0 prerelease and the two correct downloads.
 
-先完成源码门禁、容器验证、MSI/NSIS 构建与便携目录组装；便携目录和 MSI 必须来自同一次 Tauri build，并核对壳、daemon、HTML/JS/CSS 的 SHA-256。Tauri daemon 是 `externalBin`，所以便携运行时是一个带 `jev-switch.exe` 的文件夹（含 daemon 与唯一的 `resources/ui/dist`），不是可以脱离资源目录的单文件 exe。日常 UI、路由、真实调用、历史与恢复验证优先运行便携壳，避免每轮改动都触发安装/UAC。
+## 远端品牌信息 / GitHub metadata
 
-只有需要专门验证 MSI 安装器、安装路径升级行为或安装器迁移时，才在便携验收完成后做一次 MSI 升级；将该步骤与最终运行验收安排在同一轮。候选 MSI、便携目录、正式配置保护措施、预期请求与截图视口都应提前备齐。
+GitHub About description 使用英文与中文各一句、用竖线分隔，并与口号和 README 一致：
 
-### 触发安装前
+The GitHub About description uses one English sentence and one Chinese sentence separated by a vertical bar:
 
-- 确认当前提交的 Rust workspace 默认/`ts-rs` 测试、Tauri shell 测试、UI 测试、lint 与生产构建均通过。
-- 运行 `scripts/build-windows-release.ps1` 一次生成 MSI、NSIS、文件夹 Portable 与单文件 Standalone；CLI 由 Release workflow 为 Linux/Windows 单独构建，Termux 使用设备本机 `cargo install`。便携目录内含 `jev-switch.exe`、daemon、唯一的 `resources/ui/dist` 和 SHA-256 manifest，仍需解压；Standalone 则把 daemon/UI 直接嵌入单个 Tauri EXE。不要将 AppData 密钥或配置复制进运行资源。CLI 的 WireMock、local daemon smoke 和 workspace 门禁已通过；原生五页交互、OpenRouter live 与多硬件关闭延迟仍按人类验收矩阵记录。
-- 从 MSI 只读提取 Tauri shell、daemon 与 HTML/JS/CSS，逐项与当前构建输入哈希核对。之后常规 UI、路由、真实调用、历史与恢复验收直接双击便携目录中的 exe；仅安装器升级专属验证才需要 MSI/UAC。
-- 核对现有 Jev、daemon、Laya 与监听端口归属，避免覆盖或停止其他项目服务；确认现有 Vercel 凭据只通过掩码状态检查，不读取或记录明文。
-- 准备演练场相同输入、公开入口与直连 provider/model 两类目标；准备 Dashboard request ID、SQLite event/trace 字段核对项。
+Turn questions into next steps with a traceable decision runtime | 用可追溯的决策运行时，把问题变成下一步
 
-### 默认：便携运行验收
-
-1. 核对 `127.0.0.1:11435` 的监听 PID 与路径。只在确认属于 Jev-Switch 后结束占用，再双击便携目录内 `jev-switch.exe`；核对启动的壳、sidecar、health/API identity 与 `build-manifest.json`。若 shell 复用了原 daemon，先确认它确为本次目标版本，不能只看窗口已打开。
-2. 用现存正式配置核对 schema migration、入口/provider 状态及既有历史计数；不覆盖配置、不打印密钥。
-3. 各执行一次真实 Laya 与 Vercel TypeSafe 公开入口请求，并通过演练场各执行一次直连上游比较。把响应 request ID 与 Dashboard 活动及 SQLite 记录对应，确认成功/失败状态、provider/model、usage、latency、route trace 按契约保存；确认请求正文、答案、key 与原始错误 body 未写入安全 trace。
-4. 在 Tauri 候选中检查 Dashboard、Providers、Entries、Routing DAG、Playground 五页；覆盖短窗口、窄屏长宽比与现有多 DPI 显示器。确认顶栏全宽贴边、入口独立导航、路由页直达 DAG，布局使用可用视口且比较结果并排可读。
-5. 通过真实托盘菜单执行“退出”，确认 shell 负责停止其拥有的 sidecar；重启后核对入口、配置、历史和统计恢复，再核对关闭/隐藏到托盘行为。
-6. 全部检查通过后再截取当前候选版本的五页正式截图，更新 README/发布材料与验证记录；截图不得来自旧 demo、开发预览或旧 UI hash。
-
-### 可选：一次 MSI 安装器升级验收
-
-若本轮确实要验安装器，在便携运行与页面/路由检查完成后使用同一构建的候选 MSI 升级，并在这一处处理 Windows UAC。确认 ProductCode/UpgradeCode、安装目录与 AppData migration；不要为每次 UI 或 daemon 修复重复安装。MSI 成功后，按同一 request ID / SQLite / 页面检查再抽查一次即可。
-
-有一项失败时，记录结果并停止本次发布验收；优先在便携运行目录修复和复测。只有安装器专属问题才重新安排一次 MSI 验收。`v0.4.1` 的 CLI 自动门禁、local daemon smoke、Windows 原生隔离测试和维护者人工桌面验收必须分别记录；Android APK 构建成功不等于安装、service/tile/通知或真机生命周期已验证，安装器和全链路性能仍开放，不能写成已验证能力。
-
----
-
-## 干跑（不发布，只验流水线）
-
-Actions → Release → Run workflow（`workflow_dispatch`）。
-构建 Windows 产物 + 验 Dockerfile 能 build，但**不推 ghcr、不建 Release**。
-`version` 输入留空则取 `ui/package.json`，做五处一致性检查。
-输入通过环境变量传入门禁，不作为 shell 源码拼接；不一致的输入被拒绝。
-
----
-
-## 产物在哪
-
-| 产物 | 位置 |
-|---|---|
-| MSI / NSIS / Portable / Standalone | Release 页附件；或 Actions run 的 `jev-switch-windows-<版本>` artifact |
-| Linux / Windows CLI | Release 页 `jev-switch-cli-<版本>-<平台>` 附件；Termux/Android arm64 在设备本机 `cargo install --path rs/crates/jev-switch-cli --locked` |
-| Docker | `ghcr.io/<owner>/<repo>:<版本>` 与 `:latest`（owner 自动转小写） |
-
-发布页自动填入实际的小写镜像名称与版本，并提供带持久卷、管理员密码和 15 秒停机预算的启动命令。下面以本次 `0.4.1` 为例；部署其他版本时替换该值，并替换 `<owner>/<repo>`，再设置自己的 `JEV_ADMIN_PASSWORD`：
-
-```bash
-: "${JEV_ADMIN_PASSWORD:?请先设置管理员密码}"
-export JEV_ADMIN_PASSWORD
-VERSION=0.4.1
-docker pull ghcr.io/<owner>/<repo>:${VERSION}
-docker run -d --name jev-switch \
-  -p 127.0.0.1:11435:11435 \
-  --restart unless-stopped --stop-timeout 15 \
-  -e JEV_SWITCH_MODE=cloud -e JEV_BIND=0.0.0.0:11435 \
-  -e JEV_ADMIN_PASSWORD -v jev-switch-data:/data \
-  ghcr.io/<owner>/<repo>:${VERSION}
-```
-
-打开 `http://127.0.0.1:11435`，使用管理员密码登录，再到 Token 管理创建调用 Token。示例只发布到宿主回环；远程部署、反向代理和配置导入按 [部署文档](deployment.md) 操作。命名数据卷保留数据库，容器替换不等于删除数据卷。
-
----
-
-## 仓库一次性设置
-
-Settings → Actions → General → Workflow permissions → **Read and write**。
-`GITHUB_TOKEN` 自带 `packages: write`，推 ghcr 无需额外 secret。
-
-### Android 稳定签名 Secrets
-
-Android Release 是可选资产；Windows Standalone/Portable、MSI、NSIS、CLI 和 Docker 不依赖 Android Secrets。要让同一次 Release 另外生成并上传稳定签名 APK，在本机安全目录执行：
-
-```powershell
-pwsh -NoProfile -File scripts/android/generate-release-keystore.ps1 `
-  -OutputDirectory '<PROTECTED_SIGNING_DIR>'
-```
-
-脚本会交互读取 keystore 和 key 密码，默认 alias 为 `jev-switch-release`，生成 JKS 格式的 `jev-switch-release.jks` 与单行 Base64 文件 `jev-switch-release.jks.base64`。将原始 `.jks` 和密码保留在离线/受保护位置；不要提交 Git、上传 issue、写入日志或粘贴到聊天。然后在 GitHub 仓库 `Settings → Secrets and variables → Actions → New repository secret` 创建以下四项：
-
-| Secret 名称 | 填写内容 |
-|---|---|
-| `ANDROID_KEYSTORE_BASE64` | `jev-switch-release.jks.base64` 的完整单行内容，不要加引号或换行 |
-| `ANDROID_KEYSTORE_PASSWORD` | 生成 keystore 时输入的 keystore 密码 |
-| `ANDROID_KEY_ALIAS` | 生成时的 alias，默认 `jev-switch-release` |
-| `ANDROID_KEY_PASSWORD` | 生成时输入的 key 密码；如果使用 2026-10-01 旧脚本生成的 PKCS12 文件，必须填与 keystore password 相同的值 |
-
-四项必须属于同一个 keystore。Android job 会先验证 Base64、keystore、alias 和签名，再把 APK 与 manifest 上传；任一项缺失时只跳过 Android 步骤，并不会阻断 Windows Standalone Release。正式签名后建议保存 workflow 输出的 signer SHA-256 指纹，后续版本必须保持一致，才能覆盖安装升级。历史 debug-signed APK 与稳定签名不是同一身份，首次迁移需卸载旧 APK。
-
-### Windows Authenticode 签名 Secrets
-
-Windows SmartScreen 的“发布者：未知”来自没有 Authenticode 签名；自签名证书只能显示一个不受信任的发布者，不能建立公共信誉。当前发行流水线默认允许未签名功能验证包；要切换为正式签名门禁，先在仓库 Variables 设置 `WINDOWS_SIGNING_REQUIRED=true`，再从受信任的代码签名 CA 取得 Windows PFX/P12（OV/EV），并在 GitHub 仓库 `Settings → Secrets and variables → Actions` 配置：
-
-| Secret 名称 | 填写内容 |
-|---|---|
-| `WINDOWS_CERTIFICATE_BASE64` | PFX/P12 文件的完整单行 Base64，不要提交原文件或换行 |
-| `WINDOWS_CERTIFICATE_PASSWORD` | PFX 私钥密码 |
-
-当 `WINDOWS_SIGNING_REQUIRED=true` 时，tag push 会校验这两个 Secret；缺失或 Base64/PFX 无法解析会直接阻断 Windows job。开关为 false 时仍构建并上传 Windows 包，并随包写入 `windows-signing-status.txt` 明确其未签名。签名使用 `signtool` 的 SHA-256 文件摘要、RFC 3161 时间戳和 `/pa` 验证，覆盖 daemon、Tauri 壳、MSI、NSIS、Standalone；Portable ZIP 在签名完成后压缩。签名清单会随 Windows artifact/Release 上传，包含文件名、SHA-256、签名状态和证书指纹。
-
-如果 Windows job 因缺少 Secret 失败，配置完成后可以直接在该次失败的 Release run 中点击 **Re-run failed jobs**，不需要重建 tag。当前 `v0.9.3` run `37285568031` 的其他 jobs 已通过，Windows 失败只发生在签名证书预检；配置 Secret 后应直接重跑 Windows job。
-
-代码签名不能保证每台机器立即跳过 SmartScreen：新证书和新文件仍可能经历基于下载信誉的“未知应用”提示，用户可核对发布者、Release SHA-256 与签名清单。不要为了消除提示而关闭 Defender 或把自签名证书当成公开信任证书。
-
----
-
-## 失败排查
-
-| 症状 | 原因 / 处理 |
-|---|---|
-| `meta` 报版本不一致 | 五处版本号没同步，按上面清单改齐重新打 tag |
-| `gate` 报 ts-rs 生成物不一致 | 跑 `cargo test --manifest-path rs/Cargo.toml --workspace --features ts-rs` 后提交 `ui/src/generated` |
-| Tauri 找不到 sidecar | `src-tauri/binaries/` 已 gitignore；流水线的「放置 sidecar」步负责生成，本地构建需手动跑（见 `docs/deployment.md` §9.2） |
-| MSI 构建失败提 ICE30 | sidecar 与壳主二进制同名了。必须叫 `jev-switch-daemon-<triple>.exe`（`docs/deployment.md` §9.4-2） |
-| `beforeBuildCommand` ENOENT | hook 的 cwd 是仓库根，用 `--prefix ui` 而非 `../ui`（`docs/deployment.md` §9.4-1） |
-| ghcr push 403 | 仓库 Actions 权限没给 write（见上节） |
-| Windows tag 被 `WINDOWS_CERTIFICATE_*` 阻断 | 正式发布必须配置 CA 签发的 PFX 与密码；手动 workflow 只用于无签名干跑 |
-| SmartScreen 仍提示未知应用 | 检查 EXE 属性的数字签名、发布者和时间戳；新证书/新下载信誉需要时间积累，签名本身不等于立即消除信誉提示 |
-| `__TAURI_BUNDLE_TYPE` warn | 无 updater 插件的已知无害告警，忽略 |
-
----
-
-— GPT-6 Luna xhigh（OpenAI Codex），本轮发版文档修订，AI 辅助整理，2026-09-27
-
-## 尚未做
-
-- macOS / Linux 桌面打包（v0.4.0 仍只发布 Windows 桌面；Linux 继续提供 headless CLI）
-- Windows Authenticode 已接入正式 tag 门禁；macOS 代码签名与公证、Tauri updater 增量更新尚未接入
-- Tauri updater 增量更新
+官网 Pages 自动读取最近发布的 Release，包含 prerelease；不能使用只返回最新正式版的 /releases/latest API。

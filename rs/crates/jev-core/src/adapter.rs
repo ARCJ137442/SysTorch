@@ -73,6 +73,12 @@ pub trait ProtocolAdapter: Send + Sync {
 pub trait UpstreamAdapter: Send + Sync {
     fn id(&self) -> &str;
     fn capabilities(&self) -> Capabilities;
+    /// Whether this adapter preserves and translates the request's asset
+    /// payload for the selected upstream family. Unknown formats are skipped
+    /// before dispatch; the UI still lets the caller compose the request.
+    fn supports_asset_type(&self, _asset_type: &str) -> bool {
+        false
+    }
     async fn evaluate(&self, req: JevRequest) -> Result<JevResponse, JevError>;
 }
 
@@ -146,6 +152,15 @@ pub struct Registry {
 }
 
 type RouteActivityObserver = std::sync::RwLock<Option<Arc<dyn Fn(RouteActivity) + Send + Sync>>>;
+
+fn unsupported_asset_type(upstream: &dyn UpstreamAdapter, req: &JevRequest) -> Option<String> {
+    req.assets
+        .as_ref()?
+        .values()
+        .map(|asset| asset.r#type.as_str())
+        .find(|asset_type| !upstream.supports_asset_type(asset_type))
+        .map(str::to_owned)
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RouteActivityPhase {
@@ -298,12 +313,20 @@ impl Registry {
         self.router.replace_upstreams(upstreams);
     }
 
+    pub fn replace_configuration(
+        &self,
+        edges: Vec<RouteEdge>,
+        upstreams: Vec<Box<dyn UpstreamAdapter>>,
+    ) {
+        self.router.replace_configuration(edges, upstreams);
+    }
+
     /// 路由引擎视图（`/v1/models` 等只读装配用）。
     pub fn router(&self) -> &Router {
         &self.router
     }
 
-    /// 热替换路由边表（A7 admin `PUT /v1/admin/routes` 整表替换、无重启）。
+    /// 热替换路由边表（admin route transactions 整表替换、无重启）。
     /// 已注册上游与重试策略不动；调用方先 [`crate::router::check_acyclic`] 校验。
     pub fn replace_edges(&self, edges: Vec<RouteEdge>) {
         self.router.replace_edges(edges);
@@ -503,6 +526,28 @@ impl Registry {
                 continue;
             }
 
+            if let Some(asset_type) = unsupported_asset_type(upstream.as_ref(), &req) {
+                route_attempts.push(serde_json::json!({
+                    "provider_id": item.candidate.upstream_id,
+                    "upstream_model": item.candidate.upstream_model,
+                    "hops": item.candidate.hops,
+                    "priority": item.candidate.priority,
+                    "outcome": "skipped",
+                    "reason": "format_mismatch",
+                    "required_asset_type": asset_type
+                }));
+                if cap_skip.is_none() {
+                    cap_skip = Some(JevError::Capability {
+                        upstream_id: upstream.id().to_string(),
+                        detail: format!(
+                            "format mismatch: asset type '{asset_type}' cannot be projected by upstream '{}'",
+                            upstream.id()
+                        ),
+                    });
+                }
+                continue;
+            }
+
             // upstream_model 改写后发上游
             let mut attempt_req = req.clone();
             attempt_req.model = item.candidate.upstream_model.clone();
@@ -667,7 +712,10 @@ impl Registry {
             .filter(|item| {
                 self.router
                     .upstream(&item.candidate.upstream_id)
-                    .is_some_and(|up| qts.iter().all(|qt| up.capabilities().supports(*qt)))
+                    .is_some_and(|up| {
+                        qts.iter().all(|qt| up.capabilities().supports(*qt))
+                            && unsupported_asset_type(up.as_ref(), &req).is_none()
+                    })
             })
             .collect();
         if capable.is_empty() {
@@ -704,6 +752,17 @@ impl Registry {
                     JevError::UnknownUpstream(item.candidate.upstream_id.clone()),
                 )
             })?;
+        if let Some(asset_type) = unsupported_asset_type(upstream.as_ref(), &req) {
+            return Err(InvocationFailure::new(
+                &req.model,
+                Vec::new(),
+                0,
+                JevError::Capability {
+                    upstream_id: upstream.id().to_string(),
+                    detail: format!("format mismatch: asset type '{asset_type}' cannot be projected by upstream '{}'", upstream.id()),
+                },
+            ));
+        }
         let mut upstream_req = req.clone();
         upstream_req.model = item.candidate.upstream_model.clone();
         let activity_id = self
@@ -833,6 +892,25 @@ impl Registry {
                         "outcome": "skipped",
                         "reason": "capability_mismatch",
                         "required_question_type": qt.as_str()
+                    }));
+                continue;
+            }
+            if let Some(asset_type) = unsupported_asset_type(upstream.as_ref(), &req) {
+                skipped.get_or_insert_with(|| JevError::Capability {
+                    upstream_id: upstream.id().into(),
+                    detail: format!("format mismatch: asset type '{asset_type}' cannot be projected by upstream '{}'", upstream.id()),
+                });
+                attempts
+                    .lock()
+                    .expect("race attempt log lock")
+                    .push(serde_json::json!({
+                        "provider_id": item.candidate.upstream_id,
+                        "upstream_model": item.candidate.upstream_model,
+                        "hops": item.candidate.hops,
+                        "priority": item.candidate.priority,
+                        "outcome": "skipped",
+                        "reason": "format_mismatch",
+                        "required_asset_type": asset_type
                     }));
                 continue;
             }
@@ -991,6 +1069,45 @@ impl Registry {
                 })
         };
         if let Some((upstream, model, hops)) = target_item {
+            if let Some(asset_type) = unsupported_asset_type(upstream.as_ref(), &req) {
+                let mut primary = match self.invoke_failover_traced(req.clone(), ctx).await {
+                    Ok(response) => response,
+                    Err(mut failure) => {
+                        if let Some(trace) = failure.route_trace.as_object_mut() {
+                            trace.insert(
+                                "shadow".into(),
+                                serde_json::json!({
+                                    "target": target,
+                                    "model": model,
+                                    "hops": hops,
+                                    "dispatched": false,
+                                    "reason": "format_mismatch",
+                                    "required_asset_type": asset_type
+                                }),
+                            );
+                        }
+                        return Err(failure);
+                    }
+                };
+                if let Some(trace) = primary
+                    .extra
+                    .get_mut("route_trace")
+                    .and_then(serde_json::Value::as_object_mut)
+                {
+                    trace.insert(
+                        "shadow".into(),
+                        serde_json::json!({
+                            "target": target,
+                            "model": model,
+                            "hops": hops,
+                            "dispatched": false,
+                            "reason": "format_mismatch",
+                            "required_asset_type": asset_type
+                        }),
+                    );
+                }
+                return Ok(primary);
+            }
             let mut shadow_req = req.clone();
             shadow_req.model = model.clone();
             // Do not claim an extra call until the detached task has entered its
@@ -1113,6 +1230,7 @@ mod tests {
         id: String,
         cap: Capabilities,
         mode: Mode,
+        asset_types: &'static [&'static str],
         handle: std::sync::Arc<Handle>,
     }
 
@@ -1138,6 +1256,9 @@ mod tests {
         }
         fn capabilities(&self) -> Capabilities {
             self.cap.clone()
+        }
+        fn supports_asset_type(&self, asset_type: &str) -> bool {
+            self.asset_types.contains(&asset_type)
         }
         async fn evaluate(&self, req: JevRequest) -> Result<JevResponse, JevError> {
             let n = self.handle.calls.fetch_add(1, Ordering::SeqCst) + 1; // 1-based
@@ -1219,6 +1340,15 @@ mod tests {
         qts: &'static [QuestionType],
         mode: Mode,
     ) -> (Box<dyn UpstreamAdapter>, std::sync::Arc<Handle>) {
+        fake_with_asset_types(id, qts, mode, &[])
+    }
+
+    fn fake_with_asset_types(
+        id: &str,
+        qts: &'static [QuestionType],
+        mode: Mode,
+        asset_types: &'static [&'static str],
+    ) -> (Box<dyn UpstreamAdapter>, std::sync::Arc<Handle>) {
         let handle = std::sync::Arc::new(Handle {
             calls: AtomicU32::new(0),
             seen: Mutex::new(Vec::new()),
@@ -1236,6 +1366,7 @@ mod tests {
                 id: id.to_string(),
                 cap,
                 mode,
+                asset_types,
                 handle: handle.clone(),
             }),
             handle,
@@ -1270,6 +1401,7 @@ mod tests {
             model: model.to_string(),
             state: serde_json::json!("hi"),
             questions: q,
+            assets: None,
             extensions: Default::default(),
             extra: Default::default(),
         }
@@ -1518,6 +1650,50 @@ mod tests {
         assert_eq!(
             response.extra["route_trace"]["shadow"]["usage_cost"],
             "not_collected"
+        );
+    }
+
+    #[tokio::test]
+    async fn shadow_asset_mismatch_is_not_dispatched_or_counted() {
+        let mut registry =
+            Registry::with_retry(vec![edge("jev", "primary", 10)], RetryPolicy::no_retry());
+        let (primary, primary_handle) =
+            fake_with_asset_types("primary", &[QuestionType::Noul], Mode::Ok, &["image"]);
+        let (shadow, shadow_handle) = fake("shadow", &[QuestionType::Noul], Mode::Ok);
+        registry.register(primary);
+        registry.register(shadow);
+
+        let mut request = noul_request("jev");
+        request.assets = Some(BTreeMap::from([(
+            "image_fixture".into(),
+            jev_protocol::RequestAsset {
+                r#type: "image".into(),
+                format: Some("png".into()),
+                mime_type: Some("image/png".into()),
+                filename: None,
+                data_base64: Some("AA==".into()),
+                asset_id: None,
+            },
+        )]));
+
+        let response = registry
+            .invoke_with_strategy(
+                request,
+                plain_ctx(),
+                RoutingStrategy::Shadow {
+                    shadow_target: "shadow".into(),
+                },
+            )
+            .await
+            .expect("unsupported shadow must not block the primary");
+
+        assert_eq!(primary_handle.calls.load(Ordering::SeqCst), 1);
+        assert_eq!(shadow_handle.calls.load(Ordering::SeqCst), 0);
+        assert_eq!(response.upstream_calls, Some(1));
+        assert_eq!(response.extra["route_trace"]["shadow"]["dispatched"], false);
+        assert_eq!(
+            response.extra["route_trace"]["shadow"]["reason"],
+            "format_mismatch"
         );
     }
 

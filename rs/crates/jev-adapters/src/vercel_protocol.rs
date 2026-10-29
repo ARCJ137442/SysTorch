@@ -196,6 +196,7 @@ mod tests {
             model: "typesafe-ai/jev".into(),
             state: serde_json::json!("hi"),
             questions: q,
+            assets: None,
             extensions: Default::default(),
             extra: Default::default(),
         }
@@ -255,6 +256,7 @@ mod tests {
             model: "m".into(),
             state: serde_json::Value::Null,
             questions: q,
+            assets: None,
             extensions: Default::default(),
             extra: Default::default(),
         };
@@ -353,6 +355,7 @@ mod tests {
             model: "m".into(),
             state: serde_json::Value::Null,
             questions: q,
+            assets: None,
             extensions: Default::default(),
             extra: Default::default(),
         };

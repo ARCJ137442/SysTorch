@@ -5,6 +5,6 @@
  */
 export type PutPasswordResponse = { updated: boolean, 
 /**
- * env `JEV_ADMIN_PASSWORD` 非空警示（下次启动覆盖回文件值）。
+ * Canonical/legacy admin password environment override warning.
  */
 env_override_active: boolean, };

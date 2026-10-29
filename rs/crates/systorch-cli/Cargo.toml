@@ -1,0 +1,27 @@
+[package]
+name = "systorch-cli"
+description = "SysTorch HTTP CLI for scripts and headless operations"
+default-run = "systorch-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "systorch-cli"
+path = "src/main.rs"
+
+[[bin]]
+name = "jev-switch-cli"
+path = "src/legacy.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true }
+reqwest = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
+wiremock = { workspace = true }

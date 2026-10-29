@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <title>SysTorch routing torch</title>
+  <!-- M0 torch geometry; warm light, cooler routing structure, quiet background.
+       Brand color is not a success/failure/pending status. No text-glyph fallback. -->
+  <defs>
+    <linearGradient id="canvas" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#243640"/>
+      <stop offset="1" stop-color="#10191f"/>
+    </linearGradient>
+    <linearGradient id="routing" x1="0" y1="0" x2="0.3" y2="1">
+      <stop stop-color="#d5e5e8"/>
+      <stop offset="1" stop-color="#7eabb7"/>
+    </linearGradient>
+    <linearGradient id="light" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#fff0d4"/>
+      <stop offset="0.45" stop-color="#f2b56c"/>
+      <stop offset="1" stop-color="#d6743f"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#canvas)"/>
+  <g transform="translate(64 16) scale(12)">
+    <path data-role="routing" d="M16 3 4 17l8 6-3 8 7 6 7-6-3-8 8-6L16 3Z" fill="#293f49" stroke="url(#routing)" stroke-width="2" stroke-linejoin="round"/>
+    <path data-role="flame" d="m16 10-5 8 5 5 5-5-5-8Z" fill="url(#light)"/>
+    <path data-role="grip" d="M16 23v10" fill="none" stroke="#bbd0d5" stroke-width="2"/>
+  </g>
+</svg>

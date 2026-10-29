@@ -33,7 +33,7 @@ const thStyle: React.CSSProperties = {
 /**
  * 路由表编辑（design/01 §8 a11y：连线编辑必须有表单等价路径）。
  * 全字段键盘可编辑：left / match / right / upstream_model / priority / sticky / on_error。
- * 环标红行 + 重复 left→right 行首 ⚠ 提示；增删行走同一 debounce PUT 管线。
+ * 环标红行 + 重复 left→right 行首 ⚠ 提示；增删行走同一 debounce 事务管线。
  */
 export function RouteTableForm({ routes, errorEdges, onPatchAt, onDeleteAt, onAdd }: Props) {
   const { t } = useI18n();

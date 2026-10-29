@@ -92,6 +92,12 @@ impl UpstreamAdapter for OpenRouterUpstream {
     }
 
     async fn evaluate(&self, req: JevRequest) -> Result<JevResponse, JevError> {
+        if req.assets.as_ref().is_some_and(|assets| !assets.is_empty()) {
+            return Err(JevError::Capability {
+                upstream_id: self.id.clone(),
+                detail: "format mismatch: OpenRouter chat-completion conversion does not yet preserve SysTorch asset semantics".into(),
+            });
+        }
         let request_model = req.model.clone();
         let prompt = serde_json::to_string(&req).map_err(|error| JevError::BadResponse {
             upstream_id: self.id.clone(),
@@ -215,6 +221,7 @@ mod tests {
                     criteria: None,
                 },
             )]),
+            assets: None,
             extensions: Default::default(),
             extra: Default::default(),
         }

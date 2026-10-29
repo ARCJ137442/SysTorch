@@ -9,11 +9,11 @@
  * ```
  *
  * **反序列化即校验**（daemon 直接映射本地 400，不发上游）：
- * - `type` ∈ {choice, score, noul, boolean}；未知 → 拒绝；`boolean` → 归一为 [`Question::Noul`]
+ * - `type` ∈ {choice, score, noul, boolean, box}；未知 → 拒绝；`boolean` → 归一为 [`Question::Noul`]
  * - `instructions` 必填；接受 string / object / array
  * - `criteria`：choice→Map、score→List 且 Noul 可省略；choice/score 值按官方 schema 校验
  *
  * 序列化恒写契约三判别值（`Noul` 写 `"noul"`；adapter 出站需要 `boolean` 方言时
  * 在 outgoing 转换 —— 见 jev-core translate / 后续 ProtocolAdapter）。
  */
-export type Question = { "type": "choice", instructions: string | { [key in string]: unknown } | Array<unknown>, criteria: { [key in string]: string | { [key in string]: unknown } | Array<unknown> | null } } | { "type": "score", instructions: string | { [key in string]: unknown } | Array<unknown>, criteria: Array<string | { [key in string]: unknown } | Array<unknown>> } | { "type": "noul", instructions: string | { [key in string]: unknown } | Array<unknown>, criteria?: { [key in string]: unknown } };
+export type Question = { "type": "choice", instructions: string | { [key in string]: unknown } | Array<unknown>, criteria: { [key in string]: string | { [key in string]: unknown } | Array<unknown> | null } } | { "type": "score", instructions: string | { [key in string]: unknown } | Array<unknown>, criteria: Array<string | { [key in string]: unknown } | Array<unknown>> } | { "type": "noul", instructions: string | { [key in string]: unknown } | Array<unknown>, criteria?: { [key in string]: unknown } } | { "type": "box", instructions: string | { [key in string]: unknown } | Array<unknown> };

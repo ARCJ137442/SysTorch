@@ -1,143 +1,104 @@
-# jev-switch
+# SysTorch
 
-[![CI](https://github.com/ARCJ137442/jev-switch/actions/workflows/ci.yml/badge.svg)](https://github.com/ARCJ137442/jev-switch/actions/workflows/ci.yml)
+[English](README.en.md) · [发布与下载](https://github.com/ARCJ137442/SysTorch/releases) · [文档索引](docs/README.md)
 
-Jev Switch 是一个轻量的 **Jev 协议模型网关**：把对外服务入口连接到可复用的上游接入配置，由可编辑路由图决定实际调用路径。Rust/axum daemon 承担协议转换、路由和转发；模型推理由上游服务执行。交付形态包括 React 控制台、Tauri 桌面应用与 Docker 服务。
+<p align="center">
+  <img src="ui/src/brand/systorch.svg" width="112" alt="SysTorch 火炬标识">
+</p>
 
-![Jev Switch Tauri dashboard](docs/images/jev-switch-dashboard.png)
+> **把眼前的问题，变成下一步。**
+>
+> Turn questions into next steps.
 
-更多 Dashboard 活动、入口路由图与演练场界面见[截图图册](docs/screenshots.md)。未来功能方向见 [ROADMAP.md](ROADMAP.md)。
+SysTorch 是面向人、模型与 Agent 的**结构化决策运行时**：把一个判断请求送进可检查的 DAG 路由，在合适的决策服务间流转；需要人工接手时，将任务持久交给指定的人，再把严格映射的结果交还原调用方。
 
-## 特性
+![SysTorch「开始」工作面和决策回复](docs/gallery/images/start-desktop.png)
 
-- **两类调用入口**：对外服务入口由外部模型 ID、上游路由与策略组成；上游接入配置保存地址、凭据和该账号可用的模型。一个上游配置可被多个服务入口复用。
-- **双态运行**：`local` 默认仅监听 loopback 并免调用 token；`cloud` 默认对外监听并要求调用 token，管理操作另走管理员会话。两种模式都可路由到本机、LAN 或云端上游；`local` 不代表离线。详见 [部署说明](docs/deployment.md) 与[当前入口网关计划](docs/design/ENDPOINT-GATEWAY-ALIGNMENT-PLAN.md)。
-- **Jev 原生接口**：`POST /v1/systemone` 使用 Jev 请求/响应形状；Vercel 等适配器负责上游方言转换。网关不加载模型权重。`v0.9.0` 还允许在同一请求形状中承载多模态或供应商自定义扩展，并保留可追溯的网关/提供商处理状态。
-- **多模态兼容边界**：未知顶层字段和显式 `extensions` 在 local 模式默认保留；兼容 provider 可按配置转发 `media`、`images` 等字段，官方 TypeSafe 默认剥离。`strip_unknown_fields` 可全局启用剥离，响应元数据只记录字段名和 disposition，不记录媒体内容。详见[多模态 SystemOne 核验](docs/verification/multimodal-systemone-compatibility-2026-10-05.md)。
-- **当前源码上游覆盖范围**：内置适配器为 Vercel、Laya、TypeSafe SystemOne 与 OpenRouter。TypeSafe 可连接官方 API（默认 `https://api.typesafe.ai/v1/systemone`、模型 `jev-latest`），也可连接提供相同 Jev `/v1/systemone` 请求/响应格式的本地服务；OpenRouter 通过结构化 JSON Chat Completions 做上游转换。这不等于提供普通 OpenAI/Anthropic 对外入口。官方实测与 OpenRouter 边界见[核验记录](docs/verification/typesafe-official-live-2026-09-29.md)和[OpenRouter adapter 记录](docs/verification/openrouter-adapter-2026-09-30.md)。`v0.7.0` 已发布持久 attempt 双视图、路由 Dagre 排布、移动端样例选择和 Android 文件/剪贴板适配；`v0.7.1` 修复跨层连线未使用 Dagre 避让走廊的问题；`v0.7.2` 修复提供商删除级联和统一表单键盘交互；`v0.8.0` 增加只读 Graph API、DAG 节点领域模型和 Dashboard 第一阶段布局编辑。版本与人工验证范围见[发版记录](docs/RELEASE.md)。
-- **可编辑调用路由 DAG**：支持对外入口、路由节点和提供商模型端口之间的多跳与分支，并配置候选优先级和失败处理；简单直连只是 DAG 的一种形式。
-- **演练场横向比较**：可比较多个对外入口、直接上游模型或混合目标；轻点样例可多选，右键/长按可快速独选；结果分别呈现实际路径、耗时、usage 与错误。
-- **密钥边界**：上游 key 留在 daemon；管理 API 只返回脱敏状态，不提供明文读回接口。不要把真实 key 提交到仓库或聊天。
-- **模型目录发现**：Providers 可让 daemon 通过上游 `/v1/models` 获取账户模型并回填列表，同时显示 HTTP 状态和延迟；浏览器不直连上游，也不会把 key 写入配置或响应。
-- **首页运行遥测**：Dashboard 展示当前 daemon 会话的入口/出口速率、累计字节、活跃请求、成功/失败/failover、网关平均延迟和 daemon 进程 CPU/内存；采样数据只在内存中保留，无法精确获得的 Tauri WebView/上游指标明确显示不可用。
-- **Headless CLI Phase 1**：`jev-switch-cli` 通过 daemon HTTP API 提供 `status`、`models`、`invoke`、`routes`、`events`，支持 JSON/表格输出，适合 Termux、SSH 与脚本；TUI 和完整 Android 原生交互仍后置。详见 [CLI 文档](docs/CLI.md)。
-- **统计与实时路由反馈**：统计页按当前筛选范围提供入口/提供商健康矩阵，格子保持正方形并按宽度自适应日/时/分/秒粒度；入口历史每次请求一行，提供商视角按该请求持久 trace 展开每次实际候选调用。路由 DAG 使用 Dagre/Sugiyama 排布不同尺寸节点，跨层连线沿虚拟节点走廊避让，并从独立实时事件流呈现固定线宽、请求曝光和响应辉光。历史调用支持自定义每页条数。
-- **Agent 可追踪历史**：控制台与 Agent 共用 `/v1/admin/events` / `/v1/events/my` 查询能力，可按入口、提供商、时间范围、成功状态、request ID 和稳定游标分页检索；入口视角追踪父请求，提供商视角回溯 `route_trace.attempts` 中的真实失败/重试/成功链路。路由画布的 `route_activity` 只作为实时过程流，不混入历史记录。
-- **跨平台界面偏好**：设置支持 10%–200% 的全局 UI 缩放，滑块步长 5% 并可输入自定义倍率；设置搜索可匹配说明内容，局域网开关以固定文案和高亮状态表达。演练场样例 chip 在窄屏自动换行，触屏可直接多选。
-- **Android APP**：作为正式下载渠道维护，优先级次于 Windows 桌面。APK 使用稳定签名并内置网关；首次打开直接启动本机后端，用户明确停止后保持关闭，首页可启停。`v0.7.0` 已发布原生 JSON 导出/分享、剪贴板和独立前台服务状态显示。维护者已确认 `v0.6.3` 的本机网关启停与 UI 连接；新桥、service、通知、Quick Settings tile、局域网和后台稳定性仍待分别验收。详见 [Android 构建与验收计划](docs/design/ROADMAP-PLAN-ANDROID-EXPERIMENTAL.md)。
-- **当前迭代入口**：路由画布/HUD、演练场批量矩阵、Provider/Entry 搜索、统计/设置、运行控制和探测偏好按[用户反馈迭代计划](docs/design/USER-FEEDBACK-ITERATION-PLAN.md)分阶段推进。
-- **图标与运行效率**：主导航、Dashboard 状态速览、调用活动和 Routing 高频工具已有 Lucide 语义图标；Dashboard 连通性探测限制并发并合并状态提交，health 状态共享，隐藏页暂停遥测。具体测量和范围见[图标/性能验证记录](docs/verification/ui-icon-performance-2026-09-30.md)。
-- **七页控制台**：仪表盘、提供商、入口、路由 DAG、演练场、统计、设置；当前提供简体中文和英文，语言注册表可扩展。
-- **契约驱动**：Rust `ts-rs` 生成前端类型到 `ui/src/generated/`；协议及路由不变量见 `docs/contracts/`。
+> 图册截图来自合成数据的本地界面预览，不是 0.11.0 EXE／APK 的版本截图；具体证据边界见[图册说明](docs/gallery/README.md)。
 
-## 架构
+<p align="center">
+  <a href="docs/gallery/README.md">浏览截图图册 · View the product gallery</a>
+</p>
 
-Rust workspace（`rs/Cargo.toml`）+ React 控制台（`ui/`）+ Tauri 壳（`src-tauri/`）：
+## 为什么使用 SysTorch
 
-| crate | 职责 | 依赖边界 |
-|---|---|---|
-| `jev-protocol` | 协议内核类型：`JevRequest`/`JevResponse`/`Answer` 判别联合、`noul_probability()`、feature `ts-rs` 类型导出 | **零 IO**：仅 serde / serde_json |
-| `jev-core` | Router DAG（select/plan/failover）、冻结 trait `ProtocolAdapter`/`UpstreamAdapter` + `Registry`、`RetryPolicy`、redact | **无** axum / reqwest |
-| `jev-adapters` | Vercel、Laya、TypeSafe 上游实现、VercelProtocol 翻译、厂商 DTO | 厂商方言**只活在本 crate** |
-| `jev-switch-daemon` | axum HTTP、配置/数据库、管理 API、静态 UI 托管 | 组装协议、路由与适配器 |
-| `jev-switch-cli` | Termux/SSH/headless HTTP 客户端（Phase 1） | 只调用 daemon API，不复制路由、SQLite 或 provider key |
-| `ui/` | React 控制台：Dashboard / Providers / Entries / Routing DAG / Playground | 开发端口 5173；类型由 `ts-rs` 生成 |
-| `src-tauri/` | Windows 桌面壳与随包 sidecar | MSI / NSIS / Standalone 源码构建 |
+普通模型 API 只回答“哪个服务收到了请求”。SysTorch 还记录“这个决策走了哪条路径、经过哪些尝试、是否交给人判断，以及结果怎样回到调用方”。
 
-```text
-调用者：网关地址 + 调用 token + 对外模型 ID
-   │
-   ▼
-对外服务入口（独立路由集合与策略）
-   │
-   ▼
-可编辑调用路由 DAG
-   │
-   ▼
-提供商接入配置（地址 + 凭据 + 模型端口）
-   │
-   ▼
-上游适配器（当前内置 Vercel、Laya、TypeSafe SystemOne） -> 上游模型服务
-```
+一个典型流程：
 
-## API 端点总表
+1. Agent、Harness 或使用者提交一个或多个有稳定 ID 的结构化问题。
+2. SysTorch 沿 DAG 在本地或云端决策服务间选择；路由辉光显示实际请求与响应。
+3. 某个任务需要人判断时，决策台保存请求。调用方可以退出后再回来取结果。
+4. 成功回复、失败尝试、重试与路由轨迹保留在同一会话中，方便追踪和复核。
 
-HTTP surface 按调用、管理、事件与统计分组；端点随管理能力演进，不固定为早期 README 中的“8 个”。默认端口为 `11435`：local 默认 loopback，cloud 默认 `0.0.0.0`；可显式配置监听地址。开发 UI 的 CORS origin 为 `127.0.0.1:5173` 与 `localhost:5173`。
+这套核心可以在没有 OpenAI、Anthropic 等通用文本生成 API 的情况下运行。连接远端决策服务时，请求会发送到你所配置的上游；“本地模式”不等于离线。
 
-| Method | Path | 形状要点 |
-|---|---|---|
-| 调用 | `/health`, `/v1/models`, `/v1/systemone` | 健康身份、可公开模型、Jev 原生推理请求 |
-| 提供商与路由 | `/v1/admin/providers*`, `/v1/admin/routes` | 接入配置、探测/直调与路由图管理 |
-| 服务入口 | `/v1/admin/endpoints*`, `/v1/admin/config/default_strategy` | 对外模型 ID、路由策略与启停 |
-| 访问与观测 | `/v1/admin/tokens*`, `/v1/admin/stats`, `/v1/admin/events*`, `/v1/admin/telemetry`, `/v1/stats/my`, `/v1/events/my*` | 调用权限、历史、事件流与当前会话遥测 |
-| 运行管理 | `/v1/admin/mode`, `/v1/admin/listen`, `/v1/admin/status`, `/v1/admin/config/*` | 模式/监听管理、TOML 导入导出与存储状态 |
+## 产品能力
 
-完整 DTO、鉴权边界与错误语义以当前 [HTTP 契约](docs/contracts/05-HTTP契约.md)、[入口网关修订](docs/contracts/07-入口网关修订.md)和后端实现为准。
+- **开始**：标准聊天式入口；支持 Noul、Choice、Score、Box 结构化问题、一次发送多题、共享背景和附件。
+- **持久人工作答**：提交后退出调用程序，在决策台作答，再由同一调用方取回；支持鉴权、幂等、过期、原子多题答案与重启恢复。
+- **可编辑 DAG**：组织公开入口、可复用路由节点和提供商出口；每条边独立绘制，按请求事件发光。图编辑按原子操作提交，非法更新会回滚。
+- **本地服务生命周期**：提供商可配置启动、停止、状态探测与进程策略；权限门默认关闭。
+- **附件与媒体**：图片、音频、视频和普通文件统一登记。界面不因当前提供商提前拦截；适配器不能无损转换时给出明确的格式/能力错误。官方 TypeSafe 图片投影限制为 PNG/JPEG；其他媒体需目标服务显式兼容。
+- **可追溯历史**：入口视角按父请求聚合，提供商视角列出真实上游尝试；调用正文、答案和凭据不写入普通路由历史。
+- **Agent API 与 CLI**：人类操作与调用方身份走同一套鉴权和持久数据边界。
 
-## 配置
+当前内置上游适配器：Vercel、Laya、TypeSafe SystemOne 和 OpenRouter。OpenRouter 是上游转换适配器，不是 OpenAI/Anthropic 聊天兼容入口。对外服务仍使用 Jev/SystemOne 决策协议；SysTorch 是产品名，不绑定单一模型或供应商。
 
-配置文件位置由 `JEV_SWITCH_CONFIG` 指定，未设置时使用用户配置目录中的 `providers.toml`。首次启动时读取 TOML 并导入 SQLite；之后 SQLite 统一快照是运行配置权威来源。外部编辑提示漂移，需通过控制台显式导入；也可导出 TOML 作为备份。`JEV_SWITCH_DATA_DIR` 可指定 SQLite 数据目录。
+## 预发布说明 · v0.11.0
 
-仓库示例 [`rs/providers.example.toml`](rs/providers.example.toml) 配有 Vercel、Laya、TypeSafe 官方及本地 SystemOne-compatible endpoint 示例。官方 TypeSafe 需配置 Bearer key；本地服务按需配置 key。真实 key 不应写进 Git；提供商页可管理接入配置并只显示脱敏状态。
+v0.11.0 是新的 SysTorch 品牌预发布版。自动化构建和测试通过后发布，**尚未经维护者人工验收**。
+
+- Windows 提供单文件 Standalone EXE。当前没有 Authenticode 证书，Windows 可能显示未知发布者提示。
+- Android 提供 arm64 APK，使用稳定 Android 签名；安装身份保留旧值以支持覆盖升级和读取既有任务数据，应用显示名与界面品牌为 SysTorch。
+- Android 真机相机/相册、权限拒绝、后台生命周期等仍需维护者在设备上验收。
+- 预发布版本用于测试，不表示所有上游都支持所有题型或媒体格式。
+
+[下载 v0.11.0 预发布版](https://github.com/ARCJ137442/SysTorch/releases/tag/v0.11.0)
 
 ## 快速开始
 
-```powershell
-# 1. 终端 A：先设置环境，再启动后端（默认 local：127.0.0.1:11435）
-$env:JEV_SWITCH_CONFIG="rs\providers.example.toml"
-# 若要使用 Vercel，启动 daemon 前取消下一行注释并替换为真实 key
-# $env:AI_GATEWAY_API_KEY="<your-key>"
+### Windows / Android
+
+从 [GitHub Release](https://github.com/ARCJ137442/SysTorch/releases) 下载对应附件。Android 可通过安装器覆盖更新已安装的稳定版；若 Android 报签名不一致，请停止安装并联系维护者，不要先卸载旧版，以免丢失其私有数据。
+
+### 从源码运行
+
+需要 Rust stable、Node.js 20 和 npm。
+
+~~~powershell
+$env:SYSTORCH_CONFIG = "rs\providers.example.toml"
 cargo run --manifest-path rs/Cargo.toml
+~~~
 
-# 2. 终端 B：启动前端
-npm run dev --prefix ui    # http://127.0.0.1:5173
+另开终端启动前端开发服务器：
 
-# 3. 可选：终端 C 使用 headless CLI
-cargo run --manifest-path rs/Cargo.toml -p jev-switch-cli -- status
-```
+~~~powershell
+npm ci --prefix ui
+npm run dev --prefix ui
+~~~
 
-前端可通过 `http://127.0.0.1:5173` 连接本机 daemon。生产构建由 daemon 同源托管 UI。Docker 默认使用 cloud 模式；先为管理密码和公开调用 Token 配置本机 `.env`，然后启动：
+设置了 SYSTORCH_CONFIG 时，daemon 会使用该配置。旧的 JEV_SWITCH_CONFIG 等环境变量仍作为升级兼容别名；新部署请使用 SYSTORCH_* 名称。
 
-```bash
-docker compose up -d
-```
+### Agent / 调用方
 
-若要在 Docker 部署中调用 Vercel 上游，也需在 `.env` 配置 `AI_GATEWAY_API_KEY`。
+完整的外部 Choice 示例、调用 Token 配置位置和“提交—退出—人工作答—取回”步骤见[外部调用指南](docs/guides/SYSTORCH-EXTERNAL-CHOICE.md)。HTTP 请求与错误语义见[契约目录](docs/contracts/00-INDEX.md)。
 
-## 测试与门禁
+## 架构与安全边界
 
-| 门禁 | 命令 | 预期 |
-|---|---|---|
-| Rust workspace 单测与集成 | `cargo test --manifest-path rs/Cargo.toml --workspace --locked --offline` | 按当前工作树运行；不要复用历史固定计数 |
-| Rust + ts-rs | `cargo test --manifest-path rs/Cargo.toml --workspace --features ts-rs --locked --offline` | CI 同时检查生成物无漂移 |
-| UI 测试 / 类型检查 / 构建 | `npm test --prefix ui` / `npm run lint --prefix ui` / `npm run build --prefix ui` | 当前 `lint` 脚本执行 TypeScript 检查（`tsc --noEmit`）；使用当前 `ui/package.json` 脚本 |
-| GitHub Actions | CI / Release workflows | 状态以对应提交的 workflow 结果为准；本地构建不代表远端 CI 或发布通过 |
+Rust daemon 持有上游凭据、DAG、SQLite、事件与加密的 SysTorch 会话；React 界面通过本机或远程 gateway API 访问；Tauri 壳提供 Windows 与 Android 应用容器。桌面与 Android 的显示品牌为 SysTorch，持久用户数据目录、已安装身份、owner key、历史协议和旧环境变量作为兼容锚点保留。
 
-## 文档
+每次模型请求都会发送到其实际选择的上游。上游 API key 由 daemon 持有，普通聊天与人工作答正文使用 owner key 加密；路由历史只保留安全元数据和 provider attempt。备份数据库时必须同时保管匹配的 SysTorch owner key，否则无法解密既有会话。
 
-从 [当前入口网关计划](docs/design/ENDPOINT-GATEWAY-ALIGNMENT-PLAN.md) 和 [目标重评](docs/OPUS5-GOAL-REASSESSMENT.md) 开始，再按需查看 [ROADMAP.md](ROADMAP.md)、[文档索引](docs/README.md)、[契约目录](docs/contracts/00-INDEX.md)、[发版手册](docs/RELEASE.md)、[09-24 联调历史记录](docs/verification/2026-09-24-entry-gateway-integration.md)、[09-26 便携运行验收](docs/verification/portable-runtime-acceptance-2026-09-26.md)与[Tauri 截图证据](docs/verification/tauri-screenshot-evidence-2026-09-26.md)。历史计划和验收仅证明各自版本与覆盖范围，不代表当前整版验收。
+## 开发与验证
 
-## 开发说明
+~~~powershell
+cargo test --manifest-path rs/Cargo.toml --workspace --locked --offline
+cargo test --manifest-path rs/Cargo.toml --workspace --features ts-rs --locked --offline
+cargo clippy --manifest-path rs/Cargo.toml --workspace --all-targets --locked --offline
+npm test --prefix ui
+npm run lint --prefix ui
+npm run build --prefix ui
+~~~
 
-本项目由 AI 编码代理（MiMo、Claude Code 与 OpenAI Codex）协作构建，文档级作者逐件署名见各文件头与 [docs/README](docs/README.md) 索引。本轮路线图与文档修订由 **GPT-6 Luna xhigh（OpenAI Codex）** 协助完成。AI 生成内容不替代可复核的源码、测试与运行证据。
-
-## License
-
-Licensed under **MIT OR Apache-2.0**：
-
-- [LICENSE-MIT](LICENSE-MIT)
-- [LICENSE-APACHE](LICENSE-APACHE)
-
-## 数据与凭据
-
-Jev-Switch 是路由网关，不在本机运行模型推理。每次调用的请求数据会被转发到该入口选中的上游，因此 `local` 模式仍可能向远程服务发送数据；云端部署时，请求会经过部署网关所在的服务器。SQLite 历史保留调用所需的安全元数据和路由追踪，不保存原始请求体或模型答案。上游 API key 由 daemon 持有，管理接口只返回掩码状态、不提供明文读回。
-
-## 当前验收状态
-
-**当前代码版本（2026-10-12）：**`v0.10.3` 修复 Windows 后台请求未采用系统代理的问题，同时确保本地模型回环请求直连。官方模型目录已通过网络与鉴权对照，发行包实际推理和原生 UI 留到发布后验证。`v0.10.2` 的原子配置写入继续保留；本地服务脚本仍由外部环境维护，Jev Switch 执行登记的通用命令并反馈状态。版本与验收边界见[0.10.3 发布核验](docs/verification/v0.10.3-release-2026-10-12.md)和[发版手册](docs/RELEASE.md)。
-
-Release dry-run 的 Windows 便携包已冷启动；壳、daemon 与服务端 UI 资源都和同批构建清单相符，并复用了已有用户配置。2026-09-26 的 AppData 核验包含 2 个提供商、9 条路由、7 个公开入口和 34 条调用历史。调用历史摘要优先呈现 request ID、入口/路由、HTTP 状态、耗时、token 与上游次数，原始 JSON 收在折叠详情中。
-
-同一便携运行时的 Playground 已用同一份内置输入跑通公开入口↔公开入口、直连上游↔直连上游、公开入口↔直连上游三种比较；六列均成功调用本地 Laya，HTTP 200，request ID 与 SQLite route trace 对齐。该实例的 Vercel 公开入口也实测 HTTP 200；远端 dry-run workflow 已构建 MSI、NSIS 与便携 artifact 并通过哈希核对，Docker cloud 持久化和 CI 测试也有通过记录。
-
-验收边界：维护者已人工确认 v0.4.0 便携/Standalone 桌面核心路径、官方 TypeSafe 调用及 v0.5.0 Android 初步安装/官方调用；MSI/NSIS 安装器、Android 原生 service/tile/通知、OpenRouter live call、真实用户配置恢复和全链路性能仍按各自核验记录处理。v0.5.0 Release 的 Android APK 使用临时 debug 签名，仅作历史证据；v0.6.3 的稳定签名 APK、Windows 品牌图标与更新进程隔离仍按本次 Release 资产和人工平台验收记录区分。详细边界见[下一轮用户反馈计划](docs/design/USER-FEEDBACK-ITERATION-PLAN-NEXT.md)和对应发布核验记录。
+Release 与兼容标识说明见[发版手册](docs/RELEASE.md)；未来方向见[路线图](ROADMAP.md)。旧版 Jev Switch 的截图、tag 和故障核验保留在历史档案中，不代表 SysTorch 0.11.0 当前状态。

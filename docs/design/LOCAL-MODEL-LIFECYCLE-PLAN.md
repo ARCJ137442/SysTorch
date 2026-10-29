@@ -2,15 +2,15 @@
 
 **状态：**0.10.x 已实现 provider 级结构化 argv、双重 host-command/controllable 门控、readiness、startup_check/on_demand 前置、provider 互斥、生命周期所有权快照、独立审计表、admin lifecycle domain API、主机命令安全开关和 Provider 高级 UI；Windows Laya、StartLux、OneJev 已通过本机 EXE API 的启动、就绪和停止验收。细粒度 Agent scope、跨 daemon 的安全进程组回收、OpenJev 与其他平台验收仍未完成。
 **适用版本：**`0.10.x` 生命周期主线；模型画像/属性路由移至 `0.11.0`，不属于 `v0.9.3` 能力。  
-**目标：**在保持 Jev-Switch 作为路由网关的边界下，为已登记的本地模型提供商增加可控的启动、停止和状态检查能力。
+**目标：**在保持 SysTorch 作为路由网关的边界下，为已登记的本地模型提供商增加可控的启动、停止和状态检查能力。
 
 ## 背景与边界
 
-当前 provider 的 `enabled` 只表示“允许路由使用”，并不代表本地模型进程正在运行。用户仍需分别打开 StartLux、OpenJev、Laya 或其他本地服务，再回到 Jev-Switch 配置地址和模型。这使本地服务管理与路由管理割裂。
+当前 provider 的 `enabled` 只表示“允许路由使用”，并不代表本地模型进程正在运行。用户仍需分别打开 StartLux、OpenJev、Laya 或其他本地服务，再回到 SysTorch 配置地址和模型。这使本地服务管理与路由管理割裂。
 
 本计划增加的是“provider 关联的外部服务生命周期配置”，不是通用终端，也不是模型权重管理器：
 
-- Jev-Switch 不下载、加载、卸载模型权重，不猜测厂商进程结构。
+- SysTorch 不下载、加载、卸载模型权重，不猜测厂商进程结构。
 - provider 的路由启用状态与外部服务运行状态始终分开显示。
 - 只有用户明确登记的 provider 生命周期配置才能执行；不接受远程任意 shell 字符串。
 - 主机命令执行由全局 `allow_host_commands` 和 provider 的 `controllable` 双重门控；两者任一关闭都不得执行命令。
@@ -24,9 +24,9 @@ Provider 的四个维度必须分别建模、分别授权、分别呈现：
 | 维度 | 字段/状态 | 说明 |
 |---|---|---|
 | 路由资格 | `enabled` | 允许/禁止将调用交给 provider；云端和本地都适用 |
-| 控制能力 | `controllable` | 是否允许 Jev-Switch 使用生命周期配置控制服务；默认 `false` |
+| 控制能力 | `controllable` | 是否允许 SysTorch 使用生命周期配置控制服务；默认 `false` |
 | 服务事实 | `service_state` | `running`、`starting`、`stopped`、`unknown`、`failed`；来自状态命令和 readiness |
-| 进程策略 | `process_policy` | `persistent`、`session`、`external`；决定 Jev-Switch 退出时是否处理本应用启动的进程 |
+| 进程策略 | `process_policy` | `persistent`、`session`、`external`；决定 SysTorch 退出时是否处理本应用启动的进程 |
 
 云端 provider 通常是 `controllable=false` 的不可控服务；本地 Laya/OpenJev/StartLux 等可以在用户明确开启后成为可控服务。`enabled=true` 不得隐式把 `controllable` 改为 true，也不得因为 provider 可控就自动启动。
 
@@ -42,13 +42,13 @@ Provider 的四个维度必须分别建模、分别授权、分别呈现：
 | `可控服务` | `controllable`；开启后才显示和允许生命周期命令，默认关闭 |
 | `进程策略` | `persistent`（应用退出后保留）、`session`（随本应用会话结束）、`external`（外部拥有，只能调用显式停止命令） |
 | `启动策略` | `manual`（默认）、`startup_check`、`on_demand` |
-| `启动命令` | 可选；空值表示不由 Jev-Switch 启动 |
-| `停止命令` | 可选；空值表示不由 Jev-Switch 停止，不得擅自杀进程 |
+| `启动命令` | 可选；空值表示不由 SysTorch 启动 |
+| `停止命令` | 可选；空值表示不由 SysTorch 停止，不得擅自杀进程 |
 | `状态检查命令` | 可选；空值时使用 provider health/probe 作为弱状态证据 |
 | `工作目录` | 可选，必须是用户明确配置的本地目录 |
 | `启动等待/检查超时` | 有界时间，默认 30 秒，最大值由 daemon 限制 |
 
-“启动/停止服务”按钮改变的是外部服务状态；“允许路由”按钮仍只改变路由资格；“可控服务”只改变 Jev-Switch 是否拥有执行这些生命周期动作的权限。三个状态必须在卡片上分别显示，例如“允许路由 / 可控服务 / 服务未运行”。
+“启动/停止服务”按钮改变的是外部服务状态；“允许路由”按钮仍只改变路由资格；“可控服务”只改变 SysTorch 是否拥有执行这些生命周期动作的权限。三个状态必须在卡片上分别显示，例如“允许路由 / 可控服务 / 服务未运行”。
 
 ### 状态检查约定
 
@@ -105,7 +105,7 @@ UI 可以提供 `${JEV_PROVIDER_BASE_URL}` 等占位符便利，但 daemon 必�
 
 这是本地代码执行能力，配置界面必须明确显示风险：命令可以读取本机文件、启动后台进程或访问环境变量。保存/首次执行以下任一情况时需要模态确认：
 
-模型运行时的差异由外部服务脚本承担，Jev Switch 不内置 Laya、StartLux、OneJev 的专用启动器。脚本规范与本机验证见 [`LOCAL-MODEL-SERVICE-SCRIPTS.md`](LOCAL-MODEL-SERVICE-SCRIPTS.md)。
+模型运行时的差异由外部服务脚本承担，SysTorch 不内置 Laya、StartLux、OneJev 的专用启动器。脚本规范与本机验证见 [`LOCAL-MODEL-SERVICE-SCRIPTS.md`](LOCAL-MODEL-SERVICE-SCRIPTS.md)。
 
 - 命令使用 `${JEV_PROVIDER_API_KEY}` 或等价敏感变量。
 - 命令程序来自 PATH 而不是用户选择的绝对路径。
@@ -127,9 +127,9 @@ UI 可以提供 `${JEV_PROVIDER_BASE_URL}` 等占位符便利，但 daemon 必�
 
 启动方式必须记录 `execution_id`、启动时间、命令摘要 hash、PID/进程组（若平台可得）和 readiness 结果，但不记录完整命令参数中的敏感值。
 
-- `persistent`：直接由 daemon 启动且能取得 PID/进程组的服务，在 Jev-Switch/daemon 退出时保留；只有用户显式点击停止或 Agent 获得 lifecycle execute 权限时才停止。
+- `persistent`：直接由 daemon 启动且能取得 PID/进程组的服务，在 SysTorch/daemon 退出时保留；只有用户显式点击停止或 Agent 获得 lifecycle execute 权限时才停止。
 - `session`：直接由 daemon 启动且能取得 PID/进程组的服务，daemon 正常退出时按拥有关系停止；崩溃/断电恢复时不得凭旧 PID 强杀，重新检查身份后再决定。
-- `external`：服务由用户或其他 supervisor 拥有，Jev-Switch 只调用显式停止命令；没有停止命令时“停止”按钮必须禁用并说明原因。
+- `external`：服务由用户或其他 supervisor 拥有，SysTorch 只调用显式停止命令；没有停止命令时“停止”按钮必须禁用并说明原因。
 - 直接由 daemon 启动且能取得 PID/进程组的进程，标记为“本应用拥有”；停止时优先使用停止命令，缺失时才按 `process_policy` 结束本应用拥有的进程组。
 - 不得按端口、进程名或模糊命令行匹配杀进程，避免误杀用户手工启动的 LM Studio/Python/其他项目。
 - Windows 使用 Job Object/进程组边界，Unix 使用独立 process group；实现前分别做平台 spike，不能用 `kill -9` 或 `taskkill /IM` 作为通用方案。
@@ -269,7 +269,7 @@ UI 文案必须使用“启动/停止服务”，不能把它写成 provider 的
 - provider 路由 enabled 与 service running 的组合矩阵全部可读：允许/未允许 × 运行/未运行/未知。
 - `controllable=false` 时生命周期配置不可执行，即使 `enabled=true`；云端 provider 默认以不可控服务呈现。
 - `allow_host_commands=false` 时 UI、管理员 API 和 Agent API 均返回同一结构化禁用错误；开启动作必须经过 5 秒冷却确认。
-- `persistent`、`session`、`external` 三种进程策略分别验证：退出 Jev-Switch 是否保留服务、是否只停止本应用拥有的进程、无所有权时是否禁用停止。
+- `persistent`、`session`、`external` 三种进程策略分别验证：退出 SysTorch 是否保留服务、是否只停止本应用拥有的进程、无所有权时是否禁用停止。
 - `on_demand` 触发时只启动目标 provider；启动失败进入既有 `on_error` 策略并留下生命周期记录。
 - [ ] Agent 使用不同 scope 访问 capability registry、配置写入和 lifecycle execute；当前领域错误已带稳定 code/message/remediation，scope enforcement 仍待实现。
 

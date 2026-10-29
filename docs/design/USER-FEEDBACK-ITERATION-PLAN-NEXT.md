@@ -1,12 +1,22 @@
-# Jev Switch 下一轮用户反馈迭代计划
+# SysTorch 用户反馈迭代计划（历史清单）
 
 **作者：** GPT-6 Luna xhigh（OpenAI Codex）  
 **AI 披露：** 本文由 AI 协助整理；用户决策来自 2026-09-30 至 2026-10-01 反馈，技术拆分和验收建议仍需随实现核对。
 
-**状态：** `v0.7.0` 已发布移动端样例多选、设置内容搜索与局域网固定文案开关、Dagre/Sugiyama 节点排布、provider attempt 双视图以及 Android 文件/剪贴板原生桥和前台服务状态观测。`v0.7.1` 已修复跨层边的 Dagre 避让走廊和发版后 Pages 派发；`v0.7.2` 候选补提供商删除级联和统一表单键盘交互。自动验证及发行资产见[发布核验](../verification/v0.7.0-release-candidate-2026-10-03.md)与[交接核验](../verification/v0.7.1-handoff-2026-10-03.md)；Android 原生 service/tile/通知与新交互仍待真机人工验收。
-**Release 版本：** `v0.8.0` 候选；Graph API 写入、节点页面、自由拖拽和专用页面布局仍未实现。
+**状态：** 2026-10-30 归档。本文保留 v0.7.x 至 v0.10.x 期间的用户反馈与验收证据；当前「开始／决策台」和品牌工作以 [SysTorch 分阶段实施计划](SYSTORCH-IMPLEMENTATION-PLAN.md) 与 [0.11.0 核验](../verification/v0.11.0-pre-release-2026-10-30.md) 为准。本文早期 Release 状态和未完成项不是当前版本声明。
+**历史 Release 版本记录：** `v0.8.0` 候选状态仅适用于本文早期迭代，不代表当前版本。当前预发布候选为 0.11.0；CI 与人工验收状态以本轮核验记录为准。
 
 > **TL;DR：** 下一轮聚焦演练场减摩擦、路由图的节点与霓虹式实时反馈、统计健康矩阵与历史筛选、Dashboard 十分钟滚动流量图、VS Code 式状态栏、F11 全屏、命令近期记录、设置构建信息/关于与更新检查，以及彩色品牌图标。所有指标必须来自真实记录；无数据就显示未知或零流量，不能伪造健康状态。
+
+## 2026-10-29 SysTorch 产品与开始页迭代（当前主线）
+
+当前主线已从 SysTorch 控制台升级为 SysTorch 人机协同决策工作台；详细阶段、实际完成度和验收边界见[SysTorch 分阶段实施计划](SYSTORCH-IMPLEMENTATION-PLAN.md)。本节与本文早期 SysTorch UI 清单并存：旧条目是对应版本的历史事实，不自动成为当前承诺。
+
+- 产品入口采用标准聊天式「开始」工作面，A 为默认；窄屏无常驻侧栏，历史和模式入口并入左侧抽屉。宽屏保留会话列表与工作区双栏。用户消息在右，回复在左，失败尝试按渐进披露附在对应回复下。
+- 保留现有 DAG、provider 生命周期、路由活动与辉光。调用、协调、决策三角色分别使用已选定的入口箭头、路由分叉、清单图标；调用方以 Agent/Harness/自动化程序为主要对象。
+- 编辑器支持共同背景、单题直接发送、多题队列、Noul/Choice/Score/Box 与附件。0.11.0 源码中的题型和资产能力以 contracts 08–10 为准；不同 provider 能力不同，无法无损转换时要保留草稿并明确报错。
+- 会话管理含按更新时间排序、置顶、新回复提示、归档/恢复和删除。会话正文、待答任务和附件按服务端持久化/权限契约保存；浏览器本地索引只放必要的会话 ID 与展示偏好。
+- 截至本次实施，生产「开始」页已有标准聊天外壳、响应式抽屉、历史索引与归档入口；持久人工 Choice 支持单题/多题创建、原子批量作答、question ID 结果投影，并保留即时 SystemOne 调用。多模态统一资产、其他题型、完整 SysTorch API、修订多题消息和真包验证仍须按实施计划完成。
 
 ## 当前基线
 
@@ -17,7 +27,7 @@
 - Routing 现使用 Dagre 的 Sugiyama 排布处理不同尺寸节点和跨层边；节点选中/度数、双击聚焦、触控 pinch 和真实调用活动的基础曝光/辉光事件已存在，完整色温和并发冷却模型仍待实现。
 - Statistics 已加入入口/提供商矩阵、统一筛选、用户可调分页和旧记录游标读取；原始 JSON 仍按渐进披露保留。
 - Dashboard 已加入运行/地址摘要、活跃请求入口、十分钟滚动流量和网关启停；Tauri WebView 精确资源与完整性能基线仍待人工核验。
-- 当前 Tauri 图标资源统一为黑底白色 `J`；唯一母版派生桌面、托盘与 Android 图标，禁止彩色 Tauri 默认图形回归。Android launcher、最近任务卡片、通知和 Quick Settings 的用户可见名称统一为 `Jev Switch`，内部包名与协议标识继续使用 `jev-switch`。
+- 当前 SysTorch 图标以 ui/src/brand/systorch.svg 为唯一火炬母版，桌面、托盘、启动页、Android launcher 与最近任务从同一来源派生；用户可见名称统一为 SysTorch。历史 applicationId 和协议标识按迁移记录保留。
 - daemon 已实现默认 loopback、明确确认后开放 `0.0.0.0`、私有/LAN peer 限制和失败回滚；仍需维护者用真实手机/平板网络做人工验收。
 - Android 路由画布双指缩放已进入通用前端；顶部 safe-area、launcher 图标和原生生命周期仍归入 Android 专项收尾。Android APP 启动时默认恢复内嵌后端，空 API 地址自动指向实际监听地址。
 
@@ -142,7 +152,7 @@
 - [x] 路由 DAG 增加双指 pinch-to-zoom；围绕两指中心缩放，缩放中心下的画布位置保持稳定。单指拖节点、平移画布、端口接线与页面滚动不能被 pinch 逻辑吞掉。
 - [x] 黑底白色 `J` 母版同时生成并接入 Android launcher 自适应/圆形图标资源，发布门禁清除 Tauri 默认图标残留；最近任务卡片使用母版不透明位图，避免 Activity 继承模板图标。
 
-**验收：**Android 真机检查顶部状态栏、横竖屏、刘海/打孔、导航手势；在路由图连续放大缩小并平移，节点和连线位置稳定；单指接线不回归；launcher、任务切换器和桌面均显示 Jev-Switch 品牌图标。APK 构建成功与维护者已报告的初步调用通过分别记录，不把二者合并成完整 Android 生命周期验收。
+**验收：**Android 真机检查顶部状态栏、横竖屏、刘海/打孔、导航手势；在路由图连续放大缩小并平移，节点和连线位置稳定；单指接线不回归；launcher、任务切换器和桌面均显示 SysTorch 品牌图标。APK 构建成功与维护者已报告的初步调用通过分别记录，不把二者合并成完整 Android 生命周期验收。
 
 ### 11. Tauri 网关服务一键启停
 
@@ -180,7 +190,7 @@
 
 ### 15. Android 前台保活通知
 
-- [x] Android 网关启动后启动 Android 原生 foreground service 并显示常驻通知；通知点击回到 Jev-Switch，服务状态与内核监听状态一致。
+- [x] Android 网关启动后启动 Android 原生 foreground service 并显示常驻通知；通知点击回到 SysTorch，服务状态与内核监听状态一致。
 - [x] 设置提供默认开启的保活通知选项；关闭时提示后台可能被系统回收。停止网关或关闭通知设置后按状态机更新/移除通知，不留下虚假“运行中”。
 - [x] Android Activity 切后台时不重复启动前台服务；恢复前台时避免重复启动 service。首次打开直接进入 UI 并启动本机网关，用户明确停止后下次保持关闭。
 
@@ -241,7 +251,7 @@
 - [x] 2026-10-06 修复启停面板的失败引导：未保存的 `controllable`/命令编辑会显示“未保存”并阻止启动/停止，保存前做绝对路径与必填校验；daemon 错误体保留 `code`、`detail`、`remediation`，UI 展示具体原因和请求 ID，不再把生命周期错误压缩成无意义的 `HTTP 400`。Rust 生命周期测试、ts-rs 类型生成、UI lint/build/test 均通过；该修复尚未进入已发布的 v0.10.0 资产。
 - [x] 2026-10-06 增加独立的 `allow_shell_commands` 二值安全开关：默认关闭，必须先开启主机命令再经过第二个 5 秒确认；开启后才允许显式登记的 PowerShell/cmd 等解释器作为生命周期程序。Jev Decision Lab 的 Laya 启动器与状态探查命令已登记到本地 Laya provider；启动会执行 lab 的内存/GPU 预检，当前机器因超过 75% 内存门槛而拒绝启动，错误已保留在 daemon 日志。
 - [x] 2026-10-06 收紧提供商配置 API：普通 `/v1/admin/providers` 不再接受整表 `PUT`；日常客户端使用单 provider `PUT/DELETE /v1/admin/providers/:id`，批量变更只走显式确认的 TOML/JSON 导入，避免空请求体覆盖全部提供商。
-- [x] 本地服务控制实现保持模型无关：Jev Switch 生命周期 API 只处理已登记的 start/stop/status 命令；Laya、StartLux、OneJev 的启动器、资源门禁、PID 管理和健康检查均由用户私有的本地服务脚本提供。脚本规范记入 `docs/design/LOCAL-MODEL-SERVICE-SCRIPTS.md`。
+- [x] 本地服务控制实现保持模型无关：SysTorch 生命周期 API 只处理已登记的 start/stop/status 命令；Laya、StartLux、OneJev 的启动器、资源门禁、PID 管理和健康检查均由用户私有的本地服务脚本提供。脚本规范记入 `docs/design/LOCAL-MODEL-SERVICE-SCRIPTS.md`。
 - [x] lifecycle `running` 以 provider readiness 为依据，不再把子启动器仍存活当作服务健康；启动器可以启动 detached 模型进程，在 provider HTTP readiness 成功后退出。进程退出而 readiness 未就绪时状态为失败，互斥锁按执行结果释放；页面重新打开会恢复查询 `starting/stopping` 状态并轮询终态。
 - [x] Windows Standalone v0.10.1 本机构建并冷启动健康检查通过；API 配置 Laya、StartLux、OneJev 三套脚本。Laya 与 StartLux 在资源足够时分别通过启动、HTTP/readiness、实际 Jev 请求和停止；高负载时资源门禁会明确拒绝。OneJev 已支持通过脚本私有配置提供 qev、GGUF 和 projector，完整推理验收仍待在该私有配置下完成。
 - [x] Laya 连续三轮“状态→启动→状态→停止”回归通过：每轮启动返回 `running/ready`、健康接口可达，停止返回 `stopped/not_ready`，停止后 `18765` 不监听；修复了状态脚本失败分支隐式返回退出码 `0`导致的假运行状态。

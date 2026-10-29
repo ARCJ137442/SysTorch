@@ -1,6 +1,6 @@
-export const GITHUB_REPOSITORY_URL = 'https://github.com/ARCJ137442/jev-switch';
+export const GITHUB_REPOSITORY_URL = 'https://github.com/ARCJ137442/SysTorch';
 export const GITHUB_RELEASES_URL = `${GITHUB_REPOSITORY_URL}/releases`;
-const LATEST_RELEASE_API_URL = 'https://api.github.com/repos/ARCJ137442/jev-switch/releases/latest';
+const LATEST_RELEASE_API_URL = 'https://api.github.com/repos/ARCJ137442/SysTorch/releases/latest';
 
 export type ReleaseCheckResult = {
   currentVersion: string;

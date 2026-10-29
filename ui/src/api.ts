@@ -1,5 +1,5 @@
 /**
- * Jev-Switch API client — talks to the Rust daemon at `BASE` (derived from `PORT`).
+ * SysTorch API client — talks to the Rust daemon at `BASE` (derived from `PORT`).
  *
  * 协议类型单一来源 = ts-rs 生成物（B5 收口；contracts/05 §4）：
  * 下列类型全部从 `./generated/*` re-export，禁止再手写重复。
@@ -115,12 +115,12 @@ export async function fetchHealth(): Promise<HealthBody> {
     throw new Error('health: non-JSON body');
   }
   if (!body || typeof body !== 'object') throw new Error('health: unexpected body');
-  const { status, version, product, api_revision, build_revision } = body as Partial<HealthBody>;
+  const { status, version, brand, product, api_revision, build_revision } = body as Partial<HealthBody>;
   if (status !== 'ok') throw new Error(`health: status=${String(status)}`);
-  if (product !== 'jev-switch' || api_revision !== 1 || typeof version !== 'string') {
-    throw new Error('health: incompatible or unrecognized Jev Switch backend');
+  if ((brand !== 'SysTorch' && product !== 'jev-switch') || api_revision !== 1 || typeof version !== 'string') {
+    throw new Error('health: incompatible or unrecognized SysTorch backend');
   }
-  return { status, version, product, api_revision, build_revision: typeof build_revision === 'string' ? build_revision : null };
+  return { status, version, brand: brand ?? 'SysTorch', product: product ?? 'jev-switch', api_revision, build_revision: typeof build_revision === 'string' ? build_revision : null };
 }
 
 /**
@@ -195,7 +195,7 @@ export const DEFAULT_MODEL_OPTIONS = [
   { value: 'typesafe-ai/jev', label: 'typesafe-ai/jev  (Vercel)' },
 ];
 
-export const SAMPLE_STATE = JSON.stringify({ test: true, source: 'jev-switch-mvp-ui' }, null, 2);
+export const SAMPLE_STATE = JSON.stringify({ test: true, source: 'systorch-ui' }, null, 2);
 
 export const SAMPLE_QUESTIONS = JSON.stringify(
   {

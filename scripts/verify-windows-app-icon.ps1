@@ -19,16 +19,10 @@ if ($null -eq $embeddedIcon) {
 $expectedBitmap = $expectedIcon.ToBitmap()
 $embeddedBitmap = $embeddedIcon.ToBitmap()
 try {
-    for ($y = 0; $y -lt $embeddedBitmap.Height; $y++) {
-        for ($x = 0; $x -lt $embeddedBitmap.Width; $x++) {
-            $pixel = $embeddedBitmap.GetPixel($x, $y)
-            if ($pixel.A -gt 8 -and ($pixel.R -ne $pixel.G -or $pixel.G -ne $pixel.B)) {
-                throw "Windows executable contains a colored app icon pixel at ($x, $y): $exePath"
-            }
-        }
-    }
+    # Full-color app artwork is checked against the pinned SVG-derived ICO.
+    # Only the separate small tray/status variant is required to be monochrome.
     if ($expectedBitmap.Size -ne $embeddedBitmap.Size) {
-        throw "Windows executable icon dimensions do not match the Jev-Switch icon: $exePath"
+        throw "Windows executable icon dimensions do not match the SysTorch icon: $exePath"
     }
 
     for ($y = 0; $y -lt $expectedBitmap.Height; $y++) {
@@ -46,4 +40,4 @@ finally {
     $embeddedIcon.Dispose()
 }
 
-Write-Host "Verified Jev-Switch Windows app icon: $exePath"
+Write-Host "Verified SysTorch Windows app icon: $exePath"

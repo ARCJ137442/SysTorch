@@ -5,7 +5,8 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   define: {
-    __JEV_UI_BUILD_REVISION__: JSON.stringify(process.env.JEV_BUILD_REVISION ?? 'dev'),
+    __SYSTORCH_UI_BUILD_REVISION__: JSON.stringify(process.env.SYSTORCH_BUILD_REVISION ?? process.env.JEV_BUILD_REVISION ?? 'dev'),
+    __JEV_UI_BUILD_REVISION__: JSON.stringify(process.env.SYSTORCH_BUILD_REVISION ?? process.env.JEV_BUILD_REVISION ?? 'dev'),
   },
   server: {
     port: 5173,

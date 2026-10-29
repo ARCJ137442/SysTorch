@@ -1,9 +1,10 @@
 {
-  "name": "jev-switch-ui",
-  "version": "0.10.3",
+  "name": "systorch-ui",
+  "productName": "SysTorch",
+  "version": "0.11.0",
   "private": true,
   "type": "module",
-  "description": "Jev-Switch MVP React UI — providers toggle + model select + test panel",
+  "description": "SysTorch — a traceable decision runtime from model routes to human judgment",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

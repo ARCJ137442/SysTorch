@@ -1,14 +1,19 @@
-//! Jev-Switch 桌面壳（Tauri 2 · Windows 优先 —— docs/12 §二.8 裁决、§四-线3 / 任务 #44）。
+//! SysTorch desktop shell (Tauri 2; legacy installed identity remains for upgrades).
 //!
 //! 形态对标 LM Studio「双击开箱」：
 //! - 主窗口默认 900×560 逻辑像素，按显示器工作区/DPI 缩小后显示；服务身份核对通过后切入
 //!   `http://127.0.0.1:11435`（sidecar daemon ServeDir 同源托管 ui/dist，local 态免 token）
-//! - sidecar = 打包的 `jev-switch.exe`（externalBin）；`JEV_SWITCH_CONFIG` 指向
-//!   `%APPDATA%\jev-switch\providers.toml`（首启播种、已有不覆盖）；`JEV_SWITCH_MODE` 不设 = local
+//! - sidecar = packaged `systorch-daemon.exe`; canonical `SYSTORCH_CONFIG` points
+//!   at the managed config while legacy Jev-Switch paths remain readable.
 //! - 单实例（tauri-plugin-single-instance）+ 系统托盘（显示 / 打开配置目录 / 退出）
 //! - 关窗 = 隐藏到托盘；退出时终止本壳启动的 sidecar
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+mod config_seed;
+mod decision_owner;
+#[cfg(all(feature = "m1-preview", not(target_os = "android")))]
+mod startup_log;
 
 #[cfg(target_os = "android")]
 mod android_gateway;
@@ -46,11 +51,14 @@ pub struct ShellState {
 }
 
 pub fn main() {
+    #[cfg(all(feature = "m1-preview", not(target_os = "android")))]
+    startup_log::init();
     let mut builder = tauri::Builder::default();
     #[cfg(target_os = "android")]
     {
         builder = builder.plugin(android_keepalive::init());
         builder = builder.invoke_handler(tauri::generate_handler![
+            decision_owner::decision_owner_token,
             android_gateway::gateway_status,
             android_gateway::android_gateway_probe,
             android_gateway::start_gateway,
@@ -73,11 +81,35 @@ pub fn main() {
     }
     #[cfg(not(target_os = "android"))]
     {
+        builder = builder.invoke_handler(tauri::generate_handler![
+            decision_owner::decision_owner_token
+        ]);
         // 单实例锁必须第一个注册：二次双击 → 聚焦已有窗口
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             show_main_window(app);
         }));
     }
+    let context = tauri::generate_context!();
+    #[cfg(any(not(target_os = "android"), feature = "m1-preview"))]
+    let context = {
+        let mut context = context;
+        // Desktop owns the main window explicitly at Runtime::Ready. Building
+        // it before the runtime window store is ready can leave only a tray and
+        // daemon, with a stale WebviewWindow handle that cannot receive messages.
+        for window in &mut context.config_mut().app.windows {
+            if window.label == "main" {
+                #[cfg(not(target_os = "android"))]
+                {
+                    window.create = false;
+                }
+                #[cfg(feature = "m1-preview")]
+                {
+                    window.devtools = Some(true);
+                }
+            }
+        }
+        context
+    };
     builder
         .setup(|app| {
             #[cfg(target_os = "android")]
@@ -100,7 +132,9 @@ pub fn main() {
                             false
                         }
                     }
-                } else { false };
+                } else {
+                    false
+                };
                 if let Err(error) = android_keepalive::set_state(
                     app.handle(),
                     android_state.keepalive_notification_status().enabled,
@@ -113,66 +147,7 @@ pub fn main() {
             }
             #[cfg(not(target_os = "android"))]
             {
-                let app_handle = app.handle().clone();
-
-                // 首次显示前调整，避免大窗口闪现；服务尚未就绪也要显示等待/错误页。
-                if let Some(window) = app.get_webview_window("main") {
-                    let icon = app.default_window_icon().ok_or_else(|| {
-                        std::io::Error::other("the bundled Jev-Switch window icon is missing")
-                    })?;
-                    window.set_icon(icon.clone())?;
-                    if let Err(error) = window_layout::fit_initial_window(&window) {
-                        eprintln!("initial window layout: {error}");
-                    }
-                    window.show()?;
-                }
-
-                // Standalone builds release their embedded daemon/UI before config or spawn.
-                #[cfg(feature = "standalone")]
-                let runtime_result = standalone::prepare_runtime().map(Some);
-                #[cfg(not(feature = "standalone"))]
-                let runtime_result: Result<Option<std::path::PathBuf>, String> = Ok(None);
-
-                let (runtime_dir, runtime_error) = match runtime_result {
-                    Ok(runtime_dir) => (runtime_dir, None),
-                    Err(error) => (None, Some(error)),
-                };
-
-                // 1. 配置目录（用户数据与可执行资源缓存分开存放）
-                let config_dir = sidecar::config_dir();
-
-                app.manage(ShellState {
-                    child: Mutex::new(None),
-                    quitting: AtomicBool::new(false),
-                    config_dir: config_dir.clone(),
-                    runtime_dir,
-                });
-
-                // 2. 托盘
-                build_tray(&app_handle)?;
-
-                if let Some(error) = runtime_error {
-                    sidecar::set_status(&app_handle, &error);
-                    return Ok(());
-                }
-
-                let config_path = match sidecar::seed_config(&config_dir) {
-                    Ok(path) => path,
-                    Err(error) => {
-                        sidecar::set_status(
-                            &app_handle,
-                            &format!("配置目录不可用：{error}（{}）", config_dir.display()),
-                        );
-                        return Ok(());
-                    }
-                };
-
-                // 3. sidecar 拉起 + 就绪轮询（服务身份及版本通过 → 切入控制台 UI）
-                if let Err(e) = sidecar::start(app_handle.clone(), &config_path) {
-                    sidecar::set_status(&app_handle, &e);
-                    #[cfg(not(feature = "standalone"))]
-                    sidecar::wait_for_daemon(app_handle);
-                }
+                let _ = app; // Desktop initialization runs at Runtime::Ready.
                 Ok(())
             }
         })
@@ -189,19 +164,91 @@ pub fn main() {
                 }
             }
         })
-        .build(tauri::generate_context!())
+        .build(context)
         .expect("error while building tauri application")
         .run(|_app, event| match event {
+            #[cfg(not(target_os = "android"))]
+            RunEvent::Ready => {
+                if let Err(error) = start_desktop(_app) {
+                    eprintln!("desktop startup failed: {error}");
+                    _app.exit(1);
+                }
+            }
             // 退出兜底：无论从托盘/关窗路径来，子进程统一在此收尸
             #[cfg(not(target_os = "android"))]
             RunEvent::Exit => {
-                let child = _app.state::<ShellState>().child.lock().unwrap().take();
-                if let Some(mut child) = child {
-                    sidecar::shutdown(&mut child);
+                if let Some(state) = _app.try_state::<ShellState>() {
+                    let child = state.child.lock().unwrap().take();
+                    if let Some(mut child) = child {
+                        sidecar::shutdown(&mut child);
+                    }
                 }
             }
             _ => {}
         });
+}
+
+#[cfg(not(target_os = "android"))]
+fn start_desktop(app: &tauri::AppHandle) -> Result<(), Box<dyn std::error::Error>> {
+    #[cfg(feature = "standalone")]
+    let runtime_result = standalone::prepare_runtime().map(Some);
+    #[cfg(not(feature = "standalone"))]
+    let runtime_result: Result<Option<std::path::PathBuf>, String> = Ok(None);
+    let (runtime_dir, runtime_error) = match runtime_result {
+        Ok(runtime_dir) => (runtime_dir, None),
+        Err(error) => (None, Some(error)),
+    };
+    let config_dir = sidecar::config_dir();
+    app.manage(ShellState {
+        child: Mutex::new(None),
+        quitting: AtomicBool::new(false),
+        config_dir: config_dir.clone(),
+        runtime_dir,
+    });
+    let config = app
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|window| window.label == "main")
+        .ok_or("main window configuration is missing")?;
+    // WebView2 rejects MoveFocus while its controller is hidden. Keep initial
+    // sizing hidden, then focus only after the window has actually been shown.
+    let window = tauri::WebviewWindowBuilder::from_config(app, config)?
+        .focused(false)
+        .build()
+        .map_err(|error| format!("create main window: {error}"))?;
+    let icon = app
+        .default_window_icon()
+        .ok_or("bundled window icon is missing")?;
+    window.set_icon(icon.clone())?;
+    window_layout::fit_initial_window(&window)
+        .map_err(|error| format!("fit main window: {error}"))?;
+    window.show()?;
+    window.set_focus()?;
+    #[cfg(feature = "m1-preview")]
+    startup_log::complete();
+    build_tray(app)?;
+    if let Some(error) = runtime_error {
+        sidecar::set_status(app, &error);
+        return Ok(());
+    }
+    let config_path = match sidecar::seed_config(&config_dir) {
+        Ok(path) => path,
+        Err(error) => {
+            sidecar::set_status(
+                app,
+                &format!("配置目录不可用：{error}（{}）", config_dir.display()),
+            );
+            return Ok(());
+        }
+    };
+    if let Err(error) = sidecar::start(app.clone(), &config_path) {
+        sidecar::set_status(app, &error);
+        #[cfg(not(feature = "standalone"))]
+        sidecar::wait_for_daemon(app.clone());
+    }
+    Ok(())
 }
 
 #[cfg(not(target_os = "android"))]
@@ -253,7 +300,12 @@ fn build_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
     let menu = Menu::with_items(app, &[&show_item, &config_item, &quit_item])?;
 
     let mut builder = TrayIconBuilder::with_id("main-tray")
-        .tooltip("Jev-Switch")
+        .tooltip(
+            app.config()
+                .product_name
+                .as_deref()
+                .expect("productName is configured"),
+        )
         .menu(&menu)
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| handle_tray_menu_event(app, event.id.as_ref()))
@@ -269,10 +321,8 @@ fn build_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
             }
         });
 
-    let icon = app
-        .default_window_icon()
-        .expect("the bundled Jev-Switch tray icon must be present");
-    builder = builder.icon(icon.clone());
+    let icon = tauri::image::Image::from_bytes(include_bytes!("../icons/tray.png"))?;
+    builder = builder.icon(icon);
     builder.build(app)?;
     Ok(())
 }
@@ -297,9 +347,11 @@ mod tests {
     fn single_instance_identity_isolated_for_each_patch_version() {
         let identity = tauri_plugin_single_instance::semver_instance_key(env!("CARGO_PKG_VERSION"));
         for other_version in ["0.6.0", "0.6.1", "0.6.2", "0.6.4"] {
-            let other_identity =
-                tauri_plugin_single_instance::semver_instance_key(other_version);
-            assert_ne!(identity, other_identity, "{other_version} must not capture current build");
+            let other_identity = tauri_plugin_single_instance::semver_instance_key(other_version);
+            assert_ne!(
+                identity, other_identity,
+                "{other_version} must not capture current build"
+            );
         }
     }
     use tauri::{Manager, RunEvent};
@@ -687,7 +739,7 @@ mod tests {
                             .get_webview_window("main")
                             .ok_or_else(|| "isolated WebView window is missing".to_string())?;
                         window
-                            .eval(&format!(
+                            .eval(format!(
                                 "location.replace('{}#/dashboard')",
                                 sidecar::ui_entry_url()
                             ))
@@ -717,7 +769,7 @@ mod tests {
                                 .map_err(|error| error.to_string())?;
                             for route in ROUTES {
                                 window
-                                    .eval(&format!("location.hash = '#/{route}';"))
+                                    .eval(format!("location.hash = '#/{route}';"))
                                     .map_err(|error| error.to_string())?;
                                 thread::sleep(Duration::from_millis(250));
                                 let script = webview_probe_script(&report_url);

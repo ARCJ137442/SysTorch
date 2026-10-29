@@ -1984,9 +1984,10 @@ dependencies = [
 
 [[package]]
 name = "jev-adapters"
-version = "0.10.3"
+version = "0.11.0"
 dependencies = [
  "async-trait",
+ "base64 0.22.1",
  "jev-core",
  "jev-protocol",
  "reqwest 0.12.28",
@@ -1996,7 +1997,7 @@ dependencies = [
 
 [[package]]
 name = "jev-core"
-version = "0.10.3"
+version = "0.11.0"
 dependencies = [
  "async-trait",
  "jev-protocol",
@@ -2008,52 +2009,10 @@ dependencies = [
 
 [[package]]
 name = "jev-protocol"
-version = "0.10.3"
+version = "0.11.0"
 dependencies = [
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "jev-switch-daemon"
-version = "0.10.3"
-dependencies = [
- "anyhow",
- "async-trait",
- "axum",
- "futures-util",
- "getrandom 0.2.17",
- "hyper-util",
- "jev-adapters",
- "jev-core",
- "jev-protocol",
- "reqwest 0.12.28",
- "rusqlite",
- "serde",
- "serde_json",
- "sha2",
- "sysinfo",
- "thiserror 1.0.69",
- "tokio",
- "tokio-rusqlite",
- "toml 0.8.23",
- "tower-http",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "jev-switch-shell"
-version = "0.10.3"
-dependencies = [
- "jev-switch-daemon",
- "serde",
- "serde_json",
- "sha2",
- "tauri",
- "tauri-build",
- "tauri-plugin-single-instance",
- "tokio",
 ]
 
 [[package]]
@@ -3925,6 +3884,51 @@ dependencies = [
  "pkg-config",
  "toml 0.8.23",
  "version-compare",
+]
+
+[[package]]
+name = "systorch-daemon"
+version = "0.11.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "axum",
+ "base64 0.22.1",
+ "futures-util",
+ "getrandom 0.2.17",
+ "hyper-util",
+ "jev-adapters",
+ "jev-core",
+ "jev-protocol",
+ "reqwest 0.12.28",
+ "ring",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sysinfo",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-rusqlite",
+ "toml 0.8.23",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "systorch-shell"
+version = "0.11.0"
+dependencies = [
+ "log",
+ "serde",
+ "serde_json",
+ "sha2",
+ "systorch-daemon",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-single-instance",
+ "tokio",
 ]
 
 [[package]]

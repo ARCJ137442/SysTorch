@@ -1,5 +1,5 @@
 /**
- * Jev-Switch 设计系统 v2.0 (2026-09-24 重构)
+ * SysTorch 设计系统 (0.11.0 rebrand)
  * 方向：实用主义 + 精致工业风，深色优先
  * 字体：Inter Variable（清晰）+ JetBrains Mono（仅代码/ID）
  * 避开：终端腔（mono+uppercase+tracking-widest）、SaaS渐变俗套
@@ -312,22 +312,6 @@ select:focus {
 .status-warning,
 .status-danger {
   animation: pulse 2s infinite;
-}
-
-/* ── 滚动条（深色主题） ── */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-subtle);
 }
 
 /* ── 响应式运动降级 ── */

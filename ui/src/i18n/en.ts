@@ -1,7 +1,7 @@
 /**
  * i18n 英文词典（默认语言 — CDP 断言依赖此处英文字面，改动前先对 e2e 脚本）。
  * 键 = 点分命名空间；值可用 {name} 占位符插值。
- * 品牌/HTTP 术语不译：Jev-Switch / Run Jev / POST / GET / qid / key / UNSAVED 机读位见 zh 对应键。
+ * Keep SysTorch / System One protocol terms and HTTP verbs stable across locales.
  */
 import { routingEn } from './routing';
 import { playgroundEn } from './playground';
@@ -11,8 +11,10 @@ import { dashboardEn } from './dashboard';
 import { questionEditorEn } from './questionEditor';
 import { accessEn } from './access';
 import { configFileEn } from './configFile';
+import { decisionsEn } from './decisions';
 
 export const en = {
+  ...decisionsEn,
   ...routingEn,
   ...playgroundEn,
   ...providersEn,
@@ -396,8 +398,8 @@ export const en = {
   'settings.autoProbe': 'Automatically check provider connectivity',
   'settings.autoProbeHint': 'Background checks call the configured provider endpoint. Disable them to avoid routine traffic or provider rate limits; manual checks remain available.',
   'settings.apiAddress': 'Gateway API address',
-  'settings.apiAddressHint': 'Blank follows this console origin. Set an HTTP(S) address to connect this client to another Jev Switch service.',
-  'settings.androidApiAddressHint': 'Blank connects to the embedded local gateway. Set an HTTP(S) address for another Jev Switch service; use diagnostics below to verify /health.',
+  'settings.apiAddressHint': 'Blank follows this console origin. Set an HTTP(S) address to connect this client to another SysTorch service.',
+  'settings.androidApiAddressHint': 'Blank connects to the embedded local gateway. Set an HTTP(S) address for another SysTorch service; use diagnostics below to verify /health.',
   'settings.apiAddressPlaceholder': 'https://gateway.example',
   'settings.saveAddress': 'Save address',
   'settings.resetAddress': 'Use this origin',
@@ -445,7 +447,7 @@ export const en = {
   'settings.buildInfoHint': 'The UI revision is embedded during the frontend build; the backend revision is reported by the running service. A dev value or missing revision is shown explicitly.',
   'settings.notAvailable': 'Not available',
   'settings.about': 'About',
-  'settings.aboutVersion': 'Jev Switch {version}',
+  'settings.aboutVersion': 'SysTorch {version}',
   'settings.aboutHint': 'A lightweight, traceable Jev-native gateway for local debugging and reusable upstream routing.',
   'settings.githubProject': 'GitHub project',
   'settings.githubReleases': 'Releases',
@@ -471,9 +473,9 @@ export const en = {
   'stats.title': 'Statistics',
   'stats.subtitle': 'Call history, token usage and request outcomes.',
   'mobile.connectTitle': 'Choose a gateway',
-  'mobile.connectHint': 'The local gateway starts off. You can start it from the dashboard, or connect this console to another Jev Switch service.',
+  'mobile.connectHint': 'The local gateway starts automatically unless you explicitly stopped it. Control it from the dashboard, or connect this console to another SysTorch service.',
   'mobile.address': 'Gateway address',
-  'mobile.addressRequired': 'Enter the HTTPS address or reachable LAN address of your Jev Switch service.',
+  'mobile.addressRequired': 'Enter the HTTPS address or reachable LAN address of your SysTorch service.',
   'mobile.connect': 'Connect',
   'mobile.or': 'or',
   'mobile.useLocal': 'Use this device',

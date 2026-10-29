@@ -17,15 +17,18 @@ import { readAutoProviderProbe, readRoutingHudAutoHide, readShowStatusBar, readU
 import { createSettingsBackup, parseSettingsBackup } from '../settings/backup';
 import { isAndroidTauriRuntime } from '../api/androidDebug';
 import { AndroidDiagnostics } from '../components/settings/AndroidDiagnostics';
+import { ArchivedSessionsSettings } from './ArchivedSessionsSettings';
 import { getAndroidForegroundServiceActive, getAndroidKeepaliveNotificationStatus, getAndroidNotificationPermissionState, requestAndroidNotificationPermission, setAndroidKeepaliveNotification, type AndroidNotificationPermissionState } from '../api/androidGateway';
 import { getGatewayServiceStatus } from '../api/gatewayControl';
 import { saveJsonFile } from '../api/nativeTransfer';
 import pkg from '../../package.json';
+import { readStartupPage, writeStartupPage, type StartupPage } from '../settings/startup';
 
 const fieldClass = 'min-h-10 border px-3 text-sm';
 const fieldStyle: React.CSSProperties = { borderColor: 'var(--border)', borderRadius: 'var(--radius)', background: 'var(--surface)', color: 'var(--text)' };
 const groupSearchKeys: Record<string, MessageKey[]> = {
-  personalization: ['settings.personalization', 'settings.dashboardLayout', 'settings.dashboardLayoutHint'],
+  personalization: ['settings.personalization', 'settings.dashboardLayout', 'settings.dashboardLayoutHint', 'decision.home', 'decision.homeHint', 'decision.start', 'decision.last'],
+  'archived-sessions': ['decision.archivedSessionsTitle', 'decision.archivedSessionsHint', 'decision.archived'],
   appearance: ['settings.theme', 'settings.themeSystem', 'settings.themeLight', 'settings.themeDark', 'settings.language', 'settings.showStatusBar', 'settings.showStatusBarHint', 'settings.uiScale', 'settings.uiScaleHint', 'settings.autoHideRoutingHud', 'settings.autoHideRoutingHudHint'],
   providers: ['settings.autoProbe', 'settings.autoProbeHint'],
   connection: ['settings.apiAddress', 'settings.apiAddressHint', 'settings.androidApiAddressHint', 'settings.saveAddress', 'settings.resetAddress'],
@@ -45,6 +48,7 @@ export function SettingsPage() {
   const { t, lang, setLang, setSystemLang } = useI18n();
   const auth = useAuth();
   const [query, setQuery] = useState('');
+  const [startup, setStartup] = useState(readStartupPage);
   const [searchFocused, setSearchFocused] = useState(false);
   const [theme, setTheme] = useState<ThemePreference>(readThemePreference);
   const [language, setLanguage] = useState(() => getLangPreference());
@@ -134,6 +138,7 @@ export function SettingsPage() {
     uiScale,
     autoHideRoutingHud,
     apiBase: readApiBasePreference(),
+    startupPage: startup,
   });
 
   const downloadSettingsBackup = async () => {
@@ -142,7 +147,7 @@ export function SettingsPage() {
     try {
       const gateway = await exportRuntimeConfigJson();
       const backup = createSettingsBackup(appBackupSettings(), gateway);
-      await saveJsonFile(`jev-switch-settings-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(backup, null, 2));
+      await saveJsonFile(`systorch-settings-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(backup, null, 2));
       setBackupMessage(t('settings.backupExported' as MessageKey));
       setBackupMode(null);
     } catch (error) {
@@ -167,6 +172,7 @@ export function SettingsPage() {
       if (backup.app_settings.language === 'system') { setSystemLang(); setLanguage('system'); }
       else { setLang(backup.app_settings.language); setLanguage(backup.app_settings.language); }
       setTheme(backup.app_settings.theme);
+      if (backup.app_settings.startupPage) { setStartup(backup.app_settings.startupPage); writeStartupPage(backup.app_settings.startupPage); }
       setApiBase(nextApiBase ?? '');
       setAutoProbe(backup.app_settings.autoProviderProbe);
       setShowStatusBar(backup.app_settings.showStatusBar);
@@ -202,12 +208,19 @@ export function SettingsPage() {
   };
 
   const groups = [
-    { id: 'personalization', label: t('settings.personalization' as MessageKey), terms: 'personalization dashboard layout home 个性化 首页 布局 仪表盘', content: (
+    { id: 'personalization', label: t('settings.personalization' as MessageKey), terms: 'personalization dashboard layout home start last startup 个性化 首页 启动 开始 最近 布局 仪表盘', content: (<>
+      {matchesSetting('startup home start last 启动 首页 开始 最近', 'decision.home', 'decision.homeHint') && <label className="grid gap-2 text-sm mb-4">
+        <strong>{mark(t('decision.home'))}</strong><select value={startup} style={fieldStyle} className={fieldClass} onChange={e => { const value = e.target.value as StartupPage; setStartup(value); writeStartupPage(value); }}>
+          <option value="start">{t('decision.start')}</option><option value="dashboard">{t('shell.navDashboard')}</option><option value="last">{t('decision.last')}</option>
+        </select><span>{mark(t('decision.homeHint'))}</span>
+      </label>}
+      {
       matchesSetting('personalization dashboard layout home 个性化 首页 布局 仪表盘', 'settings.personalization', 'settings.dashboardLayout', 'settings.dashboardLayoutHint') && <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
         <div className="grid gap-1"><strong>{mark(t('settings.dashboardLayout' as MessageKey))}</strong><span style={{ color: 'var(--text-muted)' }}>{mark(t('settings.dashboardLayoutHint' as MessageKey))}</span></div>
         <a href="#/dashboard?edit=1" className={fieldClass + ' inline-flex items-center'} style={{ ...fieldStyle, color: 'var(--accent)' }}>{t('settings.openDashboardLayout' as MessageKey)}</a>
-      </div>
-    ) },
+      </div>}
+    </>) },
+    { id: 'archived-sessions', label: t('decision.archivedSessionsTitle'), terms: 'archived chats restore conversations history 归档会话 恢复 会话 历史', content: <ArchivedSessionsSettings /> },
     { id: 'appearance', label: t('settings.appearance' as MessageKey), terms: 'appearance theme language status bar ui scale zoom 外观 主题 语言 状态栏 界面缩放 倍率', content: (
       <div className="grid gap-4 sm:grid-cols-2">
         {matchesSetting('theme 主题 appearance 外观', 'settings.theme', 'settings.themeSystem', 'settings.themeLight', 'settings.themeDark') && <label className="grid gap-2 text-sm">
@@ -326,7 +339,7 @@ export function SettingsPage() {
         <InfoRow label={t('settings.appVersion' as MessageKey)} value={`v${pkg.version}`} />
         <InfoRow label={t('settings.backendVersion' as MessageKey)} value={health?.version ? `v${health.version}` : '—'} />
         <InfoRow label={t('settings.apiRevision' as MessageKey)} value={health ? String(health.api_revision) : '—'} />
-        <InfoRow label={t('settings.uiBuildRevision' as MessageKey)} value={__JEV_UI_BUILD_REVISION__} mono />
+        <InfoRow label={t('settings.uiBuildRevision' as MessageKey)} value={__SYSTORCH_UI_BUILD_REVISION__} mono />
         <InfoRow label={t('settings.backendBuildRevision' as MessageKey)} value={health?.build_revision ?? t('settings.notAvailable' as MessageKey)} mono />
         <p className="text-xs sm:col-span-2" style={{ color: 'var(--text-muted)' }}>{t('settings.buildInfoHint' as MessageKey)}</p>
       </div>

@@ -35,7 +35,8 @@ jobs:
           curl --fail --silent --show-error \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${GH_TOKEN}" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/latest" > site/releases/latest.json
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases?per_page=1" \
+            | jq '.[0] // error("No published GitHub Release found")' > site/releases/latest.json
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

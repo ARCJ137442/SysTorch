@@ -1,39 +1,11 @@
-﻿# ── Tauri 桌面首启播种模板（src-tauri/src/default_providers.toml）────────────
-# 由桌面壳首次启动复制到 %APPDATA%\jev-switch\providers.toml（已有文件不覆盖）。
-# 与 rs/providers.example.toml 同源示例：仅 api_key_env 环境变量名，无真实密钥。
-# 真值编辑请用托盘菜单「打开配置目录」。
-# Jev-Switch MVP example config
-#
-# 加载顺序：
-#   1. $JEV_SWITCH_CONFIG 环境变量
-#   2. 否则 ~/.jev-switch/providers.toml
-#
-# 相对路径基准：按启动进程时的 CWD 解析（工作区约定 = 仓库根，如
-# `JEV_SWITCH_CONFIG="rs\providers.example.toml"`），不是本文件/manifest 所在目录。
-# cargo workspace 拆分（rs/Cargo.toml → crates/*）不改变该基准。
-#
-# 密钥（Q4=b 默认档 · contracts/04 §1 · A7）：
-#   - 明文 `api_key = "sk-…"`（**优先读取**；示例不写真实 key，仅注释示意）
-#   - `api_key_env = "…"`（环境变量名，**兼容保留**；明文缺省时回退到此）
-#   - 真值文件应 0600、~/.jev-switch/ 目录 0700（Windows 降级为启动/写回告警）
-#   - UI/API 只出 `api_key_masked`（如 sk-****a1b2），永无读回明文接口
-#   - admin PUT 写回会保留本文件其它段，但**注释不保留**（toml 往返限制）
-#
-# MVP 范围（M0）：2 provider + 模型路由 DAG（[[routes]]）+ 旧 [router] 兼容表。
-#
-# ── 双态开关（#43 · docs/12 §一）────────────────────────────────────
-# mode 只管鉴权，**不涉及上游拓扑**（拓扑不区分：以内核所在位置访问上游）。
-#   mode = "local"   # 默认：绑 127.0.0.1:11435，完全不校验 token/密码（现状）
-#   mode = "cloud"   # 绑 0.0.0.0:11435，/v1 要 Bearer 调用 token，admin 要会话
-# env 覆盖：JEV_SWITCH_MODE=local|cloud（非法值拒绝启动）。
-#
-# cloud 态鉴权（可选；local 态忽略这两项）：
-#   auth_tokens = ["tok-…"]        # /v1 调用 token（也可写 [[auth_tokens]] token="…"
-#                                  #   或 env JEV_AUTH_TOKENS=逗号分隔，env 优先）
-#   admin_password = "…"           # admin 登录密码（明文 toml —— Q4=b 哲学，0600 文件；
-#                                  #   env JEV_ADMIN_PASSWORD 优先；UI 只见会话，永不见密码）
-# 部署细节与风险块：docs/deployment.md。
-
+# SysTorch desktop first-run provider template.
+# The shell seeds this as providers.toml and never overwrites an existing file.
+# New deployments prefer SYSTORCH_* names; old JEV_* names remain compatibility aliases.
+# Canonical config paths: %APPDATA%/SysTorch/providers.toml and ~/.systorch/providers.toml.
+# Existing %APPDATA%/jev-switch and ~/.jev-switch data remain readable for upgrades.
+# SYSTORCH_CONFIG takes precedence; JEV_SWITCH_CONFIG is a legacy alias.
+# Model-specific runtime paths and environment variables belong to the user's external scripts.
+# This file contains no real secrets; provider API keys stay inside the daemon.
 [providers.vercel]
 kind = "vercel"
 base = "https://ai-gateway.vercel.sh/typesafe/v1/systemone"

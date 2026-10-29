@@ -152,6 +152,7 @@ mod tests {
                     app.handle(),
                     &app.config().app.windows[0],
                 )?
+                .focused(false)
                 .data_directory(window_profile.clone())
                 .build()?;
                 fit_initial_window(&window)?;
@@ -229,6 +230,7 @@ mod tests {
                     app.handle(),
                     &app.config().app.windows[0],
                 )?
+                .focused(false)
                 .data_directory(window_profile.clone())
                 .build()?;
                 Ok(())

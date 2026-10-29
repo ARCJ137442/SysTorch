@@ -1,4 +1,6 @@
 export const TOP_LEVEL_ROUTES = [
+  'start',
+  'desk',
   'dashboard',
   'providers',
   'endpoints',
@@ -51,7 +53,7 @@ export function cycleTopLevelRoute(
   routes: readonly TopLevelRoute[] = TOP_LEVEL_ROUTES,
 ): TopLevelRoute {
   const available = routes.length > 0 ? routes : TOP_LEVEL_ROUTES;
-  const currentIndex = current === 'home' ? 0 : available.indexOf(current as TopLevelRoute);
+  const currentIndex = available.indexOf((current === 'home' ? 'dashboard' : current) as TopLevelRoute);
   const index = currentIndex < 0 ? 0 : currentIndex;
   const offset = reverse ? -1 : 1;
   return available[(index + offset + available.length) % available.length];

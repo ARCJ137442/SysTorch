@@ -36,6 +36,7 @@ pub enum QuestionType {
     Score,
     Noul,
     Boolean,
+    Box,
 }
 
 impl QuestionType {
@@ -45,6 +46,7 @@ impl QuestionType {
             QuestionType::Score => "score",
             QuestionType::Noul => "noul",
             QuestionType::Boolean => "boolean",
+            QuestionType::Box => "box",
         }
     }
 }
@@ -80,6 +82,12 @@ pub struct JevRequest {
     pub state: serde_json::Value,
     /// Record，禁止数组；无 serde default（必填）。
     pub questions: BTreeMap<String, Question>,
+    /// Media referenced by typed values in state/instructions/criteria.
+    /// Inline `data_base64` is the TypeSafe-compatible small-asset projection;
+    /// `asset_id` is a SysTorch reference resolved by the gateway before routing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts-rs", ts(optional))]
+    pub assets: Option<BTreeMap<String, RequestAsset>>,
     /// Namespaced provider payloads (for example `media` or `images`).
     ///
     /// The gateway keeps this namespace outside the frozen Jev contract. An
@@ -96,6 +104,36 @@ pub struct JevRequest {
     pub extra: BTreeMap<String, serde_json::Value>,
 }
 
+/// SysTorch superset asset descriptor. A TypeSafe adapter projects image entries
+/// to `{type, format, data_base64}`; provider-specific asset IDs never leave the
+/// gateway unresolved.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[cfg_attr(
+    feature = "ts-rs",
+    derive(::ts_rs::TS),
+    ts(export, export_to = "../../../../ui/src/generated/")
+)]
+#[serde(deny_unknown_fields)]
+pub struct RequestAsset {
+    #[serde(rename = "type")]
+    pub r#type: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts-rs", ts(optional))]
+    pub format: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts-rs", ts(optional))]
+    pub mime_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts-rs", ts(optional))]
+    pub filename: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts-rs", ts(optional))]
+    pub data_base64: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts-rs", ts(optional))]
+    pub asset_id: Option<String>,
+}
+
 /// 过渡别名：主名 [`JevRequest`]（contracts/01）；deprecated 名保留以降低迁移面。
 pub type SystemOneRequest = JevRequest;
 
@@ -107,7 +145,7 @@ pub type SystemOneRequest = JevRequest;
 /// ```
 ///
 /// **反序列化即校验**（daemon 直接映射本地 400，不发上游）：
-/// - `type` ∈ {choice, score, noul, boolean}；未知 → 拒绝；`boolean` → 归一为 [`Question::Noul`]
+/// - `type` ∈ {choice, score, noul, boolean, box}；未知 → 拒绝；`boolean` → 归一为 [`Question::Noul`]
 /// - `instructions` 必填；接受 string / object / array
 /// - `criteria`：choice→Map、score→List 且 Noul 可省略；choice/score 值按官方 schema 校验
 ///
@@ -120,7 +158,7 @@ pub type SystemOneRequest = JevRequest;
     ts(
         export,
         export_to = "../../../../ui/src/generated/",
-        type = "{ \"type\": \"choice\", instructions: string | { [key in string]: unknown } | Array<unknown>, criteria: { [key in string]: string | { [key in string]: unknown } | Array<unknown> | null } } | { \"type\": \"score\", instructions: string | { [key in string]: unknown } | Array<unknown>, criteria: Array<string | { [key in string]: unknown } | Array<unknown>> } | { \"type\": \"noul\", instructions: string | { [key in string]: unknown } | Array<unknown>, criteria?: { [key in string]: unknown } }"
+        type = "{ \"type\": \"choice\", instructions: string | { [key in string]: unknown } | Array<unknown>, criteria: { [key in string]: string | { [key in string]: unknown } | Array<unknown> | null } } | { \"type\": \"score\", instructions: string | { [key in string]: unknown } | Array<unknown>, criteria: Array<string | { [key in string]: unknown } | Array<unknown>> } | { \"type\": \"noul\", instructions: string | { [key in string]: unknown } | Array<unknown>, criteria?: { [key in string]: unknown } } | { \"type\": \"box\", instructions: string | { [key in string]: unknown } | Array<unknown> }"
     )
 )]
 pub enum Question {
@@ -136,6 +174,9 @@ pub enum Question {
         instructions: Instructions,
         #[cfg_attr(feature = "ts-rs", ts(optional))]
         criteria: Option<Criteria>,
+    },
+    Box {
+        instructions: Instructions,
     },
 }
 
@@ -171,6 +212,10 @@ impl Serialize for Question {
                 }
                 value
             }
+            Question::Box { instructions } => serde_json::json!({
+                "type": "box",
+                "instructions": instructions,
+            }),
         };
         value.serialize(serializer)
     }
@@ -182,6 +227,7 @@ impl Question {
             Question::Choice { .. } => "choice",
             Question::Score { .. } => "score",
             Question::Noul { .. } => "noul",
+            Question::Box { .. } => "box",
         }
     }
 
@@ -193,6 +239,7 @@ impl Question {
             Question::Choice { .. } => QuestionType::Choice,
             Question::Score { .. } => QuestionType::Score,
             Question::Noul { .. } => QuestionType::Noul,
+            Question::Box { .. } => QuestionType::Box,
         }
     }
 
@@ -200,7 +247,8 @@ impl Question {
         match self {
             Question::Choice { instructions, .. }
             | Question::Score { instructions, .. }
-            | Question::Noul { instructions, .. } => instructions,
+            | Question::Noul { instructions, .. }
+            | Question::Box { instructions } => instructions,
         }
     }
 
@@ -208,6 +256,7 @@ impl Question {
         match self {
             Question::Choice { criteria, .. } | Question::Score { criteria, .. } => Some(criteria),
             Question::Noul { criteria, .. } => criteria.as_ref(),
+            Question::Box { .. } => None,
         }
     }
 }
@@ -339,10 +388,10 @@ impl<'de> Deserialize<'de> for Question {
             }
         };
         match ty {
-            "choice" | "score" | "noul" | "boolean" => {}
+            "choice" | "score" | "noul" | "boolean" | "box" => {}
             other => {
                 return custom_err(format!(
-                    "unknown variant `{other}`, expected one of `choice`, `score`, `noul`"
+                    "unknown variant `{other}`, expected one of `choice`, `score`, `noul`, `box`"
                 ));
             }
         }
@@ -359,6 +408,12 @@ impl<'de> Deserialize<'de> for Question {
                     json_kind(instructions_value)
                 ))
             })?;
+        if ty == "box" {
+            if obj.contains_key("criteria") {
+                return custom_err("box questions do not accept `criteria`");
+            }
+            return Ok(Question::Box { instructions });
+        }
         // ── criteria：choice/score 必填且形态固定；Noul 可省略 ──
         let criteria = match ty {
             "choice" => {
@@ -474,7 +529,7 @@ impl<'de> Deserialize<'de> for Question {
         export_to = "../../../../ui/src/generated/",
         // 手工 Serialize（非 serde derive）→ ts-rs 看不到 tag、默认生成错误的
         // 外部标签形状（{Choice:{…}}）。按 contracts/01 §4 wire 字面做**容器级覆盖**。
-        type = "{ \"type\": \"choice\", choice: string, probabilities: { [key in string]: number }, confidence: number } | { \"type\": \"score\", score: number, legend?: unknown, probabilities: { [key in string]: number }, confidence: number } | { \"type\": \"noul\" | \"boolean\", noul?: number | null, probability?: number | null }"
+        type = "{ \"type\": \"choice\", choice: string, probabilities: { [key in string]: number }, confidence: number } | { \"type\": \"score\", score: number, legend?: unknown, probabilities: { [key in string]: number }, confidence: number } | { \"type\": \"noul\" | \"boolean\", noul?: number | null, probability?: number | null } | { \"type\": \"box\", box: { top: number, bottom: number, left: number, right: number }, confidence: number }"
     )
 )]
 pub enum Answer {
@@ -493,6 +548,34 @@ pub enum Answer {
         confidence: f64,
     },
     Noul(NoulAnswer),
+    Box(BoxAnswer),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[cfg_attr(
+    feature = "ts-rs",
+    derive(::ts_rs::TS),
+    ts(export, export_to = "../../../../ui/src/generated/")
+)]
+pub struct BoxCoordinates {
+    pub top: f64,
+    pub bottom: f64,
+    pub left: f64,
+    pub right: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[cfg_attr(
+    feature = "ts-rs",
+    derive(::ts_rs::TS),
+    ts(export, export_to = "../../../../ui/src/generated/")
+)]
+pub struct BoxAnswer {
+    #[serde(rename = "type")]
+    pub kind: String,
+    #[serde(rename = "box")]
+    pub coordinates: BoxCoordinates,
+    pub confidence: f64,
 }
 
 /// 布尔族答案：概率本身就是置信度 —— 没有 confidence 字段（contracts/01 §4）。
@@ -578,8 +661,27 @@ impl<'de> Deserialize<'de> for Answer {
             "noul" | "boolean" => Ok(Answer::Noul(
                 serde_json::from_value(value).map_err(serde::de::Error::custom)?,
             )),
+            "box" => {
+                let answer: BoxAnswer =
+                    serde_json::from_value(value).map_err(serde::de::Error::custom)?;
+                let b = &answer.coordinates;
+                if answer.kind != "box"
+                    || !answer.confidence.is_finite()
+                    || !(0.0..=1.0).contains(&answer.confidence)
+                    || [b.top, b.bottom, b.left, b.right]
+                        .iter()
+                        .any(|edge| !edge.is_finite() || !(0.0..=1.0).contains(edge))
+                    || b.top >= b.bottom
+                    || b.left >= b.right
+                {
+                    return Err(serde::de::Error::custom(
+                        "box edges must be ordered finite fractions in [0,1] and confidence must be in [0,1]",
+                    ));
+                }
+                Ok(Answer::Box(answer))
+            }
             other => Err(serde::de::Error::custom(format!(
-                "unknown variant `{other}`, expected one of `choice`, `score`, `noul`"
+                "unknown variant `{other}`, expected one of `choice`, `score`, `noul`, `box`"
             ))),
         }
     }
@@ -617,6 +719,7 @@ impl Serialize for Answer {
             }
             // Noul 自带 `type` 判别键（kind），直通内层序列化
             Answer::Noul(n) => return n.serialize(serializer),
+            Answer::Box(answer) => return answer.serialize(serializer),
         };
         value.serialize(serializer)
     }
@@ -927,6 +1030,23 @@ mod tests {
     }
 
     #[test]
+    fn box_question_round_trips_without_criteria() {
+        let raw = r#"{"model":"m","state":{"photo":"asset-ref"},"assets":{"asset-ref":{"type":"image","format":"png","data_base64":"AA=="}},"questions":{"target":{"type":"box","instructions":"the coffee mug in `photo`"}}}"#;
+        let request: JevRequest = serde_json::from_str(raw).unwrap();
+        assert_eq!(
+            request.questions["target"].question_type(),
+            QuestionType::Box
+        );
+        assert_eq!(
+            serde_json::to_value(&request).unwrap(),
+            serde_json::from_str::<serde_json::Value>(raw).unwrap()
+        );
+
+        let with_criteria = r#"{"model":"m","state":null,"questions":{"target":{"type":"box","instructions":"find it","criteria":{}}}}"#;
+        assert!(serde_json::from_str::<JevRequest>(with_criteria).is_err());
+    }
+
+    #[test]
     fn unknown_question_type_rejected() {
         // §6：未知 type → 拒绝（禁 best-effort 平移）
         let json = r#"{
@@ -1042,6 +1162,17 @@ mod tests {
             r#"{"type":"score","probabilities":{"1":1.0},"confidence":1.0}"#
         )
         .is_err());
+    }
+
+    #[test]
+    fn box_answer_requires_normalized_ordered_edges() {
+        let answer: Answer = serde_json::from_str(r#"{"type":"box","box":{"top":0.25,"bottom":0.82,"left":0.44,"right":0.84},"confidence":0.92}"#).unwrap();
+        assert!(matches!(answer, Answer::Box(_)));
+        let encoded = serde_json::to_value(answer).unwrap();
+        assert_eq!(encoded["type"], "box");
+        assert_eq!(encoded["box"]["left"], 0.44);
+        assert!(serde_json::from_str::<Answer>(r#"{"type":"box","box":{"top":0.8,"bottom":0.2,"left":0.1,"right":0.9},"confidence":0.5}"#).is_err());
+        assert!(serde_json::from_str::<Answer>(r#"{"type":"box","box":{"top":0.1,"bottom":0.9,"left":0.1,"right":0.9},"confidence":1.2}"#).is_err());
     }
 
     #[test]

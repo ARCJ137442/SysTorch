@@ -38,6 +38,7 @@ fn main() {
         model: "laya-english".to_string(),
         state: serde_json::json!({"source": "basic_use example"}),
         questions,
+        assets: None,
         extensions: Default::default(),
         extra: Default::default(),
     };

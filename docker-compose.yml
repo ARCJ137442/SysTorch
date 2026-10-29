@@ -1,9 +1,9 @@
-# Jev-Switch 单命令云部署（任务 #43 · docs/12 §四线1）
+# SysTorch single-command container deployment.
 #
 # 用法：
 #   1.（首次）准备 .env —— cloud 管理须配置管理员密码，公开调用须有调用 Token：
-#        JEV_AUTH_TOKENS=tok-…        # 可选：首次导入 readonly Token（逗号可列多个）
-#        JEV_ADMIN_PASSWORD=…         # admin 登录密码
+#        SYSTORCH_AUTH_TOKENS=tok-…  # optional caller tokens on first import
+#        SYSTORCH_ADMIN_PASSWORD=…   # admin sign-in password
 #        AI_GATEWAY_API_KEY=sk-…      # 可选：Vercel 上游 key（providers.toml 用）
 #   2. docker compose up -d
 #   3. curl http://127.0.0.1:11435/health
@@ -14,22 +14,25 @@
 # .env 已在 .gitignore（密钥不进仓库）；providers.toml 里的明文 key 同理勿提交。
 
 services:
-  jev-switch:
+  systorch:
     build:
       context: .
       dockerfile: Dockerfile
-    image: jev-switch:latest
-    container_name: jev-switch
+    image: systorch:latest
+    container_name: systorch
     ports:
       # 容器内 mode=cloud 绑 0.0.0.0:11435（部署形态偏差，见 docs/deployment.md）
       - "11435:11435"
     environment:
       # 默认 cloud；local 的回环来源限制仍生效，不能直接等同于容器端口发布。
-      JEV_SWITCH_MODE: ${JEV_SWITCH_MODE:-cloud}
+      SYSTORCH_MODE: ${SYSTORCH_MODE:-${JEV_SWITCH_MODE:-cloud}}
       # 首次导入时非空 env 优先于 TOML；之后以数据库中的启停/撤销状态为准。
-      JEV_AUTH_TOKENS: ${JEV_AUTH_TOKENS:-}
+      SYSTORCH_AUTH_TOKENS: ${SYSTORCH_AUTH_TOKENS:-${JEV_AUTH_TOKENS:-}}
       # env 优先于 providers.toml 内 admin_password
-      JEV_ADMIN_PASSWORD: ${JEV_ADMIN_PASSWORD:-}
+      SYSTORCH_ADMIN_PASSWORD: ${SYSTORCH_ADMIN_PASSWORD:-${JEV_ADMIN_PASSWORD:-}}
+      SYSTORCH_CONFIG: ${SYSTORCH_CONFIG:-${JEV_SWITCH_CONFIG:-/data/providers.toml}}
+      SYSTORCH_DATA_DIR: ${SYSTORCH_DATA_DIR:-${JEV_SWITCH_DATA_DIR:-/data}}
+      SYSTORCH_UI_DIST: ${SYSTORCH_UI_DIST:-${JEV_UI_DIST:-/app/ui/dist}}
       # Vercel 上游（providers.example.toml 的 api_key_env 指向它；不设则跳过该上游）
       AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:-}
       RUST_LOG: ${RUST_LOG:-info}

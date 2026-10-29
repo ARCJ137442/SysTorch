@@ -16,11 +16,12 @@ const key = (overrides = {}) => ({
 
 test('cycles every top-level page forward and backward like browser tabs', () => {
   assert.equal(cycleTopLevelRoute('dashboard'), 'providers');
-  assert.equal(cycleTopLevelRoute('settings'), 'dashboard');
-  assert.equal(cycleTopLevelRoute('dashboard', true), 'settings');
+  assert.equal(cycleTopLevelRoute('settings'), 'start');
+  assert.equal(cycleTopLevelRoute('start', true), 'settings');
+  assert.equal(cycleTopLevelRoute('dashboard', true), 'desk');
   assert.equal(cycleTopLevelRoute('providers', true), 'dashboard');
   assert.equal(cycleTopLevelRoute('home'), 'providers');
-  assert.equal(TOP_LEVEL_ROUTES.length, 7);
+  assert.equal(TOP_LEVEL_ROUTES.length, 9);
 });
 
 test('only Tauri Ctrl or Meta plus Tab claims the shortcut', () => {

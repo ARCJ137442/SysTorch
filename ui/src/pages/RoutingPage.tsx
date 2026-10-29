@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Redo2, RefreshCw, RotateCcw, Table2, Undo2 } from 'lucide-react';
 import { getBase } from '../api';
-import { findCyclicEdgeKeys, listProviders, listRoutes, normalizeRoute, putRoutes, type Route } from '../api/admin';
+import { findCyclicEdgeKeys, listProviders, listRoutes, normalizeRoute, saveRouteEdits, type Route } from '../api/admin';
+import { applyRouteEdits, planRouteEdits, reconcileRouteReceipt, rebaseRouteHistory } from '../api/routeEdits';
 import { listEndpoints } from '../api/endpoints';
 import { DagCanvas } from '../components/routing/DagCanvas';
 import { routeIdentity, routeDocumentSignature, type DagEntry, type DagProvider, type Point } from '../components/routing/dag';
@@ -21,17 +22,27 @@ let routeActivityCache: RouteActivityState = {};
 const serialize = routeDocumentSignature;
 const layoutKey = () => `jev-routing-layout-v1:${getBase() || location.origin}`;
 const draftKey = () => `jev-routing-draft-v1:${getBase() || location.origin}`;
-function readDraft(): Route[] | null {
+interface RouteDraft { version: 2; routes: Route[]; baseline: Route[] }
+function readDraft(): RouteDraft | null {
   try {
-    const routes: unknown = JSON.parse(sessionStorage.getItem(draftKey()) ?? 'null');
-    if (!Array.isArray(routes) || !routes.every(route => route && typeof route.left === 'string' && typeof route.right === 'string' && Number.isFinite(route.priority))) return null;
-    return routes.map(normalizeRoute);
+    const raw = sessionStorage.getItem(draftKey());
+    const value: unknown = JSON.parse(raw ?? 'null');
+    // Legacy drafts have no editing baseline: applying them could erase remote
+    // changes. Keep a recoverable copy, but never infer delete intent from them.
+    if (Array.isArray(value)) {
+      sessionStorage.setItem(`${draftKey()}:legacy`, raw!);
+      return null;
+    }
+    if (!value || typeof value !== 'object') return null;
+    const draft = value as RouteDraft;
+    const valid = (routes: unknown): routes is Route[] => Array.isArray(routes) && routes.every(route => route && typeof route.left === 'string' && typeof route.right === 'string' && Number.isFinite(route.priority));
+    return draft.version === 2 && valid(draft.routes) && valid(draft.baseline) ? draft : null;
   } catch { return null; }
 }
 function preserveDraft(routes: Route[], baseline: Route[]) {
   try {
     if (serialize(routes) === serialize(baseline)) sessionStorage.removeItem(draftKey());
-    else sessionStorage.setItem(draftKey(), JSON.stringify(routes));
+    else sessionStorage.setItem(draftKey(), JSON.stringify({ version: 2, routes, baseline } satisfies RouteDraft));
   } catch { /* Unavailable storage does not block editing; beforeunload still warns. */ }
 }
 function readPositions(): Record<string, Point> {
@@ -55,6 +66,7 @@ export function RoutingPage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [draftBackup, setDraftBackup] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [showTable, setShowTable] = useState(false);
@@ -95,17 +107,30 @@ export function RoutingPage() {
     return () => window.clearTimeout(timer);
   }, [routeActivities, activityNow]);
 
-  const load = async () => {
+  const load = async (reviewLatest = false) => {
     const generation = ++loadGeneration.current;
     setLoading(true); setLoadError(null);
     try {
       const [routeDoc, providerDoc, entryDoc] = await Promise.all([listRoutes(), listProviders(), listEndpoints()]);
       if (!alive.current || generation !== loadGeneration.current) return;
       const routes = routeDoc.routes.map(normalizeRoute);
-      const draft = readDraft();
-      const restored = draft !== null && serialize(draft) !== serialize(routes);
-      setDoc(history.current.reset({ routes: restored ? draft : routes, positions: history.current.current.positions }));
-      setBaseline(routes);
+      const draft = reviewLatest ? null : readDraft();
+      if (reviewLatest) {
+        const backup = JSON.stringify({ version: 2, routes: history.current.current.routes, baseline } satisfies RouteDraft, null, 2);
+        setDraftBackup(backup);
+        try { sessionStorage.setItem(`${draftKey()}:backup`, backup); sessionStorage.removeItem(draftKey()); } catch { /* The read-only in-memory backup remains visible. */ }
+      } else {
+        try { setDraftBackup(sessionStorage.getItem(`${draftKey()}:backup`) ?? sessionStorage.getItem(`${draftKey()}:legacy`)); } catch { /* Storage may be unavailable. */ }
+      }
+      const restored = draft !== null && serialize(draft.routes) !== serialize(draft.baseline);
+      let restoredRoutes = routes;
+      let restoredBaseline = routes;
+      if (restored) {
+        try { restoredRoutes = applyRouteEdits(routes, planRouteEdits(draft)); }
+        catch { restoredRoutes = draft.routes; restoredBaseline = draft.baseline; }
+      }
+      setDoc(history.current.reset({ routes: restoredRoutes, positions: history.current.current.positions }));
+      setBaseline(restoredBaseline);
       setProviders(providerDoc.providers);
       setEntries(entryDoc.endpoints.map(entry => ({ id: entry.id, enabled: entry.enabled, strategy: entry.strategy_config.type })));
       setSelected(null); setSelectedNode(null); setSaveError(restored ? t('dag.draftRestored') : null); setSaveFailed(restored);
@@ -124,26 +149,34 @@ export function RoutingPage() {
   const undo = () => { const next = history.current.undo(); preserveDraft(next.routes, baseline); setDoc(next); setSelected(null); setSaveError(null); setSaveFailed(false); };
   const redo = () => { const next = history.current.redo(); preserveDraft(next.routes, baseline); setDoc(next); setSelected(null); setSaveError(null); setSaveFailed(false); };
 
-  // One PUT at a time: acknowledge its snapshot, then send any newer local edits.
+  // One transaction at a time; receipt rebases untouched remote edges and later local edits.
   useEffect(() => {
     if (loading || loadError || !dirty || saving || saveFailed || inFlight.current) return;
     if (cycleEdges.length) { setSaveError(t('routing.cycle')); return; }
     if (doc.routes.some(route => !route.left.trim() || !route.right.trim())) { setSaveError(t('dag.invalid')); return; }
     if (new Set(doc.routes.map(routeIdentity)).size !== doc.routes.length) { setSaveError(t('dag.duplicate')); return; }
     const current = doc.routes.map(normalizeRoute);
+    const savedBaseline = baseline;
+    const generation = loadGeneration.current;
     const timer = window.setTimeout(async () => {
       if (inFlight.current) return;
       inFlight.current = true; setSaving(true); setSaveError(null);
       try {
-        await putRoutes(current);
-        // A PUT body may merely echo the request; independently read the stored graph.
-        const result = await listRoutes();
+        const result = await saveRouteEdits({ baseline: savedBaseline, routes: current });
+        if (!alive.current || generation !== loadGeneration.current) return;
         const acknowledged = result.routes.map(normalizeRoute);
-        if (serialize(current) !== serialize(acknowledged)) throw new Error(t('dag.saveMismatch'));
-        if (alive.current) setBaseline(acknowledged);
+        const reconciled = reconcileRouteReceipt({ submitted: current, local: history.current.current.routes, acknowledged });
+        const next = history.current.rebase(
+          value => ({ ...value, routes: rebaseRouteHistory({ submitted: current, historical: value.routes, acknowledged }) }),
+          value => ({ ...value, routes: reconciled.routes }),
+        );
+        setDoc(next);
+        setBaseline(reconciled.baseline);
+        preserveDraft(next.routes, reconciled.baseline);
+        if (reconciled.conflicts.length) { setSaveFailed(true); setSaveError(t('dag.laterEditConflict')); }
       } catch (error) {
-        if (alive.current) { setSaveFailed(true); setSaveError(error instanceof Error ? error.message : String(error)); }
-      } finally { inFlight.current = false; if (alive.current) setSaving(false); }
+        if (alive.current && generation === loadGeneration.current) { setSaveFailed(true); setSaveError(error instanceof Error ? error.message : String(error)); }
+      } finally { inFlight.current = false; if (alive.current && generation === loadGeneration.current) setSaving(false); }
     }, 400);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -238,7 +271,8 @@ export function RoutingPage() {
       <button className="dag-icon-button" type="button" disabled={dirty || saving || loading} onClick={() => void load()} title={t('common.refresh')} aria-label={t('common.refresh')}><RefreshCw size={15} aria-hidden="true" /></button>
       {dirty && !saving && <button className="dag-icon-button" type="button" onClick={() => { changeRoutes(baseline); setSelected(null); }} title={t('dag.discard')} aria-label={t('dag.discard')}><RotateCcw size={16} aria-hidden="true" /></button>}
     </div>
-    {(saveError || loadError) && <div className="routing-page__error" role="alert"><span>{saveError ?? loadError}</span>{saveFailed && <button type="button" onClick={() => setSaveFailed(false)}>{t('common.retry')}</button>}</div>}
+    {(saveError || loadError) && <div className="routing-page__error" role="alert"><span>{saveError ?? loadError}</span>{saveFailed && <><button type="button" onClick={() => setSaveFailed(false)}>{t('common.retry')}</button><button type="button" onClick={() => void load(true)}>{t('dag.reviewLatest')}</button></>}</div>}
+    {draftBackup && <details className="routing-page__draft-backup"><summary>{t('dag.draftBackup')}</summary><textarea readOnly aria-label={t('dag.draftBackup')} value={draftBackup}/></details>}
     {loading ? <p className="routing-page__loading" role="status">{t('entry.loading')}</p> : loadError ? <button className="routing-page__loading" type="button" onClick={() => void load()}>{t('common.retry')}</button> : <DagCanvas routes={doc.routes} entries={entries} providers={providers} positions={doc.positions} selected={selected} selectedNode={selectedNode} errors={errors} routeActivities={routeActivities} activityNow={activityNow}
       onSelectNode={setSelectedNode} onNodeDoubleClick={openNode}
       onSelect={setSelected} onCreate={createEdge}

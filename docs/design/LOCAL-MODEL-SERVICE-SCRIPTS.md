@@ -1,12 +1,12 @@
 # 本地模型服务脚本规范
 
-Jev Switch 不为 Laya、StartLux、OneJev 等模型写专用进程逻辑。模型差异全部放在外部服务脚本中，提供商生命周期配置只登记三个结构化动作：`start`、`stop`、`status`。
+SysTorch 不为 Laya、StartLux、OneJev 等模型写专用进程逻辑。模型差异全部放在外部服务脚本中，提供商生命周期配置只登记三个结构化动作：`start`、`stop`、`status`。
 
 本文只使用公开的占位符和通用脚本接口，不记录任何机器路径、仓库目录、用户名、模型缓存位置或密钥。具体服务脚本由使用者自行保存到本机私有目录。
 
 脚本必须满足：
 
-- `start` 可以启动独立服务并在服务就绪后退出；不能把模型进程绑定到 Jev Switch 的窗口。
+- `start` 可以启动独立服务并在服务就绪后退出；不能把模型进程绑定到 SysTorch 的窗口。
 - `stop` 只能根据脚本自己保存的 PID/进程身份停止本次启动的进程，不能按端口或进程名误杀。
 - `status` 使用退出码表达状态：`0` = 已就绪，`3` = 已停止，`4` = 启动中，其他 = 未知/失败。
 - `start`、`stop` 和 `status` 都要输出脱敏的人类可读摘要；模型 API key 不进入命令参数、日志或 PID 文件。
@@ -31,7 +31,7 @@ Jev Switch 不为 Laya、StartLux、OneJev 等模型写专用进程逻辑。模�
 
 `<POWERSHELL_EXE>` 和 `<SCRIPT_ROOT>` 是公开模板占位符，不能原样保存。用户应在自己的配置界面中替换为本机实际路径；公开配置、提交记录和截图应继续保留占位符。
 
-模型运行时路径由脚本自己读取本机私有配置，Jev Switch 不提供、填充或解释这些变量。脚本可以读取环境变量，也可以共同导入一个未提交的 `local-service.config.ps1`/`.env` 文件；Jev Switch 只执行 UI 中登记的脚本路径和参数：
+模型运行时路径由脚本自己读取本机私有配置，SysTorch 不提供、填充或解释这些变量。脚本可以读取环境变量，也可以共同导入一个未提交的 `local-service.config.ps1`/`.env` 文件；SysTorch 只执行 UI 中登记的脚本路径和参数：
 
 ```powershell
 $env:LOCAL_SERVICE_SCRIPT_ROOT = '<SCRIPT_ROOT>'
@@ -52,7 +52,7 @@ $env:LOCAL_ONEJEV_LLAMASERVER = '<LLAMA_SERVER_EXE>'
 
 这些变量只存在于执行本机脚本的进程环境中，不应写进 Git、公开配置导出或截图。
 
-如果多个脚本需要共享同一组路径，推荐由脚本目录中的私有配置文件统一导入，而不是让 Jev Switch 认识这些变量：
+如果多个脚本需要共享同一组路径，推荐由脚本目录中的私有配置文件统一导入，而不是让 SysTorch 认识这些变量：
 
 ```powershell
 # local-service.config.ps1（仅保存在本机，并加入 .gitignore）
@@ -65,7 +65,7 @@ $env:LOCAL_ONEJEV_QEV_PROGRAM = '<QEV_EXE>'
 . (Join-Path $PSScriptRoot 'local-service.config.ps1')
 ```
 
-Linux/macOS 可以使用同样的 `local-service.config` shell 文件并通过 `. ./local-service.config` 导入；Jev Switch 仍只看到脚本的 `start/stop/status` 接口。
+Linux/macOS 可以使用同样的 `local-service.config` shell 文件并通过 `. ./local-service.config` 导入；SysTorch 仍只看到脚本的 `start/stop/status` 接口。
 
 ### 环境变量说明
 
@@ -162,7 +162,7 @@ $onejev = Join-Path $scriptRoot 'onejev-service.ps1'
 & $onejev -Action status
 ```
 
-## 在 Jev Switch 界面中配置
+## 在 SysTorch 界面中配置
 
 脚本准备好后，配置工作由人在 Providers 页面完成：
 
@@ -185,7 +185,7 @@ $onejev = Join-Path $scriptRoot 'onejev-service.ps1'
 
 | 示例行/机制 | 为什么需要 | Linux/macOS 对应经验 |
 |---|---|---|
-| `param(... Action ...)` | 让同一个脚本拥有 `status/start/stop` 三个明确动作，Jev Switch 只需登记三组参数 | 用 `case "$1"` 或 `argparse` 实现同样的三个动作 |
+| `param(... Action ...)` | 让同一个脚本拥有 `status/start/stop` 三个明确动作，SysTorch 只需登记三组参数 | 用 `case "$1"` 或 `argparse` 实现同样的三个动作 |
 | `hostAddress`、`port` | 固定服务监听位置，状态命令和 provider 地址必须指向同一位置 | 使用 `127.0.0.1` 与端口变量，不要扫描端口猜服务 |
 | `Invoke-RestMethod ... /health` | 只做轻量 readiness，不发送模型推理请求；HTTP 200 才表示服务可用 | 使用 `curl --fail`、`wget --spider` 或 Python `urllib` |
 | `Test-Path $python/$server/$snapshot` | 在启动前快速发现运行时、脚本或模型快照缺失，避免 UI 长时间卡在启动中 | 使用 `test -x`、`test -f`、`test -d` |
@@ -201,12 +201,12 @@ $onejev = Join-Path $scriptRoot 'onejev-service.ps1'
 |---|---|---|
 | `llama-server` 与 bridge 两个地址 | llama.cpp 只提供底层推理，bridge 才提供 Jev SystemOne 协议；两者不能混成一个健康检查 | 用两个 systemd user service、supervisord program 或两个受控子进程 |
 | `--model`/`-m` 与 `--mmproj` | 明确指定模型/视觉 projector，避免脚本依赖当前目录或自动下载 | 用绝对路径或部署目录变量，不把路径写死在公开脚本 |
-| `--host 127.0.0.1` | 默认只允许本机网关访问，减少误暴露；局域网开放应由 Jev Switch 单独控制 | 绑定 loopback；公网部署需显式反向代理和鉴权 |
+| `--host 127.0.0.1` | 默认只允许本机网关访问，减少误暴露；局域网开放应由 SysTorch 单独控制 | 绑定 loopback；公网部署需显式反向代理和鉴权 |
 | `Start-Process -RedirectStandard*` | detached 启动仍保留日志，失败时用户能定位，而不是只看到 HTTP 400 | 使用 `nohup ... >stdout 2>stderr &` 或 systemd journal |
 | 先等 llama 端口，再等 bridge `/health` | 端口打开不代表模型加载完成；bridge readiness 才能让 UI 显示“运行中” | 先 `curl` 底层健康，再 `curl` bridge 健康 |
 | 记录两个 PID 并校验命令行 | 停止时需要同时释放底层和 bridge，且不能停止别人的同名服务 | 保存 PID 文件、进程组 ID 和启动命令 hash |
 
-不要把 API key 放进启动参数或环境变量示例。若确实需要向受信任脚本注入 key，使用 Jev Switch 的敏感变量确认流程，并保证脚本日志脱敏。
+不要把 API key 放进启动参数或环境变量示例。若确实需要向受信任脚本注入 key，使用 SysTorch 的敏感变量确认流程，并保证脚本日志脱敏。
 
 ## FAQ 与故障排查
 
@@ -240,4 +240,4 @@ PowerShell 的 `catch { Write-Output ... }` 默认仍可能以退出码 `0` 结�
 
 能迁移设计，不直接复制命令字符串：保留三个动作、退出码、readiness、资源门禁和所有权原则，把 `powershell.exe`/`Start-Process` 换成 shell/Python/systemd，把 Windows 路径换成 Linux 路径，把进程停止实现换成 process group。这样 Agent 也能根据同一套 lifecycle 能力发现和配置服务。
 
-API 侧只调用 `POST /v1/admin/providers/{id}/lifecycle/status|start|stop`。Jev Switch 负责统一权限、审计、超时和状态呈现；脚本负责模型运行时的具体知识。`status` 的结果必须先于“运行中”文案，不能以启动器进程存在代替模型 HTTP readiness。
+API 侧只调用 `POST /v1/admin/providers/{id}/lifecycle/status|start|stop`。SysTorch 负责统一权限、审计、超时和状态呈现；脚本负责模型运行时的具体知识。`status` 的结果必须先于“运行中”文案，不能以启动器进程存在代替模型 HTTP readiness。

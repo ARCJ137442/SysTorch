@@ -8,11 +8,12 @@ param(
 $ErrorActionPreference = 'Stop'
 if (-not $ProjectRoot) { $ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path }
 $androidNamespace = 'http://schemas.android.com/apk/res/android'
-$appId = (Get-Content -LiteralPath (Join-Path $ProjectRoot 'src-tauri/tauri.android.conf.json') -Raw | ConvertFrom-Json).identifier
 [xml]$manifest = Get-Content -LiteralPath $ManifestPath -Raw
 $namespaces = [System.Xml.XmlNamespaceManager]::new($manifest.NameTable)
 $namespaces.AddNamespace('android', $androidNamespace)
 $root = $manifest.DocumentElement
+$appId = $root.GetAttribute('package')
+if (-not $SourceTemplate -and $appId -notin @('io.github.arcj137442.jevswitch', 'io.github.arcj137442.jevswitch.m1preview')) { throw 'Merged APK lost its stable installed identity.' }
 $application = $root.SelectSingleNode('application')
 if ($null -eq $application) { throw 'Android manifest has no application element.' }
 

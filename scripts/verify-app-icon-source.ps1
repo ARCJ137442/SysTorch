@@ -5,14 +5,21 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$approvedJIconSha256 = '7F20C3297D5E8C5478A7B9206740D24029CEBB9A1E9988DA571A8AFB0476CE58'
+$canonicalTorchIconSha256 = '75279A8A77CDE421EDFF56C79255A8C12366FFA424CD8918E05CB8535606B5A0'
+$masterSvg = Join-Path $PSScriptRoot '../ui/src/brand/systorch.svg'
+if ((Get-FileHash -LiteralPath $masterSvg -Algorithm SHA256).Hash -ne '567E4C4F50D11FEAD18A922F8BA4425BBEF677035F131F5CE77DDF5E3BF6A122') { throw 'The canonical routing-torch SVG changed; review and regenerate all icon surfaces.' }
+if ((Get-FileHash -LiteralPath $IcoPath -Algorithm SHA256).Hash -ne '9568D66714075814CEB8775CC0BF67A7179411436FE8483200C4AF0BACCB0B7A') { throw 'ICO frames differ from the SVG-derived color master.' }
+if ((Get-FileHash -LiteralPath (Join-Path $PSScriptRoot '../src-tauri/icons/tray.png') -Algorithm SHA256).Hash -ne '3493EE4B44ECD1FDA968AE9FEE2D0D25A2F774C4AC69862171043753930EED4C') { throw 'Tray icon differs from the derived monochrome torch.' }
+foreach ($derivedSvg in @('../src-tauri/app-icon.svg','../src-tauri/shell/icon.svg')) {
+    if ((Get-FileHash -LiteralPath (Join-Path $PSScriptRoot $derivedSvg) -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $masterSvg -Algorithm SHA256).Hash) { throw 'Native SVG differs from the shared product master.' }
+}
 
 function Assert-MonochromeBitmap([System.Drawing.Bitmap]$Bitmap, [string]$Description) {
     for ($y = 0; $y -lt $Bitmap.Height; $y++) {
         for ($x = 0; $x -lt $Bitmap.Width; $x++) {
             $pixel = $Bitmap.GetPixel($x, $y)
             if ($pixel.A -gt 8 -and ($pixel.R -ne $pixel.G -or $pixel.G -ne $pixel.B)) {
-                throw "$Description contains a colored pixel at ($x, $y). The Jev-Switch app mark is the black-and-white J."
+                throw "$Description contains a colored pixel at ($x, $y); this small-system-icon variant must remain monochrome."
             }
         }
     }
@@ -20,17 +27,18 @@ function Assert-MonochromeBitmap([System.Drawing.Bitmap]$Bitmap, [string]$Descri
 
 $sourcePath = (Resolve-Path -LiteralPath $IconPath).Path
 $sourceHash = (Get-FileHash -LiteralPath $sourcePath -Algorithm SHA256).Hash
-if ($sourceHash -ne $approvedJIconSha256) {
-    throw "The canonical app icon is not the approved black-and-white J master. SHA-256=$sourceHash"
+if ($sourceHash -ne $canonicalTorchIconSha256) {
+    throw "The canonical app icon is not the canonical SVG-derived SysTorch routing torch master. SHA-256=$sourceHash"
 }
 
 Add-Type -AssemblyName System.Drawing
+$trayBitmap = [System.Drawing.Bitmap]::FromFile((Join-Path $PSScriptRoot '../src-tauri/icons/tray.png'))
+try { Assert-MonochromeBitmap $trayBitmap 'The small monochrome tray variant' } finally { $trayBitmap.Dispose() }
 $sourceBitmap = [System.Drawing.Bitmap]::FromFile($sourcePath)
 try {
     if ($sourceBitmap.Width -ne 512 -or $sourceBitmap.Height -ne 512) {
-        throw 'The canonical black-and-white J master must be 512x512 pixels.'
+        throw 'The canonical SVG-derived SysTorch routing torch master must be 512x512 pixels.'
     }
-    Assert-MonochromeBitmap $sourceBitmap 'The canonical app icon'
 }
 finally {
     $sourceBitmap.Dispose()
@@ -43,7 +51,6 @@ try {
     if ($generatedBitmap.Size -ne $sourceBitmap.Size) {
         throw 'src-tauri/icons/icon.png must use the same 512x512 canvas as app-icon.png.'
     }
-    Assert-MonochromeBitmap $generatedBitmap 'src-tauri/icons/icon.png'
     for ($y = 0; $y -lt $sourceBitmap.Height; $y++) {
         for ($x = 0; $x -lt $sourceBitmap.Width; $x++) {
             if ($sourceBitmap.GetPixel($x, $y).ToArgb() -ne $generatedBitmap.GetPixel($x, $y).ToArgb()) {
@@ -113,7 +120,6 @@ for ($index = 0; $index -lt $frameCount; $index++) {
             if ($frameBitmap.Width -ne $width -or $frameBitmap.Height -ne $height) {
                 throw "ICO frame $index declared as $width x $height but decodes as $($frameBitmap.Width) x $($frameBitmap.Height)."
             }
-            Assert-MonochromeBitmap $frameBitmap "ICO frame $width x $height"
         }
         finally {
             if ($null -ne $frameBitmap) { $frameBitmap.Dispose() }
@@ -132,5 +138,5 @@ foreach ($size in $requiredSizes) {
     }
 }
 
-Write-Host "Verified approved black-and-white J icon source: $sourceHash"
-Write-Host "Verified monochrome ICO frames: $((@($availableSizes) | Sort-Object -Unique) -join ', ')"
+Write-Host "Verified canonical SVG-derived SysTorch routing torch icon source: $sourceHash"
+Write-Host "Verified color ICO frames: $((@($availableSizes) | Sort-Object -Unique) -join ', ')"

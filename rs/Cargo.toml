@@ -1,10 +1,10 @@
-# Jev-Switch cargo workspace（P0-1 拆分：纯搬家，语义不变）
+# SysTorch Rust workspace. `jev-*` crates implement the public Jev protocol dialect.
 #
-# 结构：
-#   crates/jev-protocol       — 协议类型（零 IO，仅 serde/serde_json）
-#   crates/jev-core           — router + Upstream trait + translate（无 axum / reqwest）
-#   crates/jev-adapters       — vercel / laya 上游适配（reqwest + async-trait）
-#   crates/jev-switch-daemon  — axum daemon（bin：main + config）
+# Structure:
+#   crates/jev-protocol       — frozen Jev/SystemOne wire types (zero IO)
+#   crates/jev-core           — routing DAG and adapter traits
+#   crates/jev-adapters       — upstream decision-service adapters
+#   crates/systorch-daemon    — SysTorch HTTP API, storage and routing assembly
 #
 # 常用命令（从仓库根执行）：
 #   cargo test --manifest-path rs/Cargo.toml --workspace
@@ -14,25 +14,26 @@
 resolver = "2"
 members = ["crates/*"]
 # 裸 `cargo run/build`（virtual manifest）默认只构建 daemon bin
-default-members = ["crates/jev-switch-daemon"]
+default-members = ["crates/systorch-daemon"]
 
 [workspace.package]
-version = "0.10.3"
+version = "0.11.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/ARCJ137442/jev-switch"
+repository = "https://github.com/ARCJ137442/SysTorch"
 
 [workspace.dependencies]
 # 内部 crate
-jev-protocol = { path = "crates/jev-protocol", version = "0.10.3" }
-jev-core = { path = "crates/jev-core", version = "0.10.3" }
-jev-adapters = { path = "crates/jev-adapters", version = "0.10.3" }
+jev-protocol = { path = "crates/jev-protocol", version = "0.11.0" }
+jev-core = { path = "crates/jev-core", version = "0.11.0" }
+jev-adapters = { path = "crates/jev-adapters", version = "0.11.0" }
 
 # 外部 crate（版本与拆分前 rs 单包保持一致）
 axum = "0.7"
 tokio = { version = "1", features = ["full"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+base64 = "0.22"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 clap = { version = "4", features = ["derive", "env"] }
 toml = "0.8"

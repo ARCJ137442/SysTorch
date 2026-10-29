@@ -135,8 +135,8 @@ jobs:
         if: steps.signing.outputs.available == 'true'
         shell: pwsh
         env:
-          VITE_JEV_MOBILE: 'true'
-          JEV_BUILD_REVISION: ${{ github.sha }}
+          VITE_SYSTORCH_MOBILE: 'true'
+          SYSTORCH_BUILD_REVISION: ${{ github.sha }}
         run: npm run build --prefix ui
 
       - name: Initialize Android project
@@ -161,7 +161,7 @@ jobs:
           $env:TAURI_ANDROID_PROJECT_PATH = (Resolve-Path 'src-tauri/gen/android').Path
           $env:WRY_ANDROID_PACKAGE = 'io.github.arcj137442.jevswitch'
           $env:WRY_ANDROID_PACKAGE_UNESCAPED = $env:WRY_ANDROID_PACKAGE
-          $env:WRY_ANDROID_LIBRARY = 'jev_switch_shell'
+          $env:WRY_ANDROID_LIBRARY = 'systorch_shell'
           $kotlinOut = 'src-tauri/gen/android/app/src/main/java/io/github/arcj137442/jevswitch/generated'
           New-Item -ItemType Directory -Force $kotlinOut | Out-Null
           $env:WRY_ANDROID_KOTLIN_FILES_OUT_DIR = (Resolve-Path $kotlinOut).Path
@@ -178,11 +178,11 @@ jobs:
             $env:AR_x86_64_linux_android = Join-Path $ndkBin 'llvm-ar.exe'
             $env:RANLIB_x86_64_linux_android = Join-Path $ndkBin 'llvm-ranlib.exe'
           }
-          cargo build --locked --manifest-path src-tauri/Cargo.toml --package jev-switch-shell --target $target --features tauri/custom-protocol --lib --release
+          cargo build --locked --manifest-path src-tauri/Cargo.toml --package systorch-shell --target $target --features tauri/custom-protocol --lib --release
           if ($LASTEXITCODE -ne 0) { throw 'Android Rust library build failed.' }
           $jniDir = "src-tauri/gen/android/app/src/main/jniLibs/$jniAbi"
           New-Item -ItemType Directory -Force $jniDir | Out-Null
-          Copy-Item "src-tauri/target/$target/release/libjev_switch_shell.so" "$jniDir/libjev_switch_shell.so" -Force
+          Copy-Item "src-tauri/target/$target/release/libsystorch_shell.so" "$jniDir/libsystorch_shell.so" -Force
 
       - name: Package Android release APK
         if: steps.signing.outputs.available == 'true'
@@ -210,7 +210,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
-          $keystorePath = Join-Path $env:RUNNER_TEMP 'jev-switch-release.jks'
+          $keystorePath = Join-Path $env:RUNNER_TEMP 'systorch-release.jks'
           try {
             $bytes = [Convert]::FromBase64String($env:ANDROID_KEYSTORE_BASE64)
           } catch {
@@ -249,7 +249,7 @@ jobs:
           if (-not $apk) { throw 'No Android release APK was produced.' }
 
           New-Item -ItemType Directory -Force artifacts | Out-Null
-          $baseName = "jev-switch-$version-android-$env:ANDROID_ABI"
+          $baseName = "SysTorch-$version-android-$env:ANDROID_ABI"
           $alignedApk = Join-Path $env:RUNNER_TEMP "$baseName-aligned.apk"
           $signedApk = Join-Path (Resolve-Path artifacts).Path "$baseName.apk"
           & $zipalign -p -f 4 $apk.FullName $alignedApk
@@ -267,8 +267,22 @@ jobs:
           $verification = & $apksigner verify --verbose --print-certs $signedApk 2>&1
           if ($LASTEXITCODE -ne 0) { throw 'apksigner verification failed.' }
           $certificateSha256 = & ./scripts/android/parse-apksigner-certificate-fingerprint.ps1 -VerificationOutput $verification
+          $expectedSignerSha256 = '5A8CB27A0C4484F140EDE57500B6ADC14DB7C66B9B52D607E8E422420DEDA1AB'
+          if ($certificateSha256 -ne $expectedSignerSha256) {
+            throw "Android signer mismatch. Expected the established SysTorch upgrade key fingerprint $expectedSignerSha256; got $certificateSha256."
+          }
           "signer_sha256=$certificateSha256" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           Write-Host "APK signer SHA-256: $certificateSha256"
+
+      - name: Verify SysTorch APK brand, installed identity, and icons
+        if: steps.signing.outputs.available == 'true'
+        shell: pwsh
+        run: |
+          $sdkRoot = if ($env:ANDROID_SDK_ROOT) { $env:ANDROID_SDK_ROOT } else { $env:ANDROID_HOME }
+          $version = (Get-Content ui/package.json -Raw | ConvertFrom-Json).version
+          $apk = "artifacts/SysTorch-$version-android-$env:ANDROID_ABI.apk"
+          & ./scripts/android/verify-systorch-apk-brand.ps1 -Apk $apk -BuildTools (Join-Path $sdkRoot 'build-tools\35.0.0')
+          if ($LASTEXITCODE -ne 0) { throw 'SysTorch APK identity/icon verification failed.' }
 
       - name: Collect Android release metadata
         if: steps.signing.outputs.available == 'true'
@@ -278,10 +292,11 @@ jobs:
         run: |
           $version = (Get-Content ui/package.json -Raw | ConvertFrom-Json).version
           $properties = ConvertFrom-StringData (Get-Content src-tauri/gen/android/app/tauri.properties -Raw)
-          $apkName = "jev-switch-$version-android-$env:ANDROID_ABI.apk"
-          $manifestPath = "artifacts/jev-switch-$version-android-$env:ANDROID_ABI.json"
+          $apkName = "SysTorch-$version-android-$env:ANDROID_ABI.apk"
+          $manifestPath = "artifacts/SysTorch-$version-android-$env:ANDROID_ABI.json"
           $manifest = [ordered]@{
-            product = 'jev-switch'
+            brand = 'SysTorch'
+            product = 'systorch'
             version = $version
             version_code = [int]$properties['tauri.android.versionCode']
             commit = (git rev-parse HEAD)
@@ -300,7 +315,7 @@ jobs:
         if: steps.signing.outputs.available == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: jev-switch-android-${{ inputs.abi }}
+          name: systorch-android-${{ inputs.abi }}
           path: artifacts/*
           if-no-files-found: error
 

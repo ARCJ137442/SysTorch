@@ -39,6 +39,7 @@ fn request() -> JevRequest {
                 }),
             },
         )]),
+        assets: None,
         extensions: Default::default(),
         extra: Default::default(),
     }

@@ -1,0 +1,17 @@
+[[permission]]
+identifier = "allow-decision-owner"
+description = "Read the local owner's Choice capability in the verified main native window."
+commands.allow = ["decision_owner_token"]
+
+[[permission]]
+identifier = "allow-android-gateway"
+description = "Preserve the bundled Android gateway, keepalive, debug export and clipboard controls for local assets."
+commands.allow = [
+  "gateway_status", "android_gateway_probe", "start_gateway", "stop_gateway", "toggle_gateway",
+  "android_debug_log_status", "android_set_debug_log", "android_read_debug_log",
+  "android_record_web_probe", "android_export_debug_log", "android_export_json_file",
+  "android_write_clipboard", "android_foreground_service_active",
+  "android_keepalive_notification_status", "android_set_keepalive_notification",
+  "android_notification_permission_state", "android_request_notification_permission",
+  "android_take_pending_gateway_toggle"
+]

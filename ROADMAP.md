@@ -1,43 +1,44 @@
-# Jev-Switch Roadmap
+# SysTorch Roadmap
 
-> **TL;DR**：`v0.10.1` 已加入 provider 级受控模型生命周期、readiness、按候选 on-demand 启动、独立审计、主机命令安全开关、提供商自动探测和公开脚本配置指南；后续路线继续围绕 DAG 核心、模型画像与可解释的本地服务编排推进。详见[0.10.1 发布核验](docs/verification/v0.10.1-release-2026-10-07.md)。
+> **2026-10-30 状态**：产品主线已转为 SysTorch。0.11.0 是品牌迁移与「开始／决策台」能力的预发布版本，CI 与附件状态见 docs/verification/v0.11.0-pre-release-2026-10-30.md。预发布并不等于维护者人工验收；旧版本记录按各自版本和证据范围保留。
 >
-> **作者**：GPT-6 Luna xhigh（OpenAI Codex）<br>
-> **AI 披露**：本文由 AI 协助整理；范围与优先顺序以项目维护者后续确认为准。<br>
-> **更新日期**：2026-10-05
+> **产品口号**：把眼前的问题，变成下一步。 / Turn questions into next steps.
+>
+> **未来方向**：本路线图描述候选与依赖，不代表发布日期、版本号或发布承诺。当前可执行的分解见 docs/design/ROADMAP-EXECUTION-PLANS.md。
 
 ## 目标方向
 
-Jev-Switch 的差异重点是轻量、响应快、本地快速调试和清楚的路由过程。后续体验改进应服务这些目标：减少开发者重复操作，让每次调用的真实路径容易理解；不以装饰动效或未验证的性能宣传代替可测结果。
+SysTorch 的目标是让人、模型与 Agent 能把结构化判断送入可追溯的决策路径。用户能够从「开始」发出普通决策请求；Agent 也能提交持久的人工作答任务，在决策台回答后由原调用方取回结果。专业工作面保留 DAG、提供商配置与服务启停、调用历史和真实请求辉光。
 
-当前公开版本为 `v0.10.1`。生命周期后端/UI、类型生成和发布门禁已自动验证；Windows Standalone 的 Laya、StartLux、OneJev 服务启停已完成人工验证。下述规划仍不属于已完成人工验收的能力承诺，除非明确标注版本证据。
+产品坚持专注 System One / Jev 决策模型与人机协同，不扩成通用 LLM 聊天平台或一般模型网关。协议兼容、上游转换能力和用户品牌相互分离。未来改进应减少重复配置，让请求、路由尝试、人工接手和最终回答可解释、可回溯；不以装饰性动效或未经验证的性能宣传代替实测。
 
-配套的前后变化与用户场景见[用户旅程文档第七、八节](docs/USER-JOURNEYS.md)，作为本路线图方向的体验叙事；两处内容均属未来提案，优先级与验收边界以本文件为准。
+Android 与 Windows 是面向普通用户的应用分发渠道；Docker 与 CLI 服务于部署和自动化调用。Android 服务、权限、后台行为、相机/相册和生命周期仍按真实设备证据说明。Windows EXE 的签名状态也必须在每次发行说明中如实披露。
 
-基于当前源码的可执行拆解见[路线图执行计划总表](docs/design/ROADMAP-EXECUTION-PLANS.md)。它区分已有实现的验收收口、已有数据源上的增量和独立工程；不改变本表的 Release 边界。
+配套用户旅程见 docs/USER-JOURNEYS.md。路线图执行计划把工作拆成已完成能力的验收收口、现有数据上的增量和独立工程；两者都不能扩大当前 Release 的能力声明。
 
-## 当前优先级调整（2026-10-04）
+## 当前优先级调整（2026-10-30）
 
-1. **P0：v0.7.2 发布收口与回归**：提供商删除级联、表单快捷键、Windows/Android 发行资产和本轮人工验收。
-2. **P1：DAG 节点引擎与核心路由历史闭环**：GraphDocument、入口/内部节点/提供商出口语义、策略矩阵、route_activity 游标、Agent/CLI 查询和回滚。
-3. **P1 并行：Dashboard 第一阶段自定义布局**：仅首页组件 registry、布局草稿、预设和个性化设置；Routing/Settings/Statistics 暂不接入布局编辑器。
-4. **P2：Windows 证据收口与专项性能**：便携/Standalone、数据目录、端口冲突、单实例和性能基线；不再作为当前核心阻塞。
-5. **P2：Android 版本回归与跨设备边界**：v0.7.1 已验收的真机能力按新 APK 复测，重点关注 OEM/Android 版本差异。
-6. **P3：服务发现、数据目录迁移、官网截图翻新和 CLI Graph 操作**。
-7. **P4：TUI、全链路 p50/p95/p99、路由顾问与受控自我迭代**。
+1. **P0：完成 0.11.0 预发布交付**：锁定双语发布说明、只公开 Windows Standalone 与稳定签名 Android APK、检查 CI/Pages 和资产身份；发布后仍保留维护者人工验收状态。
+2. **P1：首屏「开始」与持久人工作答闭环**：对普通会话、加密内容、附件、失败重试、会话归档和恢复进行版本级回归；保持普通模型会话与持久 Choice 数据分离。
+3. **P1：路由图与 Agent 配置写入可靠性**：继续补齐所有普通配置 API 的原子写入审计、路由策略边界、历史父请求/attempt 聚合和可回滚配置体验。
+4. **P2：模型画像与属性路由**：补齐静态/动态、自动/人工证据、隐私与模态硬过滤、软排序及可解释拒绝原因；不改变用户明确指定的入口语义。
+5. **P2：Android 真机验收**：检查稳定签名覆盖安装、状态栏/最近任务图标、相机/相册和文件附件权限、前后台恢复与生命周期；模拟器证据不替代实体设备。
+6. **P3：演练场多模态比较、Dashboard 个性化与进一步的普通用户体验**：先从已声明能力和真实测试数据出发，不把未验证上游能力伪装成可用。
+7. **P4：服务发现、终端 UI、自治路由顾问和更大范围的自动决策**：在调用历史、模型画像、回放与回滚基础稳定后再排序。
 
-具体执行拆解见 [路线图执行计划总表](docs/design/ROADMAP-EXECUTION-PLANS.md)、[DAG 节点引擎计划](docs/design/DAG-NODE-ENGINE-ARCHITECTURE-PLAN.md) 和 [Dashboard 组件系统计划](docs/design/DASHBOARD-COMPONENT-SYSTEM-PLAN.md)。
+具体执行拆解见 docs/design/ROADMAP-EXECUTION-PLANS.md、docs/design/DAG-NODE-ENGINE-ARCHITECTURE-PLAN.md 和 docs/design/DASHBOARD-COMPONENT-SYSTEM-PLAN.md。
 
 ## 后续迭代候选
 
 | 方向 | 计划 | 用户体验故事 | 验收重点 | 优先级 |
 |---|---|---|---|---|
 | 上游适配器：OpenRouter（Phase 1） | OpenRouter provider kind、结构化 JSON Chat Completions 转换、`/models` 发现、错误/重试映射和 UI 预设已随 v0.2.0 发布。 | 使用 OpenRouter 的人可直接填入服务地址与凭据，查看模型并挂到入口，不必另找转接层。 | WireMock、Rust/UI 门禁和 Release 已通过；真实 key/live call 与费用/能力边界仍待单独验证。 | **Phase 1 已发布；live 验证开放** |
-| 本地/云端 Jev 服务发现 | 在用户选定的本机地址、局域网网段或明确填写的云端主机范围中发现 Jev 兼容服务及其他 Jev-Switch 实例。使用带边界的端口探测，再按已知服务契约逐步请求非破坏性端点（如 health、模型/能力列表）；逐步显示证据、兼容状态、可用模型和鉴权要求。 | 以前接入新服务要靠人记住端口、API 路径和模型名，再一项项手填。现在用户选定电脑或云主机范围后，Jev-Switch 先敲门查“服务在不在、说不说 Jev 协议、有哪些模型”，把在线、需鉴权或不兼容状态逐步列出来；用户看中某项后可以先测试，再确认一键加为提供商。 | 不扫描用户未选择的互联网范围，不调用推理、不发送合成 state/questions；并发数、超时、端口范围与重试可控。结果显示服务地址、类型/身份、探测时间、协议与模型、在线/鉴权/不兼容等状态。用户显式选择后才能运行带费用提示的模型测试，或“快速添加为提供商”；添加前确认地址、适配器类型与凭据，不将扫描结果静默写入配置。其他 Jev-Switch 实例只有在支持的 Jev 协议/认证路径下才可快速添加。 | 高：缩短首次接入路径 |
+| 本地/云端 Jev 服务发现 | 在用户选定的本机地址、局域网网段或明确填写的云端主机范围中发现 Jev 兼容服务及其他 SysTorch 实例。使用带边界的端口探测，再按已知服务契约逐步请求非破坏性端点（如 health、模型/能力列表）；逐步显示证据、兼容状态、可用模型和鉴权要求。 | 以前接入新服务要靠人记住端口、API 路径和模型名，再一项项手填。现在用户选定电脑或云主机范围后，SysTorch 先敲门查“服务在不在、说不说 Jev 协议、有哪些模型”，把在线、需鉴权或不兼容状态逐步列出来；用户看中某项后可以先测试，再确认一键加为提供商。 | 不扫描用户未选择的互联网范围，不调用推理、不发送合成 state/questions；并发数、超时、端口范围与重试可控。结果显示服务地址、类型/身份、探测时间、协议与模型、在线/鉴权/不兼容等状态。用户显式选择后才能运行带费用提示的模型测试，或“快速添加为提供商”；添加前确认地址、适配器类型与凭据，不将扫描结果静默写入配置。其他 SysTorch 实例只有在支持的 Jev 协议/认证路径下才可快速添加。 | 高：缩短首次接入路径 |
 | Portable 配套 daemon 发现与启动 | 从 portable 包启动正式桌面 exe 时，检查同目录配套 daemon/守护 exe 及其版本/身份。如果二进制存在但目标 daemon 未运行，由桌面壳启动它并等待健康握手；若同目录文件缺失或启动失败，向用户显示明确修复提示和对应下载/恢复路径。 | 现在用户解压后双击，只看到窗口却不知道后台服务为何没起来，还要猜该启动哪个文件。改进后，桌面程序会自己找到可信的配套 daemon 并等待它就绪；如果文件缺失或启动失败，就直接说明缺什么、下一步怎么修，用户不用靠猜。 | 已有本应用 daemon 时复用，不重复拉起；不接受错误版本/身份的服务；不能静默失败，也不自动下载/执行未知二进制；验证正常启动、缺文件、无权限、崩溃/超时与错误进程占用，并让用户看懂实际监听地址。 | 高：便携使用基础 |
-| [本地模型提供商生命周期](docs/design/LOCAL-MODEL-LIFECYCLE-PLAN.md) | 在高级提供商配置中登记结构化启动/停止/状态命令、工作目录、超时、启动策略和进程策略；通过受控环境变量把 API 地址、模型列表和经确认的 key 提供给 StartLux/OpenJev/Laya 等本地服务。Jev Switch 只管理已登记服务，不加载权重、不提供任意 shell。 | 用户可分别看到“允许路由 / 可控服务 / 服务运行”三种状态；云端 provider 保持不可控，本地 provider 经总开关和 5 秒警告后才可控制。管理员和具备 lifecycle scope 的 Agent 可检查、启动或停止服务，退出时按进程策略保留或回收。 | 命令参数化且拒绝 shell 注入；敏感变量确认与全链路脱敏；全局 `allow_host_commands` 默认关闭；provider 级互斥、所有权快照、health/readiness、独立审计、按需候选门控和自动触发已进入 0.10.x 后端；Provider 高级 UI 与安全确认已实现，Windows Laya/StartLux/OneJev 已有人工作业证据，细粒度 scope、进程组和其他平台仍待完成。 | **高：0.10.1 已正式发布；后续补齐 Agent scope、进程组和跨平台验收** |
+| [本地模型提供商生命周期](docs/design/LOCAL-MODEL-LIFECYCLE-PLAN.md) | 在高级提供商配置中登记结构化启动/停止/状态命令、工作目录、超时、启动策略和进程策略；通过受控环境变量把 API 地址、模型列表和经确认的 key 提供给 StartLux/OpenJev/Laya 等本地服务。SysTorch 只管理已登记服务，不加载权重、不提供任意 shell。 | 用户可分别看到“允许路由 / 可控服务 / 服务运行”三种状态；云端 provider 保持不可控，本地 provider 经总开关和 5 秒警告后才可控制。管理员和具备 lifecycle scope 的 Agent 可检查、启动或停止服务，退出时按进程策略保留或回收。 | 命令参数化且拒绝 shell 注入；敏感变量确认与全链路脱敏；全局 `allow_host_commands` 默认关闭；provider 级互斥、所有权快照、health/readiness、独立审计、按需候选门控和自动触发已进入 0.10.x 后端；Provider 高级 UI 与安全确认已实现，Windows Laya/StartLux/OneJev 已有人工作业证据，细粒度 scope、进程组和其他平台仍待完成。 | **高：0.10.1 已正式发布；后续补齐 Agent scope、进程组和跨平台验收** |
 | [模型画像与属性路由](docs/design/MODEL-PROFILES-ATTRIBUTE-ROUTING-PLAN.md) | 建立静态/动态 × 自动/人工的模型画像；入口声明 required modalities、privacy、latency、memory 和按需启动意图；候选先硬过滤，再沿现有 DAG/failover 软排序与执行。 | 文件概要、README 适配器和通知摘要可以优先使用符合隐私、模态和资源约束的模型；云端 provider 不会因为排序被偷偷放宽到 local-only 入口，过滤为空会说明原因。 | 人工 override 带来源/时间/理由且不被自动探测覆盖；过滤原因和最终候选写入 trace；extensions/media 保持现有边界；System0 执行采集与可撤销副作用，Jev 只做有限选择。 | **高：需求已归档，尚未实现** |
 | 演练场多模态信息 | 在现有演练场批量比较和结果详情基础上，增加图片/媒体输入的选择、预览、协议字段检查和结果对照；沿用 `/v1/systemone` 的扩展字段边界，不把视觉质量或模型能力伪装成网关保证。 | 用户可在演练场配置同一份文本与媒体输入，分别比较公开入口、直连上游和不同模型，并看到媒体是否被转发、剥离及对应的请求/响应记录。 | 先完成模型画像与属性路由的能力声明，再定义媒体大小、格式、隐私和本地/云端限制；真实多模态服务、视觉质量和概率校准另行验收。 | **中：路线图项，尚未实现** |
+| 可扩展题型、SysTorch API 类型与转换器 | 首轮界面以 Jev 当前的 Noul、Choice、Score、Box 四类为代表；后续再设计用户可配置题型/API 类型、版本化 schema、能力声明和可追踪的格式转换器。任何转换都必须保持判断语义；无法证明等价时在请求上游前返回明确格式不匹配。 | 用户先用熟悉的 Jev 四类完成判断；当接入有额外题型的本地模型或其他兼容端点时，可在能力确认后扩展输入结构，而无需把一种上游的专有格式误当成 SysTorch 的固定边界。 | 当前只把已由具体 SysTorch API/adapter/endpoint 端到端验证的题型开放给真实发送；UI 展示不等于后端支持。配置、转换、版本迁移、错误反馈和回放都需可追溯；未知或非等价类型不得静默降级或丢字段。 | **后续：首轮题型与消息链路稳定后再规划** |
 | Standalone 单文件独立版 | 已随 v0.2.0 发布，daemon 与 UI 内嵌单文件，首次启动校验后释放到版本化运行缓存；Portable ZIP 仍需解压。 | 新用户可只下载一个 EXE 并双击启动完整本地服务；用户配置和数据库与程序文件分离。 | v0.2.0 精确候选的冷启动、cache、health 与静态资源已验证；托盘真实点击、干净账户重复启动和多硬件关闭计时仍是独立人工验收边界。 | **已发布；补充桌面生命周期证据** |
 | 应用数据目录选择与迁移 | 参考 CC Switch 的数据存放交互，将应用数据根目录做成明确设置；便携/standalone 默认使用 exe 所在目录旁的 `data/`，用户可切换到操作系统用户数据目录。统一管理 SQLite、运行配置和相关状态，避免 DB、配置快照或密钥状态悄悄分散在多个位置；路径变更时提供现有数据迁移/复制及核对。 | 用户把程序放在自己的项目盘或移动硬盘时，希望配置和历史也跟着它；若更在意多用户隔离或系统备份，则可以改用自己的用户数据目录。切换前界面会明确显示当前与目标路径、预计包含的配置和历史；迁移校验完成后才切换，不会让用户打开新位置后误以为数据丢了。 | 首次启动显示默认目录并可改选；默认与 exe 同级 `data/`，在目录不可写时明确提示并允许选择用户数据目录，不暗中回退。迁移期间使用原子/可恢复步骤，校验配置、SQLite、权限与版本后切换；失败时继续从原路径启动。解释环境变量覆盖、备份、多个实例和敏感配置边界；不将真实数据写入安装器程序文件本身。 | 高：本地使用与可迁移性 |
 | 首次使用引导 | 首次启动默认打开新手引导。把“启动时打开新手引导”设置保存在 APP 数据中，默认开启；用户完整结束引导后自动关闭，之后可从设置/帮助中手动重开。关闭窗口或中途退出不应误记成已完成。 | 第一次打开的人不必面对一排陌生设置自己猜“入口、供应商、Token”是什么。引导用一个小例子把地址、上游和请求怎么串起来讲清楚；完成后自动收起，以后不打扰，需要时又能从帮助里重新打开。 | 首次启动只自动展示一次；完成状态跨重启保存；中断后按清楚规则继续或重开；手动重开不修改已完成的使用数据；引导解释 local/cloud、网关地址与调用 Token、上游配置及数据会发往选定上游等关键边界。 | 高：首次使用体验 |
@@ -47,7 +48,7 @@ Jev-Switch 的差异重点是轻量、响应快、本地快速调试和清楚的
 | 路由图实时动效 | 已接入 admin SSE 和持久活动游标，以真实 request route_trace 短暂标记成功、失败和同候选重试边；缺少 trace 不绘制虚构路线。 | 路由图会对真实调用的命中边给出短暂反馈，帮助维护者把活动记录与配置图对应起来。 | v0.2.0 UI 代码随 Release；事件映射和 reduced-motion 样式有构建/代码验证。本次浏览器核验以静态图和移动布局为主，不新增真实上游调用证据。并发 trace 独立辨识/显示开关仍可后续打磨。 | **Phase 1 已发布；增强项后置** |
 | Tauri 2 / Android | daemon library 已在 Android target 编译；v0.6.2 起使用稳定签名和统一 J 图标随主 Release 发布，v0.6.3 修复 release WebView 的本机 HTTP 访问；v0.7.0 发布原生文件/剪贴板桥和独立 service 状态。详细执行见[Android 构建与验收计划](docs/design/ROADMAP-PLAN-ANDROID-EXPERIMENTAL.md)。 | 没有 Termux 的用户可下载 APK；首次打开自动启动内嵌后端，用户明确停止后下次保持关闭，空 API 地址指向本机监听端口。维护者已确认 v0.6.3 本机启停和 UI 连接。 | v0.7.0 CI 已验证 signer、ABI/commit/versionCode/SHA-256、图标和正式资产；新原生 service/tile/通知、后台生命周期、文件导出/剪贴板和热点 LAN 仍需设备证据。 | **正式 APK 渠道：平台验收持续进行** |
 | Android APP | Tauri 2 Android 复用 React 控制台和 daemon library；默认启动内嵌网关，Dashboard 可明确启停；GitHub Actions 主 Release 同时构建、稳定签名并附加 Android APK。 | 普通移动端用户可以直接下载、安装、打开完整 APP；没有 Termux 也能配置和运行本机网关，空 API 地址会自动指向本机监听地址。Android 是正式渠道但维护优先级次于 Windows；系统级体验按已实测能力逐项说明。 | 固定 keystore Secrets、J 图标源一致性、APK signer 指纹、versionCode、实际设备覆盖安装和后台生命周期均有独立门槛；发行标签不替代功能证据。 | **正式分发渠道；次于 Windows 的维护优先级** |
-| Termux CLI/TUI 与 CLI 发布形态（Phase 1） | 参考 [cc-switch-cli](https://github.com/SaladDay/cc-switch-cli)，已实现独立 `jev-switch-cli` 薄客户端：`status`、`models`、`invoke`、`routes`、`events`，复用 daemon HTTP API 与环境变量鉴权；Linux/Windows CLI 随 v0.6.0 发布，Termux/Android arm64 通过设备本机 `cargo install`。TUI 仍后置，只有 SSH/低带宽/无浏览器场景形成稳定需求才评估 ratatui。 | 用户在 Termux 里不必安装完整桌面应用，也能检查 daemon、查看模型、发起 Jev 请求和翻阅路由事件；JSON 输出可以接脚本，表格输出适合终端。对只想在 Android 上使用的人，Termux + 浏览器 Web UI 仍是更完整的路径；需要原生触控时再比较 Tauri Android。 | CLI 仅做 HTTP 转发，不复制路由、SQLite 或 provider key 管理；`JEV_SWITCH_URL`、`JEV_SWITCH_TOKEN`、`JEV_SWITCH_ADMIN_TOKEN` 分别控制地址、调用和管理访问；token 不进参数、history 或日志；请求限制 2 MiB，事件 limit 上限 500，禁用 HTTP 重定向。覆盖 local/cloud 鉴权、事件游标、断线错误、非 TTY/JSON、Unicode 错误和敏感字段脱敏。 | **Phase 1 随 v0.6.0 候选发布；尚未经人工实测，TUI 保持后置** |
+| Termux CLI/TUI 与 CLI 发布形态（Phase 1） | 参考 [cc-switch-cli](https://github.com/SaladDay/cc-switch-cli)，已实现独立 systorch-cli 薄客户端；旧命令 jev-switch-cli 仅保留兼容：`status`、`models`、`invoke`、`routes`、`events`，复用 daemon HTTP API 与环境变量鉴权；Linux/Windows CLI 随 v0.6.0 发布，Termux/Android arm64 通过设备本机 `cargo install`。TUI 仍后置，只有 SSH/低带宽/无浏览器场景形成稳定需求才评估 ratatui。 | 用户在 Termux 里不必安装完整桌面应用，也能检查 daemon、查看模型、发起 Jev 请求和翻阅路由事件；JSON 输出可以接脚本，表格输出适合终端。对只想在 Android 上使用的人，Termux + 浏览器 Web UI 仍是更完整的路径；需要原生触控时再比较 Tauri Android。 | CLI 仅做 HTTP 转发，不复制路由、SQLite 或 provider key 管理；SYSTORCH_URL、SYSTORCH_TOKEN、SYSTORCH_ADMIN_TOKEN 是新名称，JEV_SWITCH_* 仅为兼容别名；token 不进参数、history 或日志；请求限制 2 MiB，事件 limit 上限 500，禁用 HTTP 重定向。覆盖 local/cloud 鉴权、事件游标、断线错误、非 TTY/JSON、Unicode 错误和敏感字段脱敏。 | **Phase 1 随 v0.6.0 候选发布；尚未经人工实测，TUI 保持后置** |
 | GitHub Pages 官方首页 | 已部署到 GitHub Pages：产品定位、控制台截图、快速开始、下载和限制说明；Release published 后工作流自动刷新版本元数据和下载链接。 | 访客从 GitHub 首页链接即可看懂定位、浏览 UI 图册并找到当前发行版入口。 | Pages workflow 已在 v0.5.0 发布后重新部署；官网中英文、主题和平台下载可用，`site/assets/` 中截图仍是历史素材，需用最终候选人工翻新。 | **已部署；截图翻新待人工完成** |
 | 性能基线与优化 | 已完成第一轮 UI/管理面快修：provider probe 从逐一等待改为最多 4 路并发，结果合并提交；Shell/Dashboard 共用健康状态；Telemetry 禁止轮询重叠并在隐藏页暂停。全链路计划继续覆盖 daemon、路由、SQLite、首屏及活动面板。 | 用户打开 Dashboard 不再等多个 provider 挨个超时后逐项刷新；切到别页或窗口后台时，遥测停止持续唤醒页面。完整请求仍可按口径区分网关和上游耗时。 | 4 个各延迟约 300ms 的本地 provider fixture：串行 5 轮中位数 1244.3ms，并发中位数 312.2ms；当前同源 Dashboard trace 为 LCP 288ms、CLS 0.01、无 long task。旧的 265ms 样本来自不同视口与 DOM 数据量，不作前后性能比较。完整固定硬件/冷暖启动、路由选择、SQLite 50/500/5000 历史和 p50/p95/p99 仍待性能专项，不宣称普遍更快。 | **进行中：首轮热点已优化；全链路基线待做** |
 | 首页动态运行仪表盘（Phase 1/2） | 已落地 Dashboard 当前 daemon 会话遥测：入口/出口 JSON 字节、实时速率、会话累计、活跃请求、成功/失败/failover、网关平均延迟、daemon 进程 CPU/内存；最近约 10 分钟保留 600 个内存采样点。`abc793f` 又在 daemon 组合边界记录每次真实 adapter attempt，聚合 `avg_upstream_latency_ms` 与 `upstream_attempts`。后续再补 Tauri WebView 进程资源和逐跳 route latency。 | 用户打开首页就能知道“这一刻网关是否在工作”：一条请求到来时，入口速率曲线出现脉冲，活跃请求数短暂升高；响应发出后出口曲线与会话累计同步增加。开发者可以看到“网关收到/发出多少、请求是否堆积、是网关还是 adapter processing 变慢、应用自己占了多少内存”，而不必开任务管理器、翻日志、猜测数字含义。重启应用后会话累计从零开始，历史调用仍在活动记录和统计页中保留。 | `GET /v1/admin/telemetry` 使用版本化只读数据模型；前端支持 1 秒/5 秒刷新、暂停、手动刷新、最近 10 分钟曲线、响应式指标矩阵和展开诊断。失败响应的已知 JSON body 计入出口；adapter attempt latency 不写 SQLite、不与 gateway latency 相加；Tauri WebView 资源仍显示 unavailable。HTTP 集成回归、Rust/UI 门禁和 ts-rs 已通过；新 Tauri WebView 截图与真实桌面流量验收仍待后续。 | 高：Phase 1/2 已实现，继续做固定场景性能基线 |
@@ -62,7 +63,7 @@ Jev-Switch 的差异重点是轻量、响应快、本地快速调试和清楚的
 
 ```text
 +--------------------------------------------------------------------------------+
-| Jev-Switch  ● Local 127.0.0.1:11435  运行 18m 42s       [刷新 1s] [暂停]      |
+| SysTorch  ● Local 127.0.0.1:11435  运行 18m 42s       [刷新 1s] [暂停]      |
 +--------------------------------------------------------------------------------+
 | 网关流量 · 最近 10 分钟                                                        |
 | 入口接收  ──╮     ╭──╮        ╭────╮       当前 3.75 KB/s   会话 6.66 GB       |
@@ -92,17 +93,14 @@ Jev-Switch 的差异重点是轻量、响应快、本地快速调试和清楚的
 
 ## 决策边界
 
-- 本文描述方向，不指定发布日期、版本号或保证实现顺序；开始每项前仍需结合用户反馈、依赖和实测调整。
-- v0.7.1 正式 Release 内置 Vercel、Laya、TypeSafe SystemOne 与 OpenRouter adapters，并包含 Windows Standalone、Linux/Windows CLI、Docker 与稳定签名 Android arm64 APK。维护者此前已人工确认便携/Standalone 桌面核心路径、官方 TypeSafe 调用、Android 初步调用及 v0.6.3 APK 本机启停/连接；v0.7.1 新路径、原生 service/tile/通知、OpenRouter live-key、TUI 和全链路性能仍按实际证据边界说明。普通 OpenAI/Anthropic chat API 不属于产品兼容范围。
-- 服务发现仅扫描用户明确提供/选择的目标范围；探查和模型推理分开授权，快速添加必须经过结果确认和凭据设置。
-- 路由顾问先作为建议系统；任何扩大自治程度的变更都需要单独的用户授权、可回放评估、版本化和回滚路径。用户标注不能默认等同于可用于训练或自动改配置的授权。
-- standalone 是交付形态目标，不得省略可验证的 sidecar 身份、资源校验和故障恢复；应用数据与可执行文件分离。默认 exe 邻近目录不可写时必须明确交给用户选择，不得静默改写目录策略。
-- 数据目录变更必须可预览、可核验、可恢复；不得只迁移 SQLite 而漏掉运行配置，也不得在迁移失败后无提示地从空数据库启动。
-- 真实上游仍由已配置服务承担推理；性能数据必须分辨本地网关与上游服务耗时。
-- 动效只能呈现已观测到的事件；尚未收到、未持久化或无法关联的状态应显示为未知/缺失，不推测补画。
-- Android 计划当前进入“完整网关应用”实现；后台服务控制面主要参考 FlClash 的 service/action/前台通知/Quick Settings 模式，LocalSend 只作为共享核心与跨平台交付的辅参考。平台打包不等于适配完成，APK artifact 不等于真机支持。默认启动、APP/通知/tile 启停、后台稳定和 Activity 重建保持是硬验收条件。
-- Termux CLI/TUI 分阶段推进：CLI Phase 1 是 daemon 的薄 HTTP 客户端，TUI 仍是候选；Termux daemon + Android 浏览器 Web UI 和 Tauri Android 仍是更完整的替代方案。不得把 CLI 宣称为完整 Web/Tauri 替代，也不得复制 Web/Tauri 的全部交互。
-- UI 图标化和性能优化以[2026-09-30 验证记录](docs/verification/ui-icon-performance-2026-09-30.md)界定的当前范围为准；单机本地 fixture 的延迟改善不能外推为全链路或跨设备性能承诺。全链路基线完成前保持“进行中”。
-- UI 的游戏感以清晰反馈和可控性为限，装饰不能降低可读性、响应速度或无障碍可用性。
+- 本文描述未来方向，不指定发布日期、版本号或保证实现顺序。新功能开始前仍需结合用户反馈、依赖、权限边界和实测重新排序。
+- 0.11.0 的版本身份、当前能力与验证范围以 docs/releases/0.11.0.md 和 docs/verification/v0.11.0-pre-release-2026-10-30.md 为准；历史版本核验只证明其标注版本和范围。
+- 服务发现只探测用户明确提供或选择的目标范围；探查和模型推理分开授权，添加目标前确认地址、adapter 与凭据。
+- 路由顾问先只生成可解释建议，不静默修改配置。任何扩大自治程度的变更都要单独经过回放评估、权限设计、版本化和回滚验证。
+- Windows EXE、Android APK、Docker 与 CLI 的用户界面和命令可以采用 SysTorch 品牌；既有 Android applicationId、Windows Tauri identifier、协议字段、数据目录、密钥与旧环境变量是兼容锚点，不能为统一文案而破坏升级。
+- 动效只能反映真实观测到的请求或响应；无法关联的数据应显示未知或缺失，不补造事件。
+- Android APK 构建成功不等于真机支持。应用启停、通知、Quick Settings tile、权限、触摸、相机/相册和后台生命周期分别记录设备证据。
+- Termux CLI 是 daemon 的薄 HTTP 客户端，不复制路由、SQLite 或 provider key 管理。旧 JEV_SWITCH_* 环境变量仅作为兼容别名；新文档优先使用 SYSTORCH_* 名称。
+- UI 图标、性能或媒体兼容性结论必须有当前版本可复现的证据；一个本地 fixture 的延迟改善不能外推为跨设备或全链路性能保证。
 
-— GPT-6 Luna xhigh（OpenAI Codex），AI 辅助整理
+— SysTorch 项目路线图，AI 辅助整理，2026-10-30

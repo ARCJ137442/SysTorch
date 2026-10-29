@@ -13,9 +13,9 @@ function Get-Sha256([string]$Path) {
     (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash
 }
 
-$shellPath = Join-Path $repoRoot 'src-tauri/target/release/jev-switch.exe'
-$daemonPath = Join-Path $repoRoot 'src-tauri/target/release/jev-switch-daemon.exe'
-$daemonBuildPath = Join-Path $repoRoot 'rs/target/release/jev-switch.exe'
+$shellPath = Join-Path $repoRoot 'src-tauri/target/release/systorch.exe'
+$daemonPath = Join-Path $repoRoot 'src-tauri/target/release/systorch-daemon.exe'
+$daemonBuildPath = Join-Path $repoRoot 'rs/target/release/systorch-daemon.exe'
 $uiDistPath = Join-Path $repoRoot 'ui/dist'
 
 foreach ($required in @($shellPath, $daemonPath, $daemonBuildPath, (Join-Path $uiDistPath 'index.html'))) {
@@ -50,10 +50,10 @@ if (Test-Path -LiteralPath $destinationPath) {
 New-Item -ItemType Directory -Path $destinationPath | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $destinationPath 'resources/ui') -Force | Out-Null
 
-Copy-Item -LiteralPath $shellPath -Destination (Join-Path $destinationPath 'jev-switch.exe')
-& (Join-Path $PSScriptRoot 'verify-windows-app-icon.ps1') -ExecutablePath (Join-Path $destinationPath 'jev-switch.exe')
-Copy-Item -LiteralPath $daemonPath -Destination (Join-Path $destinationPath 'jev-switch-daemon.exe')
-Copy-Item -LiteralPath $daemonPath -Destination (Join-Path $destinationPath 'resources/jev-switch-daemon.exe')
+Copy-Item -LiteralPath $shellPath -Destination (Join-Path $destinationPath 'systorch.exe')
+& (Join-Path $PSScriptRoot 'verify-windows-app-icon.ps1') -ExecutablePath (Join-Path $destinationPath 'systorch.exe')
+Copy-Item -LiteralPath $daemonPath -Destination (Join-Path $destinationPath 'systorch-daemon.exe')
+Copy-Item -LiteralPath $daemonPath -Destination (Join-Path $destinationPath 'resources/systorch-daemon.exe')
 Copy-Item -LiteralPath $uiDistPath -Destination (Join-Path $destinationPath 'resources/ui') -Recurse
 if (Test-Path -LiteralPath (Join-Path $destinationPath 'ui/dist')) {
     throw 'Portable packaging must include exactly one UI tree under resources/ui/dist.'
@@ -61,14 +61,14 @@ if (Test-Path -LiteralPath (Join-Path $destinationPath 'ui/dist')) {
 
 $fileHashes = [ordered]@{}
 foreach ($relative in @(
-    'jev-switch.exe',
-    'jev-switch-daemon.exe',
-    'resources/jev-switch-daemon.exe',
+    'systorch.exe',
+    'systorch-daemon.exe',
+    'resources/systorch-daemon.exe',
     'resources/ui/dist/index.html'
 )) {
     $outputPath = Join-Path $destinationPath $relative
     $sourcePath = switch ($relative) {
-        'jev-switch.exe' { $shellPath }
+        'systorch.exe' { $shellPath }
         { $_ -like '*daemon.exe' } { $daemonPath; break }
         default { Join-Path $uiDistPath 'index.html' }
     }
@@ -112,15 +112,15 @@ if ($MsiPath) {
     }
     $wixManifest = Get-Content -LiteralPath $wixManifestPath -Raw
     $msiInputSources = [ordered]@{
-        shell = 'File Id="Path" Source="([^"]*jev-switch\.exe)"'
-        daemon = 'File Id="Bin_jev_switch_daemon\.exe" Source="([^"]+)"'
+        shell = 'File Id="Path" Source="([^"]*systorch\.exe)"'
+        daemon = 'File Id="Bin_systorch_daemon\.exe" Source="([^"]+)"'
         ui_index = 'Source="([^"]*ui[\\/]dist[\\/]index\.html)"'
         ui_js = 'Source="([^"]*index-[^"\\/]+\.js)"'
         ui_css = 'Source="([^"]*index-[^"\\/]+\.css)"'
     }
     $portableExpectedHashes = @{
-        shell = Get-Sha256 (Join-Path $destinationPath 'jev-switch.exe')
-        daemon = Get-Sha256 (Join-Path $destinationPath 'jev-switch-daemon.exe')
+        shell = Get-Sha256 (Join-Path $destinationPath 'systorch.exe')
+        daemon = Get-Sha256 (Join-Path $destinationPath 'systorch-daemon.exe')
         ui_index = Get-Sha256 (Join-Path $destinationPath 'resources/ui/dist/index.html')
         ui_js = $null
         ui_css = $null
@@ -148,19 +148,20 @@ if ($MsiPath) {
 }
 
 $runInstructions = @'
-Jev-Switch portable test runtime
+SysTorch portable runtime
 
-Run: double-click jev-switch.exe in this directory.
-Keep jev-switch-daemon.exe and the resources/ui/dist directory beside it. This is a folder-based portable runtime, not a standalone single-file executable.
+Run: double-click systorch.exe in this directory.
+Keep systorch-daemon.exe and the resources/ui/dist directory beside it. This is a folder-based portable runtime, not a standalone single-file executable.
 
-It uses the existing %APPDATA%\jev-switch configuration and database and listens on 127.0.0.1:11435. Before launch, make sure no other Jev-Switch daemon is already using that port; the shell reuses a compatible daemon it finds there.
+It prefers %APPDATA%\SysTorch and continues to use an existing %APPDATA%\jev-switch profile in place so older tasks, credentials, and routes remain available. It listens on 127.0.0.1:11435. Before launch, make sure no other SysTorch daemon is already using that port; the shell reuses a compatible daemon it finds there.
 
 This build does not run an installer. The portable files come from the same Tauri build inputs as the MSI candidate. Complete a cold launch and real route-trace check before treating runtime acceptance as complete.
 '@
 Set-Content -LiteralPath (Join-Path $destinationPath 'RUN-PORTABLE.txt') -Value $runInstructions -Encoding UTF8
 
 $manifest = [ordered]@{
-    product = 'jev-switch'
+    product = 'systorch'
+    brand = 'SysTorch'
     version = $tauriConfig.version
     layout = 'folder-portable'
     built_at = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')

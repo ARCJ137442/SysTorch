@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-event-listeners"
+description = "Subscribe to gateway-toggle notifications in the bundled main window; does not expose other mobile plugin commands."
+commands.allow = ["registerListener", "removeListener"]

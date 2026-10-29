@@ -1,45 +1,45 @@
-# Jev-Switch MVP example config
+# SysTorch example configuration
 #
-# 加载顺序：
-#   1. $JEV_SWITCH_CONFIG 环境变量
-#   2. 否则 ~/.jev-switch/providers.toml
+# New deployments prefer SYSTORCH_* variable names. Legacy JEV_* variables remain
+# accepted for existing installs and scripts, but should not be copied into new examples.
+# Configuration path order:
+#   1. SYSTORCH_CONFIG (legacy JEV_SWITCH_CONFIG)
+#   2. Existing ~/.jev-switch/providers.toml for an in-place upgrade
+#   3. New ~/.systorch/providers.toml
 #
-# 相对路径基准：按启动进程时的 CWD 解析（工作区约定 = 仓库根，如
-# `JEV_SWITCH_CONFIG="rs\providers.example.toml"`），不是本文件/manifest 所在目录。
-# cargo workspace 拆分（rs/Cargo.toml → crates/*）不改变该基准。
+# Relative paths are resolved from the launching process working directory; they are not
+# relative to this file. Cargo workspace layout does not change that rule.
 #
-# 密钥（Q4=b 默认档 · contracts/04 §1 · A7）：
-#   - 明文 `api_key = "sk-…"`（**优先读取**；示例不写真实 key，仅注释示意）
-#   - `api_key_env = "…"`（环境变量名，**兼容保留**；明文缺省时回退到此）
-#   - 真值文件应 0600、~/.jev-switch/ 目录 0700（Windows 降级为启动/写回告警）
-#   - UI/API 只出 `api_key_masked`（如 sk-****a1b2），永无读回明文接口
-#   - admin PUT 写回会保留本文件其它段，但**注释不保留**（toml 往返限制）
+# Secrets:
+#   - Keep providers.toml readable only by the current user.
+#   - The UI and admin API return only masked API key state.
+#   - Never paste real secrets into example files, logs, screenshots, or commits.
 #
-# 示例默认启用 Vercel + Laya；另含禁用的 TypeSafe 官方和本地-compatible 配置。
-# 未知请求字段在 local 模式默认保留；改为 true 后，网关会在出站前剥离并在响应元数据中记录。
+# This example enables Vercel and Laya, and includes disabled TypeSafe official
+# and local-compatible samples. Local requests preserve unknown fields by default.
 strip_unknown_fields = false
 #
 # ── 双态开关（#43 · docs/12 §一）────────────────────────────────────
 # mode 只管鉴权，**不涉及上游拓扑**（拓扑不区分：以内核所在位置访问上游）。
 #   mode = "local"   # 默认：loopback 免鉴权（非 loopback peer → 403 应用层兜底）
 #   mode = "cloud"   # /v1 要 Bearer 调用 token，admin 要会话
-# env 覆盖：JEV_SWITCH_MODE=local|cloud（非法值拒绝启动）。
+# env override: SYSTORCH_MODE=local|cloud (legacy JEV_SWITCH_MODE also accepted)（非法值拒绝启动）。
 # **运行时热切（零进程重启）**：PUT /v1/admin/mode {"mode":"cloud"}
 #   —— 无密码首次激活 cloud 必须同请求带 admin_password（fail-closed 指引）。
 #
 # ── 监听地址（bind 与 mode 解耦 · ListenSupervisor 热 Rebind）────────
 # 未配置 bind（默认）→ 成对默认随 mode：local=127.0.0.1:11435、cloud=0.0.0.0:11435；
 # mode 翻转自动热 Rebind 到对端默认（local 对 LAN 内核级关端口）。
-#   # bind = "0.0.0.0:11435"   # 显式 bind（或 env JEV_BIND）：恒绑此值，mode 翻转不动
+#   # bind = "0.0.0.0:11435"   # 显式 bind（或 env SYSTORCH_BIND (legacy JEV_BIND)）：恒绑此值，mode 翻转不动
 #                              #   监听（rebind.skipped="explicit bind"），local 态由
 #                              #   peer 403 兜底；运行时改址：PUT /v1/admin/listen
 #                              #   {"addr":"ip:port"} 显式化 / {"addr":"auto"} 恢复成对默认
 #
 # cloud 态鉴权（可选；local 态忽略这两项）：
 #   auth_tokens = ["tok-…"]        # /v1 调用 token（也可写 [[auth_tokens]] token="…"
-#                                  #   或 env JEV_AUTH_TOKENS=逗号分隔，env 优先）
+#                                  #   或 env SYSTORCH_AUTH_TOKENS (legacy JEV_AUTH_TOKENS)=逗号分隔，env 优先）
 #   admin_password = "…"           # admin 登录密码（明文 toml —— Q4=b 哲学，0600 文件；
-#                                  #   env JEV_ADMIN_PASSWORD 优先；UI 只见会话，永不见密码；
+#                                  #   env SYSTORCH_ADMIN_PASSWORD (legacy JEV_ADMIN_PASSWORD) 优先；UI 只见会话，永不见密码；
 #                                  #   运行时热更：PUT /v1/admin/password（会话全废）——
 #                                  #   cloud 忘密恢复 = 本机 loopback 一行 curl）
 # 部署细节与风险块：docs/deployment.md。

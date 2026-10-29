@@ -1,5 +1,41 @@
 # Changelog
 
+## [0.11.0] - 2026-10-30 · 预发布 / Pre-release
+
+### Added
+
+- 全产品品牌切换为 SysTorch：正式火炬 SVG 母版派生桌面、托盘、启动页和 Android 图标；Windows 与 Android 显示名称更新，GitHub Pages、双语 README 和发布信息使用“把眼前的问题，变成下一步 / Turn questions into next steps”。
+- 新增「开始」普通决策会话与「决策台」持久人工作答；普通对话与人工作答分开存储，原有 DAG、路由辉光、提供商配置与生命周期能力继续保留。
+- 开始会话支持多题消息、共享背景、Noul/Choice/Score/Box 结构化问题及附件；消息内容加密保存，按消息原子追加，并可在进程重启后恢复。
+- 配置 API 的普通写入使用原子资源操作；旧整表路由 PUT 已关闭，更新失败时保留原运行快照。
+- GitHub Release 改为只附两个面向用户的文件：Windows x64 Standalone EXE 与稳定签名 Android arm64 APK。公开文件名采用 SysTorch。
+
+### Compatibility and boundaries
+
+- Android installed applicationId、稳定签名密钥、Windows Tauri identifier、历史数据目录、owner key、旧备份格式、协议字段和历史调用记录按兼容迁移约定保留。新界面、可执行文件和对外品牌使用 SysTorch。
+- Windows EXE 目前没有 Authenticode 证书；Windows 可能显示未知发布者提示。
+- 此版本是预发布，自动 CI 通过不等同于维护者人工验收。Android 真机附件选择、权限拒绝和后台生命周期仍需设备实测；不同上游对题型与媒体支持不完全相同。
+
+### 用户叙事与对照场景
+
+#### Agent 提交问题，必要时由人接手，再取回结果
+
+- **起点**：一个 Harness 需要确认“是否可以发布”，但它不能独立做出最终判断。
+- **问题**：普通模型调用结束后，调用程序通常只能接受模型输出；进程退出后也没有一个可追溯的人工作答任务。
+- **操作**：Harness 将有稳定 ID 的结构化问题提交到 SysTorch；调用进程可以退出。维护者在决策台查看上下文并作答，随后 Harness 使用原身份查询同一任务。
+- **结果**：请求、明确的人工作答、后续取回与结果投影关联到同一持久任务；重复提交、过期、冲突答案和未授权访问由协议拒绝。
+- **对照**：人仍可在「开始」用聊天式工作面请求模型判断；需要工程细节时则进入 DAG、提供商、调用历史和统计页面。
+- **边界**：本版不自动把人工答案注入路由策略，不提供团队分派；Windows EXE 未做 Authenticode，整套应用还需维护者人工测试。
+
+#### A harness submits a question, a person can take over, and the caller retrieves the answer
+
+- **Starting point**: A harness needs to decide whether a release is ready, but it cannot make the final judgment on its own.
+- **Problem**: A normal model call usually ends with a model response, and a caller process has no durable, traceable human-answer task after it exits.
+- **Action**: The harness submits a structured question with a stable ID to SysTorch and may exit. A maintainer reviews the context in the Decision Desk and answers. The harness later queries the same task with its original identity.
+- **Result**: The request, explicit human answer, retrieval, and result projection stay linked to one durable task. Duplicate submissions, expiry, conflicting answers, and unauthorized access are rejected by the protocol.
+- **Comparison**: People can also use the chat-style Start workspace to ask a model for a decision; maintainers can inspect DAG routing, providers, call history, and statistics.
+- **Boundary**: This release does not feed a human answer automatically into route policy or provide team assignment. The Windows EXE is not Authenticode-signed, and the full app still needs maintainer hands-on testing.
+
 ## [0.10.3] - 2026-10-12
 
 ### Fixed

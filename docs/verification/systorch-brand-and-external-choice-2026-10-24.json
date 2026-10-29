@@ -1,0 +1,66 @@
+{
+  "date": "2026-10-24",
+  "scope": "external caller example and first source branding batch; no rebuilt branded native package",
+  "external_example": {
+    "scope": "frozen M1 EXE, native human answer, two independent PowerShell 5.1 callers",
+    "checks": [
+      "first PowerShell 5.1 process exits after durable acceptance; receipt contains no token",
+      "re-running Submit reuses the exact persisted idempotency key and task",
+      "independent pre-answer query reports pending without cancellation",
+      "native owner decision desk answers the task while no caller process is alive",
+      "fresh PowerShell 5.1 query retrieves the strict result with the same caller token"
+    ],
+    "realModelCalls": 0,
+    "binary_sha256": "98703f4912800dd55f97673ea6d6602dbf478b8b1e3189be254f146228a3e81d",
+    "script_sha256": "53f2a21cf5866615222d8eae29e39a2ff8ec3d566225324db8f264e9691abd97",
+    "completed": "2026-10-24T00:23:04.417Z"
+  },
+  "brand_browser": {
+    "started": "2026-10-24T00:27:05.421Z",
+    "binarySha256": "a5616f304b917f199b84b5acab59522c5a51934092bf4e09ceef32b07796b4b7",
+    "scope": "isolated daemon, real HTTP/SQLite and Chromium, synthetic choices only",
+    "checks": [
+      "explicit identity required even on local loopback",
+      "caller task isolation and admin role does not imply answer permission",
+      "interleaved requests from two callers retain separate ownership and answers",
+      "a pending human task does not block the existing immediate model/DAG path",
+      "20 duplicate submissions are the same durable task; changed body conflicts",
+      "pending survives actual process exit and restart with stable caller/owner",
+      "20 concurrent conflicting answers select exactly one authoritative observation and strict result",
+      "completed result survives a second real restart without executing any upstream",
+      "caller-only revision, responder clarification, stale answer rejection and conditional projection stop",
+      "refusal, cancellation, erasure and persistent no-replay tombstones",
+      "wall-clock expiry is enforced before any late answer",
+      "IME and offline submission preserve the draft without reporting an authoritative answer",
+      "real UI submit → navigate draft → answer → caller result → refresh recovery at 1440px",
+      "real UI submit → navigate draft → answer → caller result → refresh recovery at 1024px",
+      "real UI submit → navigate draft → answer → caller result → refresh recovery at 390px",
+      "real UI submit → navigate draft → answer → caller result → refresh recovery at 360px",
+      "browser caller identity is reused by Choice/model APIs; readonly UI hides provider management and Choice denies unassigned answers",
+      "offline data-directory backup with owner key restores durable authority",
+      "missing/mismatched owner key blocks Choice acceptance without crashing the old model gateway; restoring the key recovers results",
+      "no fixture body, answer or credential plaintext in database or daemon logs"
+    ],
+    "realModelCalls": 0,
+    "syntheticModelCalls": 3,
+    "completed": "2026-10-24T00:27:17.127Z"
+  },
+  "gates": {
+    "ui_tests": 85,
+    "ui_lint": "passed",
+    "ui_build": "passed",
+    "native_clippy": "passed --features standalone,m1-preview --all-targets -- -D warnings",
+    "git_diff_check": "passed"
+  },
+  "brand": {
+    "display_name": "SysTorch",
+    "private_npm_package": "systorch-ui",
+    "version": "0.10.3",
+    "technical_application_id_migration": "planned with data/signature/upgrade verification",
+    "legacy_protocol_ids": "preserved",
+    "new_native_package": "NOT_BUILT; frozen M1 binaries untouched"
+  },
+  "new_worktree": false,
+  "commit_push_release": false,
+  "collected_at": "2026-10-24T00:28:50.579Z"
+}

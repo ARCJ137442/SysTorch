@@ -1,0 +1,9 @@
+{
+  "identifier": "desktop-gateway",
+  "description": "The desktop's owned HTTP console may retrieve its own Choice capability and keep F11/events working.",
+  "platforms": ["windows", "linux", "macOS"],
+  "windows": ["main"],
+  "local": false,
+  "remote": {"urls": ["http://127.0.0.1:11435/*", "http://127.0.0.1:11436/*"]},
+  "permissions": ["allow-decision-owner", "core:window:allow-is-fullscreen", "core:window:allow-set-fullscreen", "core:event:allow-listen", "core:event:allow-unlisten"]
+}

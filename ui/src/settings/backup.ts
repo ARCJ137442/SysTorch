@@ -1,8 +1,10 @@
 import type { Lang } from '../i18n';
 import type { ThemePreference } from '../theme';
 import type { RuntimeConfigBackup } from '../api/configFile';
+import type { StartupPage } from './startup';
 
-export const SETTINGS_BACKUP_FORMAT = 'jev-switch-settings';
+export const SETTINGS_BACKUP_FORMAT = 'systorch-settings';
+export const LEGACY_SETTINGS_BACKUP_FORMAT = 'jev-switch-settings';
 export const SETTINGS_BACKUP_SCHEMA_VERSION = 1;
 
 export interface AppSettingsBackup {
@@ -13,6 +15,7 @@ export interface AppSettingsBackup {
   uiScale: number;
   autoHideRoutingHud: boolean;
   apiBase: string | null;
+  startupPage?: StartupPage;
 }
 
 export interface SettingsBackup {
@@ -37,7 +40,9 @@ function parseAppSettings(value: unknown): AppSettingsBackup {
   }
   if (typeof uiScale !== 'number' || !Number.isFinite(uiScale) || uiScale < 0.1 || uiScale > 2) throw new Error('invalid UI scale');
   if (apiBase !== null && typeof apiBase !== 'string') throw new Error('invalid API base');
-  return { theme, language, autoProviderProbe, showStatusBar, uiScale, autoHideRoutingHud, apiBase };
+  const startupPage = value.startupPage;
+  if (startupPage !== undefined && startupPage !== 'start' && startupPage !== 'dashboard' && startupPage !== 'last') throw new Error('invalid startup page');
+  return { theme, language, autoProviderProbe, showStatusBar, uiScale, autoHideRoutingHud, apiBase, ...(startupPage === undefined ? {} : { startupPage }) };
 }
 
 function parseGateway(value: unknown): RuntimeConfigBackup {
@@ -60,8 +65,11 @@ export function parseSettingsBackup(text: string): SettingsBackup {
   } catch {
     throw new Error('invalid JSON');
   }
-  if (!isObject(parsed) || parsed.format !== SETTINGS_BACKUP_FORMAT || parsed.schema_version !== SETTINGS_BACKUP_SCHEMA_VERSION || typeof parsed.exported_at !== 'string') {
-    throw new Error('unsupported Jev Switch settings backup');
+  if (!isObject(parsed)
+    || ![SETTINGS_BACKUP_FORMAT, LEGACY_SETTINGS_BACKUP_FORMAT].includes(String(parsed.format))
+    || parsed.schema_version !== SETTINGS_BACKUP_SCHEMA_VERSION
+    || typeof parsed.exported_at !== 'string') {
+    throw new Error('unsupported SysTorch settings backup');
   }
   return {
     format: SETTINGS_BACKUP_FORMAT,

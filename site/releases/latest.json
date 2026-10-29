@@ -1,12 +1,10 @@
 {
-  "tag_name": "v0.6.0",
-  "name": "Jev-Switch v0.6.0",
-  "published_at": "2026-10-01T05:30:47Z",
+  "tag_name": "v0.11.0",
+  "name": "SysTorch v0.11.0 — Pre-release preview",
+  "prerelease": true,
+  "published_at": null,
   "assets": [
-    { "name": "jev-switch-portable-0.6.0-windows-x64.zip" },
-    { "name": "jev-switch-standalone-0.6.0-windows-x64.exe" },
-    { "name": "jev-switch_0.6.0_x64_en-US.msi" },
-    { "name": "jev-switch-cli-0.6.0-linux-x64" },
-    { "name": "jev-switch-cli-0.6.0-windows-x64.exe" }
+    { "name": "SysTorch-0.11.0-windows-x64.exe" },
+    { "name": "SysTorch-0.11.0-android-aarch64.apk" }
   ]
 }

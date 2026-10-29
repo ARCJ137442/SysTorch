@@ -16,7 +16,7 @@ const gateway = {
 
 test('creates a versioned backup and preserves API keys only in explicit export data', () => {
   const backup = createSettingsBackup(appSettings, gateway, '2026-10-01T00:00:00.000Z');
-  assert.equal(backup.format, 'jev-switch-settings');
+  assert.equal(backup.format, 'systorch-settings');
   assert.equal(backup.schema_version, 1);
   assert.equal(backup.gateway.providers.test.api_key, 'secret-test-key');
   assert.equal(JSON.stringify(backup).includes('admin_password'), false);
@@ -25,6 +25,10 @@ test('creates a versioned backup and preserves API keys only in explicit export 
 test('parses a valid backup and rejects malformed or unsupported settings before import', () => {
   const valid = JSON.stringify(createSettingsBackup(appSettings, gateway));
   assert.deepEqual(parseSettingsBackup(valid).app_settings, appSettings);
+  const legacy = JSON.parse(valid);
+  legacy.format = 'jev-switch-settings';
+  assert.equal(parseSettingsBackup(JSON.stringify(legacy)).format, 'systorch-settings');
+  assert.deepEqual(parseSettingsBackup(JSON.stringify(legacy)).gateway, gateway);
   assert.throws(() => parseSettingsBackup('{'), /invalid JSON/);
   assert.throws(() => parseSettingsBackup(JSON.stringify({ format: 'jev-switch-settings', schema_version: 99 })), /unsupported/);
   assert.throws(() => parseSettingsBackup(JSON.stringify({ ...JSON.parse(valid), app_settings: { ...appSettings, uiScale: 3 } })), /UI scale/);

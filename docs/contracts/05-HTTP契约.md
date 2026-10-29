@@ -61,10 +61,17 @@ Authorization: Bearer <admin-token>
 ### `GET /health`
 
 ```json
-{ "status": "ok", "version": "0.1.0" }
+{
+  "brand": "SysTorch",
+  "status": "ok",
+  "version": "0.11.0",
+  "product": "jev-switch",
+  "api_revision": 1,
+  "build_revision": null
+}
 ```
 
-（文本 `"jev-switch MVP"` 兼容期可保留，**以 JSON 为准**。）
+`brand` 是面向界面和人员的产品名；`product` 保持旧值作为已有 shell/Agent 的兼容身份。两者并存不是旧品牌展示。实际 version 与 build_revision 由构建提供。
 
 ### `GET /v1/models`
 
@@ -162,7 +169,25 @@ PUT  /v1/admin/host-commands   {"enabled": boolean, "shell_enabled"?: boolean}
 
 事务中的 `edge_id` 使用 `[left, right, match, upstream_model]` 的 JSON 身份；服务端仅在唯一匹配时兼容旧的 `left=>right` 形式。
 
+`update` / `delete` 可带 `expected: RouteEdge`，在同一提交临界区内比较目标边原值；不相等返回 `409`，整笔事务不写入。省略时保持旧客户端的显式单边覆盖语义，不引入全局版本号。UI 必须从自身编辑基线生成操作并携带原值，不能拿最新全表与旧草稿做删除差异；回执只校验触及边，其他会话新增边要合并保留。保存期间的新编辑继续保留原值前提，冲突时可载入最新并保留只读草稿备份。
+
+运行时配置写入口（provider、路由、入口、生命周期配置、主机命令、备份导入/导出与共同 TOML 设置）共用读改写到内存发布的串行门；数据库锁不跨上游/状态探测 await。启用状态会用于构建可执行边集，编辑停用入口不会使其重新可执行。该门保证单 daemon 的写入/发布顺序，不是跨进程锁或整笔推理的配置冻结。
+
 `GET /v1/admin/graph` 返回当前运行时快照的 typed node projection：`public`（入口）、`internal`（中间节点）和 `provider`（出口）。它与 `/v1/admin/routes` 共享同一运行时快照；当前只读，provider 凭据不出现在节点文档中。
+
+### SysTorch 「开始」会话与持久人工任务
+
+```text
+POST   /v1/systorch/sessions/{id}/messages
+GET    /v1/systorch/sessions?offset=0&archived=false
+GET    /v1/systorch/sessions/{id}
+PATCH  /v1/systorch/sessions/{id}
+DELETE /v1/systorch/sessions/{id}
+GET    /v1/systorch/sessions/{id}/assets/{asset_id}
+POST/GET/DELETE /v1/systorch/decisions/...
+```
+
+`/sessions` 是普通模型对话消息流，`/decisions` 是等待人工作答的持久任务；二者分开存储，均与 `/v1/systemone` 的 provider 调用历史分离。会话仅提供单消息追加和单会话状态 PATCH，不接受整表/完整消息列表覆盖。每次写入带 `expected_revision`；同 ID 同正文安全重试，revision 不匹配返回 `409`，调用方读取最新会话后重新提出原子操作。正文加密、caller 隔离、附件授权读取、状态和限制见[契约 10](10-SysTorch开始会话契约.md)。
 
 ### `POST /v1/admin/providers/{id}/probe`
 

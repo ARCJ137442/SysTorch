@@ -4,7 +4,26 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 fn main() {
-    tauri_build::build();
+    let attributes = tauri_build::Attributes::new().plugin(
+        "systorch-android-keepalive",
+        tauri_build::InlinedPlugin::new(),
+    );
+    tauri_build::try_build(attributes).expect("build SysTorch native capabilities");
+    println!("cargo:rerun-if-env-changed=SYSTORCH_BUILD_REVISION");
+    println!("cargo:rerun-if-env-changed=JEV_BUILD_REVISION");
+    let build_revision = env::var("SYSTORCH_BUILD_REVISION")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .or_else(|| {
+            env::var("JEV_BUILD_REVISION")
+                .ok()
+                .filter(|value| !value.trim().is_empty())
+        })
+        .unwrap_or_else(|| "development".into());
+    println!("cargo:rustc-env=SYSTORCH_BUILD_REVISION={build_revision}");
+    // Keep the old compile-time symbol as a compatibility alias for downstream crates.
+    println!("cargo:rustc-env=JEV_BUILD_REVISION={build_revision}");
+    println!("cargo:rerun-if-env-changed=SYSTORCH_STANDALONE_ASSET_DIR");
     println!("cargo:rerun-if-env-changed=JEV_STANDALONE_ASSET_DIR");
     emit_ui_cache_key();
 
@@ -14,9 +33,12 @@ fn main() {
 }
 
 fn emit_ui_cache_key() {
-    let manifest_dir = PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("Cargo sets CARGO_MANIFEST_DIR"));
+    let manifest_dir =
+        PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("Cargo sets CARGO_MANIFEST_DIR"));
     let ui_index = if env::var_os("CARGO_FEATURE_STANDALONE").is_some() {
-        env::var_os("JEV_STANDALONE_ASSET_DIR")
+        env::var_os("SYSTORCH_STANDALONE_ASSET_DIR")
+            .filter(|value| !value.is_empty())
+            .or_else(|| env::var_os("JEV_STANDALONE_ASSET_DIR").filter(|value| !value.is_empty()))
             .map(PathBuf::from)
             .unwrap_or_default()
             .join("ui/dist/index.html")
@@ -34,6 +56,11 @@ fn emit_ui_cache_key() {
         })
         .unwrap_or_else(|_| "missing".to_string());
     println!(
+        "cargo:rustc-env=SYSTORCH_UI_CACHE_KEY={}-{}",
+        env!("CARGO_PKG_VERSION"),
+        content_hash
+    );
+    println!(
         "cargo:rustc-env=JEV_UI_CACHE_KEY={}-{}",
         env!("CARGO_PKG_VERSION"),
         content_hash
@@ -41,17 +68,19 @@ fn emit_ui_cache_key() {
 }
 
 fn generate_standalone_assets() {
-    let root = env::var_os("JEV_STANDALONE_ASSET_DIR")
+    let root = env::var_os("SYSTORCH_STANDALONE_ASSET_DIR")
+        .filter(|value| !value.is_empty())
+        .or_else(|| env::var_os("JEV_STANDALONE_ASSET_DIR").filter(|value| !value.is_empty()))
         .map(PathBuf::from)
-        .expect("standalone feature requires JEV_STANDALONE_ASSET_DIR");
+        .expect("standalone feature requires SYSTORCH_STANDALONE_ASSET_DIR");
     let root = root
         .canonicalize()
-        .expect("JEV_STANDALONE_ASSET_DIR must exist");
+        .expect("standalone asset directory must exist");
     let mut files = Vec::new();
     collect_files(&root, &root, &mut files);
     files.sort_by(|left, right| left.0.cmp(&right.0));
 
-    for required in ["jev-switch-daemon.exe", "ui/dist/index.html"] {
+    for required in ["systorch-daemon.exe", "ui/dist/index.html"] {
         assert!(
             files.iter().any(|(path, _)| path == required),
             "standalone bundle is missing {required}"

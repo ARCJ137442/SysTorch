@@ -15,12 +15,12 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use jev_switch_daemon::{
+use serde::Serialize;
+use systorch_daemon::{
     build_app, build_state,
     config::Config,
     listen::{self, ListenHandle, ListenPlan, PairDefaults},
 };
-use serde::Serialize;
 use tauri::{Manager, State};
 
 const DEFAULT_CONFIG: &str = include_str!("default_providers.toml");
@@ -72,7 +72,11 @@ pub struct AndroidGatewayState {
 }
 
 impl AndroidGatewayState {
-    pub fn new(config_path: PathBuf, desired_state_path: PathBuf, keepalive_notification_state_path: PathBuf) -> Self {
+    pub fn new(
+        config_path: PathBuf,
+        desired_state_path: PathBuf,
+        keepalive_notification_state_path: PathBuf,
+    ) -> Self {
         // Android is a self-contained gateway app: a fresh install starts its
         // embedded backend by default. An explicit stopped marker is the only
         // state that suppresses restoration on the next launch.
@@ -80,14 +84,16 @@ impl AndroidGatewayState {
             .map(|value| value.trim() != "stopped")
             .unwrap_or(true);
         let debug_state_path = desired_state_path.with_file_name("debug-logging.state");
+        // Keep the old diagnostics filename so existing user-export tooling can find it.
         let debug_log_path = desired_state_path.with_file_name("jev-switch-debug.log");
         let debug_logging = std::fs::read_to_string(&debug_state_path)
             .ok()
             .is_some_and(|value| value.trim() == "enabled");
-        let keepalive_notification_enabled = std::fs::read_to_string(&keepalive_notification_state_path)
-            .ok()
-            .map(|value| value.trim() != "disabled")
-            .unwrap_or(true);
+        let keepalive_notification_enabled =
+            std::fs::read_to_string(&keepalive_notification_state_path)
+                .ok()
+                .map(|value| value.trim() != "disabled")
+                .unwrap_or(true);
         Self {
             config_path,
             desired_state_path,
@@ -119,13 +125,19 @@ impl AndroidGatewayState {
         }
     }
 
-    fn set_keepalive_notification(&self, enabled: bool) -> Result<KeepaliveNotificationStatus, String> {
+    fn set_keepalive_notification(
+        &self,
+        enabled: bool,
+    ) -> Result<KeepaliveNotificationStatus, String> {
         std::fs::write(
             &self.keepalive_notification_state_path,
             if enabled { "enabled\n" } else { "disabled\n" },
         )
-        .map_err(|error| format!("persist Android keepalive notification preference failed: {error}"))?;
-        self.keepalive_notification_enabled.store(enabled, Ordering::SeqCst);
+        .map_err(|error| {
+            format!("persist Android keepalive notification preference failed: {error}")
+        })?;
+        self.keepalive_notification_enabled
+            .store(enabled, Ordering::SeqCst);
         Ok(self.keepalive_notification_status())
     }
 
@@ -219,10 +231,7 @@ impl AndroidGatewayState {
             let _ = runtime.block_on(handle.shutdown());
             return Err(error);
         }
-        *guard = Some(RunningGateway {
-            runtime,
-            handle,
-        });
+        *guard = Some(RunningGateway { runtime, handle });
         self.debug_event(&format!("gateway_start bind={bound}"));
         Ok(self.status(Some(bound)))
     }
@@ -267,7 +276,7 @@ pub fn prepare_paths(app: &tauri::AppHandle) -> Result<(PathBuf, PathBuf, PathBu
         .map_err(|error| format!("create Android app data directory failed: {error}"))?;
     let config_path = data_dir.join("providers.toml");
     if !config_path.exists() {
-        std::fs::write(&config_path, DEFAULT_CONFIG)
+        std::fs::write(&config_path, super::config_seed::text(DEFAULT_CONFIG))
             .map_err(|error| format!("seed Android provider config failed: {error}"))?;
     }
     Ok((
@@ -305,7 +314,10 @@ pub async fn android_gateway_probe(app: tauri::AppHandle) -> Result<GatewayProbe
             error: None,
         });
     };
-    let target = SocketAddr::new(std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST), bound.port());
+    let target = SocketAddr::new(
+        std::net::IpAddr::V4(std::net::Ipv4Addr::LOCALHOST),
+        bound.port(),
+    );
     let result = match tauri::async_runtime::spawn_blocking(move || probe_health(target)).await {
         Ok(probe) => probe,
         Err(error) => GatewayProbe {
@@ -316,11 +328,12 @@ pub async fn android_gateway_probe(app: tauri::AppHandle) -> Result<GatewayProbe
             error: Some(format!("native health probe task failed: {error}")),
         },
     };
-    app.state::<AndroidGatewayState>().debug_event(if result.identity_ok {
-        "native_health_ok"
-    } else {
-        "native_health_failed"
-    });
+    app.state::<AndroidGatewayState>()
+        .debug_event(if result.identity_ok {
+            "native_health_ok"
+        } else {
+            "native_health_failed"
+        });
     Ok(GatewayProbe {
         running: true,
         bind: Some(bound.to_string()),
@@ -358,10 +371,13 @@ fn probe_health(address: SocketAddr) -> GatewayProbe {
                 .and_then(|line| line.split_whitespace().nth(1))
                 .and_then(|value| value.parse().ok());
             probe.identity_ok = probe.http_status == Some(200)
-                && serde_json::from_str::<serde_json::Value>(body).ok().is_some_and(|value| {
-                    value.get("product").and_then(serde_json::Value::as_str) == Some("jev-switch")
-                        && value.get("status").and_then(serde_json::Value::as_str) == Some("ok")
-                });
+                && serde_json::from_str::<serde_json::Value>(body)
+                    .ok()
+                    .is_some_and(|value| {
+                        value.get("product").and_then(serde_json::Value::as_str)
+                            == Some("jev-switch")
+                            && value.get("status").and_then(serde_json::Value::as_str) == Some("ok")
+                    });
             if !probe.identity_ok {
                 probe.error = Some("/health returned an unexpected response".into());
             }
@@ -395,7 +411,11 @@ pub fn android_record_web_probe(
     ok: bool,
     http_status: Option<u16>,
 ) {
-    let result = if ok { "web_health_ok" } else { "web_health_failed" };
+    let result = if ok {
+        "web_health_ok"
+    } else {
+        "web_health_failed"
+    };
     let status = http_status
         .map(|value| value.to_string())
         .unwrap_or_else(|| "none".into());
@@ -408,24 +428,44 @@ pub fn android_export_debug_log(
     state: State<'_, AndroidGatewayState>,
 ) -> Result<String, String> {
     if !state.debug_log_path.is_file() {
-        return Err("Android debug log is empty; enable recording and reproduce the issue first".into());
+        return Err(
+            "Android debug log is empty; enable recording and reproduce the issue first".into(),
+        );
     }
     super::android_keepalive::export_debug_log(&app, &state.debug_log_path)
 }
 
 #[tauri::command]
-pub fn android_export_json_file(app: tauri::AppHandle, name: String, content: String) -> Result<String, String> {
+pub fn android_export_json_file(
+    app: tauri::AppHandle,
+    name: String,
+    content: String,
+) -> Result<String, String> {
     use tauri::Manager;
-    if !name.ends_with(".json") || !(1..=128).contains(&(name.len() - 5)) || !name[..name.len() - 5].chars().all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-')) {
+    if !name.ends_with(".json")
+        || !(1..=128).contains(&(name.len() - 5))
+        || !name[..name.len() - 5]
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-'))
+    {
         return Err("Invalid JSON export filename".into());
     }
     if content.len() > 5 * 1024 * 1024 {
         return Err("JSON export exceeds the 5 MiB limit".into());
     }
-    let cache = app.path().app_cache_dir().map_err(|error| error.to_string())?;
+    let cache = app
+        .path()
+        .app_cache_dir()
+        .map_err(|error| error.to_string())?;
     std::fs::create_dir_all(&cache).map_err(|error| error.to_string())?;
-    let nonce = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_err(|error| error.to_string())?.as_nanos();
-    let path = cache.join(format!("jev-switch-export-{}-{nonce}.json", std::process::id()));
+    let nonce = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|error| error.to_string())?
+        .as_nanos();
+    let path = cache.join(format!(
+        "systorch-export-{}-{nonce}.json",
+        std::process::id()
+    ));
     std::fs::write(&path, content).map_err(|error| error.to_string())?;
     let result = super::android_keepalive::export_json_file(&app, &path, &name);
     let _ = std::fs::remove_file(&path);
@@ -434,7 +474,9 @@ pub fn android_export_json_file(app: tauri::AppHandle, name: String, content: St
 
 #[tauri::command]
 pub fn android_write_clipboard(app: tauri::AppHandle, text: String) -> Result<(), String> {
-    if text.len() > 1024 * 1024 { return Err("Clipboard text exceeds the 1 MiB limit".into()); }
+    if text.len() > 1024 * 1024 {
+        return Err("Clipboard text exceeds the 1 MiB limit".into());
+    }
     super::android_keepalive::write_clipboard(&app, &text)
 }
 
@@ -487,10 +529,16 @@ pub fn android_take_pending_gateway_toggle(app: tauri::AppHandle) -> Result<bool
 }
 
 #[tauri::command]
-pub fn start_gateway(app: tauri::AppHandle, state: State<'_, AndroidGatewayState>) -> Result<GatewayStatus, String> {
+pub fn start_gateway(
+    app: tauri::AppHandle,
+    state: State<'_, AndroidGatewayState>,
+) -> Result<GatewayStatus, String> {
     let status = match state.start() {
         Ok(status) => status,
-        Err(error) => { state.debug_event("gateway_start_failed"); return Err(error); }
+        Err(error) => {
+            state.debug_event("gateway_start_failed");
+            return Err(error);
+        }
     };
     if let Err(error) = super::android_keepalive::set_state(
         &app,
@@ -506,10 +554,16 @@ pub fn start_gateway(app: tauri::AppHandle, state: State<'_, AndroidGatewayState
 }
 
 #[tauri::command]
-pub fn stop_gateway(app: tauri::AppHandle, state: State<'_, AndroidGatewayState>) -> Result<GatewayStatus, String> {
+pub fn stop_gateway(
+    app: tauri::AppHandle,
+    state: State<'_, AndroidGatewayState>,
+) -> Result<GatewayStatus, String> {
     let status = match state.stop() {
         Ok(status) => status,
-        Err(error) => { state.debug_event("gateway_stop_failed"); return Err(error); }
+        Err(error) => {
+            state.debug_event("gateway_stop_failed");
+            return Err(error);
+        }
     };
     if let Err(error) = super::android_keepalive::set_state(
         &app,
@@ -522,7 +576,10 @@ pub fn stop_gateway(app: tauri::AppHandle, state: State<'_, AndroidGatewayState>
 }
 
 #[tauri::command]
-pub fn toggle_gateway(app: tauri::AppHandle, state: State<'_, AndroidGatewayState>) -> Result<GatewayStatus, String> {
+pub fn toggle_gateway(
+    app: tauri::AppHandle,
+    state: State<'_, AndroidGatewayState>,
+) -> Result<GatewayStatus, String> {
     let running = state
         .running
         .lock()
@@ -549,9 +606,20 @@ mod tests {
         let keepalive = root.join("keepalive-notification.state");
         let state = AndroidGatewayState::new(config, desired.clone(), keepalive.clone());
         assert!(state.desired_running.load(Ordering::SeqCst));
-        assert!(state.keepalive_notification_status().enabled, "notifications default on");
+        assert!(
+            state.keepalive_notification_status().enabled,
+            "notifications default on"
+        );
         state.set_keepalive_notification(false).unwrap();
-        assert!(!AndroidGatewayState::new(root.join("providers.toml"), desired.clone(), keepalive.clone()).keepalive_notification_status().enabled);
+        assert!(
+            !AndroidGatewayState::new(
+                root.join("providers.toml"),
+                desired.clone(),
+                keepalive.clone()
+            )
+            .keepalive_notification_status()
+            .enabled
+        );
         state.set_keepalive_notification(true).unwrap();
         state.persist_desired_running(true).unwrap();
         assert_eq!(std::fs::read_to_string(desired).unwrap().trim(), "running");

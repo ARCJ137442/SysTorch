@@ -2,7 +2,7 @@
 
 Ensure a single instance of your tauri app is running.
 
-> Jev-Switch local patch: `semver` singleton IDs include the full version, not only the
+> SysTorch local patch: `semver` singleton IDs include the full version, not only the
 > semver-compatible major/minor group. This prevents a tray-resident older patch from capturing
 > a launch of a newer UI. The rest of this vendored crate is upstream `2.4.5`.
 

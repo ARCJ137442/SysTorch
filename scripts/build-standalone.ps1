@@ -11,8 +11,8 @@ $portableRoot = (Resolve-Path -LiteralPath $PortableDirectory).Path
 $manifestPath = Join-Path $portableRoot 'build-manifest.json'
 $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
 
-if ($manifest.product -ne 'jev-switch' -or $manifest.layout -ne 'folder-portable') {
-    throw 'Standalone input must be a Jev-Switch folder-portable build with a build manifest.'
+if ($manifest.product -notin @('systorch', 'jev-switch') -or $manifest.layout -ne 'folder-portable') {
+    throw 'Standalone input must be a SysTorch folder-portable build with a build manifest.'
 }
 
 function Get-Sha256([string]$Path) {
@@ -25,7 +25,7 @@ function Get-ManifestValue($Map, [string]$Name) {
     return [string]$property.Value
 }
 
-$daemonPath = Join-Path $portableRoot 'jev-switch-daemon.exe'
+$daemonPath = Join-Path $portableRoot 'systorch-daemon.exe'
 $uiRoot = Join-Path $portableRoot 'resources/ui/dist'
 $duplicateUiRoot = Join-Path $portableRoot 'ui/dist'
 $uiIndexPath = Join-Path $uiRoot 'index.html'
@@ -74,10 +74,12 @@ ${assetUiRoot} = Join-Path $assetRoot 'ui/dist'
 New-Item -ItemType Directory -Path $assetUiRoot -Force | Out-Null
 
 $shellCargo = Join-Path $repoRoot 'src-tauri/Cargo.toml'
-$previousAssetRoot = $env:JEV_STANDALONE_ASSET_DIR
+$previousAssetRoot = $env:SYSTORCH_STANDALONE_ASSET_DIR
+$previousLegacyAssetRoot = $env:JEV_STANDALONE_ASSET_DIR
 try {
-    Copy-Item -LiteralPath $daemonPath -Destination (Join-Path $assetRoot 'jev-switch-daemon.exe')
+    Copy-Item -LiteralPath $daemonPath -Destination (Join-Path $assetRoot 'systorch-daemon.exe')
     Get-ChildItem -LiteralPath $uiRoot -Force | Copy-Item -Destination $assetUiRoot -Recurse
+    $env:SYSTORCH_STANDALONE_ASSET_DIR = $assetRoot
     $env:JEV_STANDALONE_ASSET_DIR = $assetRoot
     Push-Location $repoRoot
     try {
@@ -93,7 +95,7 @@ try {
         Pop-Location
     }
 
-    $builtExe = Join-Path $repoRoot 'src-tauri/target/release/jev-switch.exe'
+    $builtExe = Join-Path $repoRoot 'src-tauri/target/release/systorch.exe'
     if (-not (Test-Path -LiteralPath $builtExe -PathType Leaf)) {
         throw "Standalone build did not produce the expected executable: $builtExe"
     }
@@ -107,12 +109,10 @@ try {
     Write-Output "Embedded UI files: $($actualUiFiles.Count)"
 }
 finally {
-    if ($null -eq $previousAssetRoot) {
-        Remove-Item Env:JEV_STANDALONE_ASSET_DIR -ErrorAction SilentlyContinue
-    }
-    else {
-        $env:JEV_STANDALONE_ASSET_DIR = $previousAssetRoot
-    }
+    if ($null -eq $previousAssetRoot) { Remove-Item Env:SYSTORCH_STANDALONE_ASSET_DIR -ErrorAction SilentlyContinue }
+    else { $env:SYSTORCH_STANDALONE_ASSET_DIR = $previousAssetRoot }
+    if ($null -eq $previousLegacyAssetRoot) { Remove-Item Env:JEV_STANDALONE_ASSET_DIR -ErrorAction SilentlyContinue }
+    else { $env:JEV_STANDALONE_ASSET_DIR = $previousLegacyAssetRoot }
     if (Test-Path -LiteralPath $assetRoot) {
         Remove-Item -LiteralPath $assetRoot -Recurse -Force
     }

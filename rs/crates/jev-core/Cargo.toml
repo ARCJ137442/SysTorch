@@ -1,6 +1,6 @@
 [package]
 name = "jev-core"
-description = "Jev-Switch 内核：router + Upstream trait + translate（无 axum / reqwest）"
+description = "Jev/SystemOne decision routing core used by SysTorch (no axum / reqwest)"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

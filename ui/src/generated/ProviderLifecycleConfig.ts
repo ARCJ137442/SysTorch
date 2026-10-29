@@ -3,7 +3,7 @@ import type { ProcessPolicy } from "./ProcessPolicy";
 
 export type ProviderLifecycleConfig = { 
 /**
- * Explicit opt-in for Jev-Switch lifecycle control. Existing providers remain manual.
+ * Explicit opt-in for SysTorch lifecycle control. Existing providers remain manual.
  */
 controllable: boolean, 
 /**

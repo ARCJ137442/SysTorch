@@ -35,6 +35,7 @@ pub struct LayaUpstream {
     id: String,
     base: String,
     api_key: Option<String>,
+    forward_extensions: bool,
     http: Client,
 }
 
@@ -48,6 +49,15 @@ impl LayaUpstream {
         base: String,
         api_key: Option<String>,
     ) -> Result<Self, JevError> {
+        Self::new_with_id_and_options(id, base, api_key, false)
+    }
+
+    pub fn new_with_id_and_options(
+        id: String,
+        base: String,
+        api_key: Option<String>,
+        forward_extensions: bool,
+    ) -> Result<Self, JevError> {
         let http = crate::http_client::client_builder(&base)
             .timeout(Duration::from_secs(60))
             .connect_timeout(Duration::from_secs(5))
@@ -60,6 +70,7 @@ impl LayaUpstream {
             id,
             base,
             api_key,
+            forward_extensions,
             http,
         })
     }
@@ -74,6 +85,10 @@ impl UpstreamAdapter for LayaUpstream {
     /// 能力注册制：返回本 adapter 的静态能力表（不再查 `capabilities_of`）。
     fn capabilities(&self) -> Capabilities {
         LAYA_CAPABILITIES
+    }
+
+    fn supports_asset_type(&self, asset_type: &str) -> bool {
+        self.forward_extensions && !asset_type.trim().is_empty()
     }
 
     async fn evaluate(&self, req: SystemOneRequest) -> Result<JevResponse, JevError> {

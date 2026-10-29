@@ -1,0 +1,8 @@
+{
+  "identifier": "native-local",
+  "description": "Bundled main-window assets retain native controls; no arbitrary remote origin.",
+  "windows": ["main"],
+  "local": true,
+  "remote": {"urls": ["http://tauri.localhost/*", "https://tauri.localhost/*"]},
+  "permissions": ["allow-decision-owner", "allow-android-gateway", "systorch-android-keepalive:allow-event-listeners", "core:window:allow-is-fullscreen", "core:window:allow-set-fullscreen", "core:event:allow-listen", "core:event:allow-unlisten"]
+}

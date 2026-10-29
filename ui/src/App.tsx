@@ -10,6 +10,7 @@ const RoutingPage = lazy(() => import('./pages/RoutingPage').then(module => ({ d
 const PlaygroundPage = lazy(() => import('./pages/PlaygroundPage').then(module => ({ default: module.PlaygroundPage })));
 const StatisticsPage = lazy(() => import('./pages/StatisticsPage').then(module => ({ default: module.StatisticsPage })));
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then(module => ({ default: module.SettingsPage })));
+const DecisionPage = lazy(() => import('./pages/DecisionPage').then(module => ({ default: module.DecisionPage })));
 
 /**
  * 路由分发：Dashboard / Providers / Entries / Routing DAG / Playground。
@@ -28,13 +29,13 @@ export default function App() {
 
 function AppContent({ route }: { route: Route }) {
   const { isReadOnly } = useAuth();
-  const visibleRoute = isReadOnly && route !== 'dashboard' && route !== 'home' && route !== 'playground' && route !== 'stats' && route !== 'settings'
+  const visibleRoute = isReadOnly && route !== 'start' && route !== 'desk' && route !== 'dashboard' && route !== 'home' && route !== 'playground' && route !== 'stats' && route !== 'settings'
     ? 'dashboard'
     : route;
   return (
       <Shell route={visibleRoute}>
         <Suspense fallback={<div className="grid h-full place-items-center text-sm text-[var(--text-muted)]" role="status">{visibleRoute === 'settings' ? 'Loading settings…' : 'Loading…'}</div>}>
-        {visibleRoute === 'home' || visibleRoute === 'dashboard' ? (
+        {visibleRoute === 'start' || visibleRoute === 'desk' ? (<DecisionPage desk={visibleRoute === 'desk'} />) : visibleRoute === 'home' || visibleRoute === 'dashboard' ? (
           <DashboardPage />
         ) : visibleRoute === 'providers' ? (
           <ProvidersPage />

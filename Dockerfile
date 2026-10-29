@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-# Jev-Switch 多阶段构建（任务 #43 · docs/12 §四线1）
+# SysTorch multi-stage image build.
 #   stage ui   — npm ci + tsc + vite build → dist
 #   stage rs   — cargo build --release（default-members = daemon bin）
 #   runtime    — 精简 Debian + 二进制 + dist 静态托管（**ServeDir 同源**，
@@ -23,6 +23,7 @@ RUN npm run build
 FROM rust:1-bookworm AS rust-base
 FROM rust-base AS rs
 WORKDIR /src
+ARG SYSTORCH_BUILD_REVISION
 ARG JEV_BUILD_REVISION
 # 仅用于构建网络诊断；默认沿用 Cargo 行为，运行镜像不继承这些参数。
 ARG CARGO_HTTP_MULTIPLEXING=true
@@ -38,31 +39,24 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/src/rs/target \
     cargo build --release --locked --offline --manifest-path rs/Cargo.toml \
-    && cp /src/rs/target/release/jev-switch /usr/local/bin/jev-switch
+    && cp /src/rs/target/release/systorch-daemon /usr/local/bin/systorch-daemon
 
 # ─── stage 3 · runtime ─────────────────────────────────────────────
 FROM debian:bookworm-slim
 # HTTPS 上游信任根从相同 Debian 系列的 Rust 构建镜像复制；运行镜像无需 apt 网络访问。
 COPY --from=rust-base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
-COPY --from=rs /usr/local/bin/jev-switch /usr/local/bin/jev-switch
+COPY --from=rs /usr/local/bin/systorch-daemon /usr/local/bin/systorch-daemon
 COPY --from=ui /src/ui/dist /app/ui/dist
-# 种子配置：容器首启时若 JEV_SWITCH_CONFIG 不存在 → 拷贝此文件初始化
+# Seed config only when neither the new nor legacy config path was supplied.
 COPY rs/providers.example.toml /app/providers.example.toml
 
-# JEV_UI_DIST   — build_app 的 ServeDir 根（同源托管，CORS 消解）
-# JEV_SWITCH_CONFIG — 首启导入与人工同步的 TOML（不覆盖已有 SQLite 快照）
-# JEV_SWITCH_DATA_DIR — 持久配置、入口、Token 与调用记录所在目录
-# 容器默认 cloud，发布端口经调用 token/管理权限访问。
-ENV JEV_UI_DIST=/app/ui/dist \
-    JEV_SWITCH_CONFIG=/data/providers.toml \
-    JEV_SWITCH_DATA_DIR=/data \
-    JEV_SWITCH_MODE=cloud
+# New SYSTORCH_* variables are canonical. Legacy JEV_* names remain accepted by the daemon.
 
 EXPOSE 11435
-# /health 双态皆放行；daemon 内置探活命令也校验 product 与 API revision。
+# /health is public in both modes; the daemon healthcheck verifies service identity and API revision.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
-    CMD ["/usr/local/bin/jev-switch", "--healthcheck"]
+    CMD ["/usr/local/bin/systorch-daemon", "--healthcheck"]
 
-# 首启播种（幂等）：目录保证存在 + 文件缺失才拷贝 → exec 交接 PID 1
-CMD ["sh", "-ec", "mkdir -p \"$(dirname \"$JEV_SWITCH_CONFIG\")\" \"$JEV_SWITCH_DATA_DIR\"; if [ ! -f \"$JEV_SWITCH_CONFIG\" ]; then cp /app/providers.example.toml \"$JEV_SWITCH_CONFIG\"; chmod 600 \"$JEV_SWITCH_CONFIG\"; fi; exec /usr/local/bin/jev-switch"]
+# Resolve defaults without overriding user-supplied canonical or legacy environment variables.
+CMD ["sh", "-ec", "CONFIG_PATH=\"${SYSTORCH_CONFIG:-${JEV_SWITCH_CONFIG:-/data/providers.toml}}\"; DATA_DIR=\"${SYSTORCH_DATA_DIR:-${JEV_SWITCH_DATA_DIR:-/data}}\"; UI_DIST=\"${SYSTORCH_UI_DIST:-${JEV_UI_DIST:-/app/ui/dist}}\"; if [ -z \"${SYSTORCH_MODE:-${JEV_SWITCH_MODE:-}}\" ]; then export SYSTORCH_MODE=cloud; fi; export SYSTORCH_CONFIG=\"$CONFIG_PATH\" SYSTORCH_DATA_DIR=\"$DATA_DIR\" SYSTORCH_UI_DIST=\"$UI_DIST\"; mkdir -p \"$(dirname \"$CONFIG_PATH\")\" \"$DATA_DIR\"; if [ ! -f \"$CONFIG_PATH\" ]; then cp /app/providers.example.toml \"$CONFIG_PATH\"; chmod 600 \"$CONFIG_PATH\"; fi; exec /usr/local/bin/systorch-daemon"]

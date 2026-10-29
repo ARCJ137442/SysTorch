@@ -549,6 +549,11 @@ function AnswerList({ answers, copy }: { answers: JevResponse['answers']; copy: 
       if (answer.type === 'score') return <div key={qid} className="flex flex-wrap items-baseline gap-2 text-sm">
         <code style={{ color: 'var(--text-subtle)' }}>{qid}</code><span style={{ color: 'var(--text)' }}>{fmt(answer.score)}</span><span className="text-xs" style={{ color: 'var(--text-muted)' }}>{copy.confidence} {fmt(answer.confidence)}</span><Distribution probabilities={answer.probabilities} highlight={String(answer.score)} />
       </div>;
+      if (answer.type === 'box') return <div key={qid} className="flex flex-wrap items-baseline gap-2 text-sm">
+        <code style={{ color: 'var(--text-subtle)' }}>{qid}</code><span className="text-xs" style={{ color: 'var(--text-muted)' }}>box</span>
+        <span style={{ color: 'var(--text)' }}>top {fmt(answer.box.top)} · bottom {fmt(answer.box.bottom)} · left {fmt(answer.box.left)} · right {fmt(answer.box.right)}</span>
+        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{copy.confidence} {fmt(answer.confidence)}</span>
+      </div>;
       const probability = answer.probability;
       const noul = answer.noul;
       return <div key={qid} className="flex flex-wrap items-baseline gap-2 text-sm">

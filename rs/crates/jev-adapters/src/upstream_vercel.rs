@@ -12,7 +12,10 @@
 //! 能力注册制（07 P2）：[`VERCEL_CAPABILITIES`] 是本 adapter 自报的能力表 ——
 //! 内核不再按 id 硬编码查表（原 `capabilities_of("vercel")` 已删）。
 
-use crate::vercel_protocol::{VercelProtocol, VERCEL_UPSTREAM_ID};
+use crate::{
+    upstream_typesafe::project_assets,
+    vercel_protocol::{VercelProtocol, VERCEL_UPSTREAM_ID},
+};
 use jev_core::adapter::{IncomingCtx, ProtocolAdapter, UpstreamAdapter};
 use jev_core::upstream::{Capabilities, JevError, QuestionType};
 use jev_protocol::{JevRequest, JevResponse};
@@ -82,29 +85,58 @@ impl UpstreamAdapter for VercelUpstream {
         VERCEL_CAPABILITIES
     }
 
+    fn supports_asset_type(&self, asset_type: &str) -> bool {
+        asset_type == "image"
+    }
+
     async fn evaluate(&self, req: JevRequest) -> Result<JevResponse, JevError> {
         // The TypeSafe endpoint speaks Jev directly; model and question types belong
         // in the request body. Keeping this whole avoids silently changing noul to
         // the legacy Evaluation API's boolean dialect.
-        let resp = self
+        let projected_assets = project_assets(&self.id, req.assets.as_ref(), false)?;
+        let has_box_question = req
+            .questions
+            .values()
+            .any(|question| matches!(question, jev_protocol::Question::Box { .. }));
+        if has_box_question && !projected_assets.has_image {
+            return Err(JevError::Capability {
+                upstream_id: self.id.clone(),
+                detail: "format mismatch: TypeSafe Box questions require an image asset".into(),
+            });
+        }
+        let needs_images_header = projected_assets.needs_images_header || has_box_question;
+        let projected_asset_map = projected_assets.assets;
+        let mut payload = serde_json::to_value(&req).map_err(|error| JevError::Config {
+            upstream_id: self.id.clone(),
+            message: format!("serialize TypeSafe SystemOne request: {error}"),
+        })?;
+        if let Some(object) = payload.as_object_mut() {
+            if let Some(assets) = projected_asset_map {
+                object.insert("assets".into(), serde_json::Value::Object(assets));
+            } else {
+                object.remove("assets");
+            }
+        }
+        let mut builder = self
             .http
             .post(&self.base)
             .bearer_auth(&self.api_key)
-            .json(&req)
-            .send()
-            .await
-            .map_err(|e| {
-                if e.is_timeout() {
-                    JevError::Timeout {
-                        upstream_id: self.id.clone(),
-                    }
-                } else {
-                    JevError::Network {
-                        upstream_id: self.id.clone(),
-                        message: e.to_string(),
-                    }
+            .json(&payload);
+        if needs_images_header {
+            builder = builder.header("TypeSafe-Danger-Zone-Images", "true");
+        }
+        let resp = builder.send().await.map_err(|e| {
+            if e.is_timeout() {
+                JevError::Timeout {
+                    upstream_id: self.id.clone(),
                 }
-            })?;
+            } else {
+                JevError::Network {
+                    upstream_id: self.id.clone(),
+                    message: e.to_string(),
+                }
+            }
+        })?;
 
         let status = resp.status();
         let raw_bytes = resp.bytes().await.map_err(|e| JevError::Network {
@@ -162,6 +194,7 @@ mod tests {
             model: "typesafe-ai/jev".into(),
             state: serde_json::json!("s"),
             questions,
+            assets: None,
             extensions: Default::default(),
             extra: Default::default(),
         };
@@ -221,6 +254,7 @@ mod tests {
             model: "typesafe-ai/jev".into(),
             state: json!({"statement":"The meeting begins at 10 AM."}),
             questions,
+            assets: None,
             extensions: Default::default(),
             extra: Default::default(),
         };

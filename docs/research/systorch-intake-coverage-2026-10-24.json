@@ -1,0 +1,2637 @@
+{
+  "date": "2026-10-24",
+  "type": "design_intake_m0_m1_progress",
+  "code_revision": "11253af121c0e9f800b544af6c95cd6e4f613e1a",
+  "code_version": "0.10.3",
+  "archive_sha256": "81367a8fbec296967c1f78cb3a21ccaf4a0358b9ff9528b811ff8aac7b541f2d",
+  "analysis_sha256": "e428a48a543cf7fdff4bf8ea0abd26b4195d5243ae92b7a81284949e5abf96af",
+  "boundaries": {
+    "application_code_changed": true,
+    "product_tests_run": true,
+    "real_upstream_calls": false,
+    "commit_push_release": false,
+    "questions_resumed": false
+  },
+  "source_integrity": {
+    "archive_files": 75,
+    "outer_manifest_hashes_passed": 73,
+    "baseline_manifest_hashes_passed": 19,
+    "json_files_parsed": 26,
+    "reader_screenshots_reviewed": 2,
+    "signature_verified": false
+  },
+  "requirements": [
+    {
+      "id": "R01",
+      "title": "证据与实体必须可追溯",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U1",
+        "U3",
+        "U5",
+        "U7",
+        "U9",
+        "U11",
+        "U21",
+        "U61"
+      ],
+      "source_ids": [
+        "S01",
+        "S03",
+        "S07"
+      ],
+      "current_baseline": "资料治理已有基础",
+      "planned_phase": "M0–M4",
+      "action": "保留来源与实体校正；复核事实后才更新主张",
+      "work_package_ids": [
+        "W00",
+        "W01"
+      ]
+    },
+    {
+      "id": "R02",
+      "title": "以最强对手作竞争推演",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U7",
+        "U11",
+        "U13",
+        "U15",
+        "U17",
+        "U19",
+        "U21"
+      ],
+      "source_ids": [
+        "S01",
+        "S08",
+        "S10"
+      ],
+      "current_baseline": "历史研究可复用，当前竞争结论未重查",
+      "planned_phase": "M0 / 持续",
+      "action": "同任务比较强对手和脚本/表单替代，允许否定优势",
+      "work_package_ids": [
+        "W21"
+      ]
+    },
+    {
+      "id": "R03",
+      "title": "SysTorch名称与渐进品牌重组",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U25",
+        "U27",
+        "U41",
+        "U43"
+      ],
+      "source_ids": [
+        "S01",
+        "S02"
+      ],
+      "current_baseline": "新名称已确认，产品尚未迁移",
+      "planned_phase": "M4",
+      "action": "先识别系统，后展示名/资产/安装迁移",
+      "work_package_ids": [
+        "W13",
+        "W16"
+      ]
+    },
+    {
+      "id": "R04",
+      "title": "独立产品制作人全生命周期能力",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U27",
+        "U33",
+        "U51",
+        "U57",
+        "U61",
+        "U65"
+      ],
+      "source_ids": [
+        "S01"
+      ],
+      "current_baseline": "非单项应用功能",
+      "planned_phase": "M0–M4 / 持续",
+      "action": "每阶段连接判断、设计、验证、发行和维护",
+      "work_package_ids": [
+        "W01",
+        "W15"
+      ]
+    },
+    {
+      "id": "R05",
+      "title": "横向案例与纵向SysTorch结合学习",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U37",
+        "U41",
+        "U45",
+        "U47",
+        "U49",
+        "U57",
+        "U61",
+        "U63"
+      ],
+      "source_ids": [
+        "S01"
+      ],
+      "current_baseline": "包内学习路径已吸收",
+      "planned_phase": "M0–M4 / 持续",
+      "action": "用实际迭代案例学习，不额外堆教程功能",
+      "work_package_ids": [
+        "W15"
+      ]
+    },
+    {
+      "id": "R06",
+      "title": "三方均为合法入口",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U35",
+        "U39",
+        "U47"
+      ],
+      "source_ids": [
+        "S01",
+        "S02"
+      ],
+      "current_baseline": "协调入口已有，另外两类缺独立入口",
+      "planned_phase": "M0–M1",
+      "action": "建立直接使用/提供判断/协调三条路径",
+      "work_package_ids": [
+        "W02"
+      ]
+    },
+    {
+      "id": "R07",
+      "title": "保持已有网关/DAG专业价值",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U35",
+        "U39",
+        "U47"
+      ],
+      "source_ids": [
+        "S01",
+        "S07"
+      ],
+      "current_baseline": "网关和DAG已有",
+      "planned_phase": "M0–M4",
+      "action": "保留既有语义，补必要原子意图与投影一致性",
+      "work_package_ids": [
+        "W00",
+        "W02"
+      ]
+    },
+    {
+      "id": "R08",
+      "title": "开始页面向直接使用决策的人",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U27",
+        "U35",
+        "U47"
+      ],
+      "source_ids": [
+        "S01",
+        "S02"
+      ],
+      "current_baseline": "尚无开始页面",
+      "planned_phase": "M0–M1",
+      "action": "当前入口、明确问题/候选或模板、结果注解、无入口引导",
+      "work_package_ids": [
+        "W02"
+      ]
+    },
+    {
+      "id": "R09",
+      "title": "决策台汇聚请求且像IM顺手",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U35",
+        "U47"
+      ],
+      "source_ids": [
+        "S01",
+        "S02"
+      ],
+      "current_baseline": "尚无持久人工收件箱",
+      "planned_phase": "M0–M2",
+      "action": "真实待办、答题、草稿、恢复与结果反馈",
+      "work_package_ids": [
+        "W02",
+        "W05",
+        "W10"
+      ]
+    },
+    {
+      "id": "R10",
+      "title": "实验场保留并强化人机评估",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U31",
+        "U35"
+      ],
+      "source_ids": [
+        "S02",
+        "S23"
+      ],
+      "current_baseline": "已有演练场批次/比较/本地历史",
+      "planned_phase": "M1 / M3",
+      "action": "新增人工独立作答、返回、实验口径与证据",
+      "work_package_ids": [
+        "W12"
+      ]
+    },
+    {
+      "id": "R11",
+      "title": "不扩成通用聊天或模型训练运行时",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U31",
+        "U39"
+      ],
+      "source_ids": [
+        "S02",
+        "S23"
+      ],
+      "current_baseline": "当前核心为Jev接口，符合主要边界",
+      "planned_phase": "全部阶段",
+      "action": "不增加通用聊天/下载/训练；保留评估与实验",
+      "work_package_ids": [
+        "W20",
+        "W21"
+      ]
+    },
+    {
+      "id": "R12",
+      "title": "同一事务跨工作面保持上下文",
+      "source_status": "proposed_design",
+      "source_user_ids": [
+        "U47"
+      ],
+      "source_ids": [
+        "S01",
+        "S02"
+      ],
+      "current_baseline": "现有样例快照可复用，无持久任务上下文",
+      "planned_phase": "M0–M3",
+      "action": "请求/修订关联、按权限投影、跨页返回，不强制同一表",
+      "work_package_ids": [
+        "W02",
+        "W05",
+        "W12"
+      ]
+    },
+    {
+      "id": "R13",
+      "title": "面向个人和团队的可用性",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U25",
+        "U27",
+        "U35"
+      ],
+      "source_ids": [
+        "S01"
+      ],
+      "current_baseline": "现有admin/readonly不足逐任务隔离",
+      "planned_phase": "M1 / 后续团队",
+      "action": "先单人授权范围及双设备冲突，再按真实需要拓展分派",
+      "work_package_ids": [
+        "W02"
+      ]
+    },
+    {
+      "id": "R14",
+      "title": "火把探索未知应用空间的愿景",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U39",
+        "U41",
+        "U43"
+      ],
+      "source_ids": [
+        "S01"
+      ],
+      "current_baseline": "品牌愿景，不是现成功能",
+      "planned_phase": "M0 / M4 / 持续",
+      "action": "以可理解的真实判断任务兑现探索意象",
+      "work_package_ids": [
+        "W13"
+      ]
+    },
+    {
+      "id": "R15",
+      "title": "路由火炬图形、侧面数字1",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U41",
+        "U43"
+      ],
+      "source_ids": [
+        "S01",
+        "S02"
+      ],
+      "current_baseline": "最终图标母版未定",
+      "planned_phase": "M4，brief可前置",
+      "action": "验证火炬/路由/侧面1在小尺寸与单色中的识别",
+      "work_package_ids": [
+        "W13"
+      ]
+    },
+    {
+      "id": "R16",
+      "title": "视觉听觉与UI/UX概念地图",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U33",
+        "U49",
+        "U51"
+      ],
+      "source_ids": [
+        "S01"
+      ],
+      "current_baseline": "已有UI token，尚无新品牌视听体系",
+      "planned_phase": "M0 / M4",
+      "action": "形成概念与识别brief；声音可关闭且服从注意力许可",
+      "work_package_ids": [
+        "W03",
+        "W13"
+      ]
+    },
+    {
+      "id": "R17",
+      "title": "正确ExoMind作为真实反思案例",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U45",
+        "U59",
+        "U61",
+        "U63"
+      ],
+      "source_ids": [
+        "S01",
+        "S03",
+        "S04",
+        "S05"
+      ],
+      "current_baseline": "实体已在包中纠正",
+      "planned_phase": "M0 / 可选",
+      "action": "只引用正确ExoMind；不延续错误实体推论",
+      "work_package_ids": [
+        "W15",
+        "W18"
+      ]
+    },
+    {
+      "id": "R18",
+      "title": "TouchAI日常采用与内存摩擦",
+      "source_status": "observed_user_report",
+      "source_user_ids": [
+        "U45",
+        "U61",
+        "U63"
+      ],
+      "source_ids": [
+        "S01",
+        "S06"
+      ],
+      "current_baseline": "用户报告，不是本项目泄漏证据",
+      "planned_phase": "M0 / M2",
+      "action": "实测资源和采用摩擦，区分不同人和任务",
+      "work_package_ids": [
+        "W09",
+        "W15"
+      ]
+    },
+    {
+      "id": "R19",
+      "title": "第一次价值与长期占用一起设计",
+      "source_status": "proposed_design",
+      "source_user_ids": [
+        "U63"
+      ],
+      "source_ids": [
+        "S01"
+      ],
+      "current_baseline": "尚无新工作面价值/占用证据",
+      "planned_phase": "M0 / M2",
+      "action": "首用观察和驻留资源分别取证、联合裁决",
+      "work_package_ids": [
+        "W09"
+      ]
+    },
+    {
+      "id": "R20",
+      "title": "披露配置但不给新手概念考试",
+      "source_status": "proposed_design",
+      "source_user_ids": [
+        "U27",
+        "U33",
+        "U35"
+      ],
+      "source_ids": [
+        "S01",
+        "S02"
+      ],
+      "current_baseline": "控制台配置已有，新手路径欠缺",
+      "planned_phase": "M0–M1 / M4",
+      "action": "诚实说明配置，按任务引导，不伪造开箱模型",
+      "work_package_ids": [
+        "W02",
+        "W14"
+      ]
+    },
+    {
+      "id": "R21",
+      "title": "异步请求、状态、查询与有限等待",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U23",
+        "U31",
+        "U35"
+      ],
+      "source_ids": [
+        "S02",
+        "S23"
+      ],
+      "current_baseline": "即时async存在，持久决策服务不存在",
+      "planned_phase": "M1",
+      "action": "持久接收/查询/取消/修订；有限等待作为显式兼容外观",
+      "work_package_ids": [
+        "W04",
+        "W05",
+        "W18"
+      ]
+    },
+    {
+      "id": "R22",
+      "title": "严格投影与薄扩展",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U31"
+      ],
+      "source_ids": [
+        "S02",
+        "S23"
+      ],
+      "current_baseline": "现有Jev响应含扩展，非新strict视图",
+      "planned_phase": "M1",
+      "action": "严格序列化与增强资源分开，验证指定客户端合同",
+      "work_package_ids": [
+        "W06"
+      ]
+    },
+    {
+      "id": "R23",
+      "title": "polyfill自动化且真实来源分层",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U31"
+      ],
+      "source_ids": [
+        "S02",
+        "S23"
+      ],
+      "current_baseline": "模型解析已有，人工polyfill未实现",
+      "planned_phase": "M1 / M3",
+      "action": "观察/派生/证据分层并记录算法版本",
+      "work_package_ids": [
+        "W06"
+      ]
+    },
+    {
+      "id": "R24",
+      "title": "概率调节低负担且可高级编辑",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U31"
+      ],
+      "source_ids": [
+        "S02",
+        "S23"
+      ],
+      "current_baseline": "已有结果显示，缺人工概率交互",
+      "planned_phase": "M1 / M3",
+      "action": "默认低负担，概率编辑可选；归一和选择保真",
+      "work_package_ids": [
+        "W06",
+        "W08"
+      ]
+    },
+    {
+      "id": "R25",
+      "title": "请求更多信息的有限交互",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U31"
+      ],
+      "source_ids": [
+        "S02",
+        "S23"
+      ],
+      "current_baseline": "尚无持久澄清流程",
+      "planned_phase": "M1",
+      "action": "修订后旧答失效；条件和拒答不偷偷批准",
+      "work_package_ids": [
+        "W07",
+        "W20"
+      ]
+    },
+    {
+      "id": "R26",
+      "title": "JSON面向人的保真渲染",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U31"
+      ],
+      "source_ids": [
+        "S02",
+        "S12"
+      ],
+      "current_baseline": "已有JSON输入与题型编辑",
+      "planned_phase": "M1",
+      "action": "安全通用阅读、原始值/路径、大内容和嵌套披露",
+      "work_package_ids": [
+        "W03",
+        "W07"
+      ]
+    },
+    {
+      "id": "R27",
+      "title": "多端通知按人授权与宿主限制",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U31",
+        "U35"
+      ],
+      "source_ids": [
+        "S02",
+        "S23"
+      ],
+      "current_baseline": "已有网关原生通知，非任务通知",
+      "planned_phase": "M2",
+      "action": "许可、深链、静音、锁屏隐私与权限拒绝路径",
+      "work_package_ids": [
+        "W05",
+        "W08",
+        "W10"
+      ]
+    },
+    {
+      "id": "R28",
+      "title": "快捷键/IME/焦点/触摸完整",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U31",
+        "U49",
+        "U63"
+      ],
+      "source_ids": [
+        "S02",
+        "S11",
+        "S12"
+      ],
+      "current_baseline": "已有IME保护/触摸/全局键盘",
+      "planned_phase": "M0–M2",
+      "action": "分离焦点/选择/提交，补连按与新任务不抢焦点",
+      "work_package_ids": [
+        "W03",
+        "W05",
+        "W07",
+        "W10"
+      ]
+    },
+    {
+      "id": "R29",
+      "title": "设置注册与命令检索统一",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U31",
+        "U39"
+      ],
+      "source_ids": [
+        "S02",
+        "S23"
+      ],
+      "current_baseline": "搜索和能力声明分别存在，未统一",
+      "planned_phase": "M2",
+      "action": "逐步同源化设置/搜索/命令/API和覆盖来源",
+      "work_package_ids": [
+        "W08"
+      ]
+    },
+    {
+      "id": "R30",
+      "title": "图片Box存在性与专用交互",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U31"
+      ],
+      "source_ids": [
+        "S02",
+        "S22"
+      ],
+      "current_baseline": "协议与UI均无Box",
+      "planned_phase": "M3",
+      "action": "存在性、坐标、图像变换、触摸与严格投影失败",
+      "work_package_ids": [
+        "W06",
+        "W11"
+      ]
+    },
+    {
+      "id": "R31",
+      "title": "未来多模态能力协商",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U31",
+        "U35"
+      ],
+      "source_ids": [
+        "S02",
+        "S23"
+      ],
+      "current_baseline": "仅有媒体扩展传递基础",
+      "planned_phase": "M3 / 后续",
+      "action": "实际模态协商、附件权限/大小/留存，不能宣称全支持",
+      "work_package_ids": [
+        "W11",
+        "W19",
+        "W20"
+      ]
+    },
+    {
+      "id": "R32",
+      "title": "多源对照/影子/聚合等分开",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U31"
+      ],
+      "source_ids": [
+        "S02",
+        "S23"
+      ],
+      "current_baseline": "模型生产策略已有，人机语义未设计",
+      "planned_phase": "M3",
+      "action": "并排实验、shadow、race、聚合、级联分别验收",
+      "work_package_ids": [
+        "W12"
+      ]
+    },
+    {
+      "id": "R33",
+      "title": "实验导出与科学证据边界",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U31"
+      ],
+      "source_ids": [
+        "S02",
+        "S23"
+      ],
+      "current_baseline": "已有样例导入导出，非实验证据包",
+      "planned_phase": "M3",
+      "action": "JSONL/CSV+manifest，缺失/辅助/原生/派生分列",
+      "work_package_ids": [
+        "W12",
+        "W19"
+      ]
+    },
+    {
+      "id": "R34",
+      "title": "隐私、TTL、容量与安全",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U31"
+      ],
+      "source_ids": [
+        "S02",
+        "S23"
+      ],
+      "current_baseline": "现有脱敏与粗粒度鉴权可复用",
+      "planned_phase": "M1–M4",
+      "action": "正文隐私、最小授权、TTL/容量、备份/删除/加密边界",
+      "work_package_ids": [
+        "W04",
+        "W07",
+        "W10",
+        "W11",
+        "W17"
+      ]
+    },
+    {
+      "id": "R35",
+      "title": "有限可知但协调方有可控责任",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U31"
+      ],
+      "source_ids": [
+        "S02",
+        "S23"
+      ],
+      "current_baseline": "现有调用trace可复用",
+      "planned_phase": "M1–M3",
+      "action": "协调方持久受理、关联、终止和查询；不保证外部动作exactly once",
+      "work_package_ids": [
+        "W04",
+        "W05",
+        "W06",
+        "W18"
+      ]
+    },
+    {
+      "id": "R36",
+      "title": "元决策Harness与规则消费者",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U31"
+      ],
+      "source_ids": [
+        "S02",
+        "S23"
+      ],
+      "current_baseline": "只有路由规则，无新元决策Harness",
+      "planned_phase": "可选 W20",
+      "action": "有界执行、明确预算/trace，不成为核心功能依赖",
+      "work_package_ids": [
+        "W20"
+      ]
+    },
+    {
+      "id": "R37",
+      "title": "已确认不等于已实现",
+      "source_status": "proposed_governance",
+      "source_user_ids": [
+        "U21",
+        "U31",
+        "U61"
+      ],
+      "source_ids": [
+        "S01",
+        "S02",
+        "S07"
+      ],
+      "current_baseline": "旧证据版本化基础已有",
+      "planned_phase": "全部阶段",
+      "action": "计划、原型、代码、实测、发布状态分列",
+      "work_package_ids": [
+        "W00",
+        "W04",
+        "W16",
+        "W17"
+      ]
+    },
+    {
+      "id": "R38",
+      "title": "宣发是任务证据而不是架构包装",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U33",
+        "U61",
+        "U63"
+      ],
+      "source_ids": [
+        "S01"
+      ],
+      "current_baseline": "现有README/官网可复用",
+      "planned_phase": "M4",
+      "action": "以真实任务和演示身份讲价值，不以架构词冒充采用",
+      "work_package_ids": [
+        "W14"
+      ]
+    },
+    {
+      "id": "R39",
+      "title": "发布、升级、迁移和维护可持续",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U51",
+        "U57",
+        "U61"
+      ],
+      "source_ids": [
+        "S01",
+        "S02"
+      ],
+      "current_baseline": "已有多渠道流水线",
+      "planned_phase": "M4",
+      "action": "旧格式迁移、候选身份、安装/升级/回滚与支持",
+      "work_package_ids": [
+        "W16",
+        "W17"
+      ]
+    },
+    {
+      "id": "R40",
+      "title": "开放社区和抗替代的积累",
+      "source_status": "proposed_strategy",
+      "source_user_ids": [
+        "U11",
+        "U15",
+        "U17",
+        "U31"
+      ],
+      "source_ids": [
+        "S01",
+        "S02"
+      ],
+      "current_baseline": "策略假设，不是现成壁垒",
+      "planned_phase": "M0 / M3–M4 / 持续",
+      "action": "开放合同/适配/可复查数据，验证可替代性",
+      "work_package_ids": [
+        "W18",
+        "W19",
+        "W21"
+      ]
+    },
+    {
+      "id": "R41",
+      "title": "不把创作者当市场全部用户",
+      "source_status": "proposed_research",
+      "source_user_ids": [
+        "U27",
+        "U61",
+        "U63"
+      ],
+      "source_ids": [
+        "S01"
+      ],
+      "current_baseline": "尚无本轮真实用户研究",
+      "planned_phase": "M0 / M2",
+      "action": "记录任务与熟悉度，不以制作人偏好代表市场",
+      "work_package_ids": [
+        "W15",
+        "W21"
+      ]
+    },
+    {
+      "id": "R42",
+      "title": "Astra学习与Luna实现共用裁决",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U51",
+        "U57",
+        "U65"
+      ],
+      "source_ids": [
+        "S01",
+        "S23"
+      ],
+      "current_baseline": "包内交接已阅读，本轮建立统一入口",
+      "planned_phase": "M0 / 持续",
+      "action": "共享R/D/W/AC与证据，讨论不自动批准实现",
+      "work_package_ids": [
+        "W01",
+        "W17"
+      ]
+    },
+    {
+      "id": "R43",
+      "title": "资源预算影响产品承诺",
+      "source_status": "proposed_design",
+      "source_user_ids": [
+        "U63"
+      ],
+      "source_ids": [
+        "S01"
+      ],
+      "current_baseline": "已有daemon遥测，缺全进程预算",
+      "planned_phase": "M0 / M2",
+      "action": "先测再定预算；空闲/隐藏/轻驻留/退出分别测",
+      "work_package_ids": [
+        "W09"
+      ]
+    },
+    {
+      "id": "R44",
+      "title": "品牌与功能互相兑现",
+      "source_status": "proposed_design",
+      "source_user_ids": [
+        "U33",
+        "U41",
+        "U43",
+        "U49"
+      ],
+      "source_ids": [
+        "S01"
+      ],
+      "current_baseline": "新品牌承诺尚未由产品验证",
+      "planned_phase": "M0 / M4",
+      "action": "三条任务路径、截图、安装体验与宣传一致",
+      "work_package_ids": [
+        "W03",
+        "W13",
+        "W14"
+      ]
+    },
+    {
+      "id": "R45",
+      "title": "避免一步到位的全量重写",
+      "source_status": "proposed_delivery",
+      "source_user_ids": [
+        "U35",
+        "U43",
+        "U51"
+      ],
+      "source_ids": [
+        "S01",
+        "S02",
+        "S24"
+      ],
+      "current_baseline": "现有栈可复用，无需重写",
+      "planned_phase": "全部阶段",
+      "action": "保留即时路径，在daemon增量持久编排",
+      "work_package_ids": [
+        "W00",
+        "W04",
+        "W16"
+      ]
+    },
+    {
+      "id": "R46",
+      "title": "持续品鉴、学习与独立判断",
+      "source_status": "confirmed_direction",
+      "source_user_ids": [
+        "U37",
+        "U45",
+        "U49",
+        "U57",
+        "U65"
+      ],
+      "source_ids": [
+        "S01"
+      ],
+      "current_baseline": "学习路线存在，未执行新实验",
+      "planned_phase": "持续，穿过M0–M4",
+      "action": "每阶段记录观察/反证/裁决/复盘，不另造功能大包",
+      "work_package_ids": [
+        "W01",
+        "W15"
+      ]
+    }
+  ],
+  "work_packages": [
+    {
+      "id": "W00",
+      "title": "读取当前工程与运行证据基线",
+      "phase": "M0",
+      "original_dependencies": [],
+      "requirement_ids": [
+        "R01",
+        "R07",
+        "R37",
+        "R45"
+      ],
+      "current_status": "AUTOMATED_BASELINE_DONE_NATIVE_EVIDENCE_SCOPED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W01",
+      "title": "建立需求裁决与证据入口",
+      "phase": "M0",
+      "original_dependencies": [
+        "W00"
+      ],
+      "requirement_ids": [
+        "R01",
+        "R04",
+        "R42",
+        "R46"
+      ],
+      "current_status": "INTAKE_AND_PROGRESS_ENTRY_MAINTAINED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W02",
+      "title": "三入口任务路径与导航合同",
+      "phase": "M0",
+      "original_dependencies": [
+        "W01"
+      ],
+      "requirement_ids": [
+        "R06",
+        "R07",
+        "R08",
+        "R09",
+        "R12",
+        "R13",
+        "R20"
+      ],
+      "current_status": "NAVIGATION_AND_STATE_CONTRACT_DRAFT_READY",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W03",
+      "title": "状态完整的交互原型",
+      "phase": "M0",
+      "original_dependencies": [
+        "W02"
+      ],
+      "requirement_ids": [
+        "R16",
+        "R26",
+        "R28",
+        "R44"
+      ],
+      "current_status": "SIMULATED_PROTOTYPE_BROWSER_VALIDATED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W04",
+      "title": "持久异步Choice事务服务",
+      "phase": "M1",
+      "original_dependencies": [
+        "W00",
+        "W01"
+      ],
+      "requirement_ids": [
+        "R21",
+        "R34",
+        "R35",
+        "R37",
+        "R45"
+      ],
+      "current_status": "PERSONAL_DURABLE_CHOICE_IMPLEMENTED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W05",
+      "title": "Human Provider与人工作答闭环",
+      "phase": "M1",
+      "original_dependencies": [
+        "W03",
+        "W04"
+      ],
+      "requirement_ids": [
+        "R09",
+        "R12",
+        "R21",
+        "R27",
+        "R28",
+        "R35"
+      ],
+      "current_status": "CHOICE_CLOSED_LOOP_IMPLEMENTED_HUMAN_DAG_DEFERRED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W06",
+      "title": "polyfill与严格兼容投影",
+      "phase": "M1",
+      "original_dependencies": [
+        "W04"
+      ],
+      "requirement_ids": [
+        "R22",
+        "R23",
+        "R24",
+        "R30",
+        "R35"
+      ],
+      "current_status": "CHOICE_ONE_HOT_V1_IMPLEMENTED_OTHER_POLYFILLS_PLANNED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W07",
+      "title": "可读JSON与渐进证据层",
+      "phase": "M1",
+      "original_dependencies": [
+        "W03",
+        "W05"
+      ],
+      "requirement_ids": [
+        "R25",
+        "R26",
+        "R28",
+        "R34"
+      ],
+      "current_status": "SAFE_TEXT_RAW_DETAILS_IMPLEMENTED_RICH_JSON_PATHS_PLANNED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W08",
+      "title": "设置与命令统一索引",
+      "phase": "M2",
+      "original_dependencies": [
+        "W02",
+        "W06"
+      ],
+      "requirement_ids": [
+        "R24",
+        "R29",
+        "R27"
+      ],
+      "current_status": "NOT_STARTED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W09",
+      "title": "驻留模式与资源基线",
+      "phase": "M2",
+      "original_dependencies": [
+        "W00",
+        "W05"
+      ],
+      "requirement_ids": [
+        "R18",
+        "R19",
+        "R43"
+      ],
+      "current_status": "NOT_STARTED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W10",
+      "title": "跨端通知与注意力许可",
+      "phase": "M2",
+      "original_dependencies": [
+        "W05",
+        "W08",
+        "W09"
+      ],
+      "requirement_ids": [
+        "R09",
+        "R27",
+        "R28",
+        "R34"
+      ],
+      "current_status": "NOT_STARTED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W11",
+      "title": "Box与媒体能力专项",
+      "phase": "M3",
+      "original_dependencies": [
+        "W04",
+        "W06",
+        "W07"
+      ],
+      "requirement_ids": [
+        "R30",
+        "R31",
+        "R34"
+      ],
+      "current_status": "NOT_STARTED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W12",
+      "title": "实验场人机对照与返回",
+      "phase": "M3",
+      "original_dependencies": [
+        "W05",
+        "W06",
+        "W07"
+      ],
+      "requirement_ids": [
+        "R10",
+        "R12",
+        "R32",
+        "R33"
+      ],
+      "current_status": "NOT_STARTED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W13",
+      "title": "路由火炬与语义设计系统",
+      "phase": "M4",
+      "original_dependencies": [
+        "W02",
+        "W03"
+      ],
+      "requirement_ids": [
+        "R03",
+        "R14",
+        "R15",
+        "R16",
+        "R44"
+      ],
+      "current_status": "NOT_STARTED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W14",
+      "title": "官网README与首用演示",
+      "phase": "M4",
+      "original_dependencies": [
+        "W05",
+        "W07",
+        "W13"
+      ],
+      "requirement_ids": [
+        "R20",
+        "R38",
+        "R44"
+      ],
+      "current_status": "NOT_STARTED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W15",
+      "title": "实际任务研究与Astra复盘",
+      "phase": "M2",
+      "original_dependencies": [
+        "W03",
+        "W05",
+        "W09"
+      ],
+      "requirement_ids": [
+        "R04",
+        "R05",
+        "R17",
+        "R18",
+        "R41",
+        "R46"
+      ],
+      "current_status": "NOT_STARTED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W16",
+      "title": "品牌迁移与发布候选门禁",
+      "phase": "M4",
+      "original_dependencies": [
+        "W09",
+        "W10",
+        "W14",
+        "W15"
+      ],
+      "requirement_ids": [
+        "R03",
+        "R37",
+        "R39",
+        "R45"
+      ],
+      "current_status": "NOT_STARTED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W17",
+      "title": "可维护诊断与支持循环",
+      "phase": "M4",
+      "original_dependencies": [
+        "W04",
+        "W08",
+        "W16"
+      ],
+      "requirement_ids": [
+        "R34",
+        "R37",
+        "R39",
+        "R42"
+      ],
+      "current_status": "NOT_STARTED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W18",
+      "title": "与正确ExoMind的可选合同集成",
+      "phase": "OPTIONAL",
+      "original_dependencies": [
+        "W05",
+        "W07",
+        "W10"
+      ],
+      "requirement_ids": [
+        "R17",
+        "R21",
+        "R35",
+        "R40"
+      ],
+      "current_status": "NOT_STARTED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W19",
+      "title": "实验导出与开放适配包",
+      "phase": "M3",
+      "original_dependencies": [
+        "W12"
+      ],
+      "requirement_ids": [
+        "R31",
+        "R33",
+        "R40"
+      ],
+      "current_status": "NOT_STARTED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W20",
+      "title": "有界元决策Harness实验",
+      "phase": "OPTIONAL",
+      "original_dependencies": [
+        "W04",
+        "W06",
+        "W07"
+      ],
+      "requirement_ids": [
+        "R11",
+        "R25",
+        "R31",
+        "R36"
+      ],
+      "current_status": "NOT_STARTED",
+      "dependency_adjustments": "See implementation plan section 6"
+    },
+    {
+      "id": "W21",
+      "title": "强对手与替代路径复核",
+      "phase": "M0_AND_RECURRING",
+      "original_dependencies": [
+        "W01"
+      ],
+      "requirement_ids": [
+        "R02",
+        "R11",
+        "R40",
+        "R41"
+      ],
+      "current_status": "NOT_STARTED",
+      "dependency_adjustments": "See implementation plan section 6"
+    }
+  ],
+  "acceptance_cases": [
+    {
+      "id": "AC01",
+      "title": "多个请求不串答",
+      "requirement_ids": [
+        "R09",
+        "R21"
+      ],
+      "work_package_ids": [
+        "W04",
+        "W05"
+      ],
+      "phase": "M1",
+      "status": "PARTIAL_CHOICE_VERIFIED",
+      "evidence": [
+        "docs/verification/systorch-m1-2026-10-24.md"
+      ],
+      "given": "两个调用者提交不同问题且可见用户相同",
+      "when": "交错领取与回答",
+      "then": "按request/revision/权限返回到正确调用方",
+      "scope": "Personal Choice only; final artifact identity in verification JSON. HTTP clients simulate concurrency; no full service, rich JSON paths, other question types or maintainer-device acceptance implied."
+    },
+    {
+      "id": "AC02",
+      "title": "重复提交与双设备冲突",
+      "requirement_ids": [
+        "R21",
+        "R35"
+      ],
+      "work_package_ids": [
+        "W04",
+        "W05"
+      ],
+      "phase": "M1",
+      "status": "PARTIAL_CHOICE_VERIFIED",
+      "evidence": [
+        "docs/verification/systorch-m1-2026-10-24.md"
+      ],
+      "given": "同一修订在两台设备打开",
+      "when": "重复或不同答案同时提交",
+      "then": "一次有效结果；冲突端明确已更新，不重放业务动作",
+      "scope": "Personal Choice only; final artifact identity in verification JSON. HTTP clients simulate concurrency; no full service, rich JSON paths, other question types or maintainer-device acceptance implied."
+    },
+    {
+      "id": "AC03",
+      "title": "过期或旧修订答案",
+      "requirement_ids": [
+        "R12",
+        "R25",
+        "R35"
+      ],
+      "work_package_ids": [
+        "W04",
+        "W05"
+      ],
+      "phase": "M1",
+      "status": "PARTIAL_CHOICE_VERIFIED",
+      "evidence": [
+        "docs/verification/systorch-m1-2026-10-24.md"
+      ],
+      "given": "任务过期或上下文已修订",
+      "when": "旧窗口提交",
+      "then": "不复活、不批准新对象，提示重新核对",
+      "scope": "Personal Choice only; final artifact identity in verification JSON. HTTP clients simulate concurrency; no full service, rich JSON paths, other question types or maintainer-device acceptance implied."
+    },
+    {
+      "id": "AC04",
+      "title": "断网草稿与权威反馈",
+      "requirement_ids": [
+        "R27",
+        "R28"
+      ],
+      "work_package_ids": [
+        "W03",
+        "W05"
+      ],
+      "phase": "M1",
+      "status": "PARTIAL_CHOICE_VERIFIED",
+      "evidence": [
+        "docs/verification/systorch-m1-2026-10-24.md"
+      ],
+      "given": "用户已选择但网络不可用",
+      "when": "提交后恢复连接",
+      "then": "保留草稿与正确重试；未确认不显示成功",
+      "scope": "Personal Choice only; final artifact identity in verification JSON. HTTP clients simulate concurrency; no full service, rich JSON paths, other question types or maintainer-device acceptance implied."
+    },
+    {
+      "id": "AC05",
+      "title": "关闭工作台与重启恢复",
+      "requirement_ids": [
+        "R19",
+        "R21"
+      ],
+      "work_package_ids": [
+        "W04",
+        "W05",
+        "W09"
+      ],
+      "phase": "M1/M2",
+      "status": "PARTIAL_CHOICE_VERIFIED",
+      "evidence": [
+        "docs/verification/systorch-m1-2026-10-24.md"
+      ],
+      "given": "任务已接受但未回答",
+      "when": "关窗、停止/恢复服务",
+      "then": "按部署合同保存并恢复；不会把关窗当业务取消",
+      "scope": "Personal Choice only; final artifact identity in verification JSON. HTTP clients simulate concurrency; no full service, rich JSON paths, other question types or maintainer-device acceptance implied."
+    },
+    {
+      "id": "AC06",
+      "title": "弹窗/输入法/焦点安全",
+      "requirement_ids": [
+        "R28"
+      ],
+      "work_package_ids": [
+        "W03",
+        "W05",
+        "W10"
+      ],
+      "phase": "M0/M1/M2",
+      "status": "PARTIAL_CHOICE_VERIFIED",
+      "evidence": [
+        "docs/verification/systorch-m1-2026-10-24.md"
+      ],
+      "given": "用户在其他窗口输入或中文组合中",
+      "when": "新任务到达或按回车",
+      "then": "不误批准，焦点可见、快捷键作用域正确",
+      "scope": "Personal Choice only; final artifact identity in verification JSON. HTTP clients simulate concurrency; no full service, rich JSON paths, other question types or maintainer-device acceptance implied."
+    },
+    {
+      "id": "AC07",
+      "title": "演示与真实模型分开",
+      "requirement_ids": [
+        "R08",
+        "R20"
+      ],
+      "work_package_ids": [
+        "W02",
+        "W14"
+      ],
+      "phase": "M0/M4",
+      "status": "NOT_RUN",
+      "evidence": [],
+      "given": "没有Provider或凭据的新用户",
+      "when": "试演示后接真实服务",
+      "then": "演示标识清楚、配置成本可见、无隐式外发"
+    },
+    {
+      "id": "AC08",
+      "title": "协调视图权限与实际trace",
+      "requirement_ids": [
+        "R07",
+        "R12",
+        "R35"
+      ],
+      "work_package_ids": [
+        "W02",
+        "W04"
+      ],
+      "phase": "M1/M3",
+      "status": "PARTIAL_CHOICE_VERIFIED",
+      "evidence": [
+        "docs/verification/systorch-m1-2026-10-24.md"
+      ],
+      "given": "父请求失败后切换或等人",
+      "when": "进入路径详情",
+      "then": "显示真实attempt/等待；无权内容不可见",
+      "scope": "Personal Choice only; final artifact identity in verification JSON. HTTP clients simulate concurrency; no full service, rich JSON paths, other question types or maintainer-device acceptance implied."
+    },
+    {
+      "id": "AC09",
+      "title": "人工独立实验与返回",
+      "requirement_ids": [
+        "R10",
+        "R12",
+        "R33"
+      ],
+      "work_package_ids": [
+        "W12"
+      ],
+      "phase": "M3",
+      "status": "NOT_RUN",
+      "evidence": [],
+      "given": "模型已回答、人工尚未作答",
+      "when": "前往决策台再返回实验",
+      "then": "模型答案按条件遮蔽，返回同样例和修订"
+    },
+    {
+      "id": "AC10",
+      "title": "实验统计口径",
+      "requirement_ids": [
+        "R23",
+        "R32",
+        "R33"
+      ],
+      "work_package_ids": [
+        "W06",
+        "W12"
+      ],
+      "phase": "M3",
+      "status": "NOT_RUN",
+      "evidence": [],
+      "given": "有人类合成分布与模型分布、缺失样例",
+      "when": "比较与排序",
+      "then": "不混称校准，不删除失败，不以一致性冒称准确率"
+    },
+    {
+      "id": "AC11",
+      "title": "带条件导出可复查",
+      "requirement_ids": [
+        "R33",
+        "R34"
+      ],
+      "work_package_ids": [
+        "W12",
+        "W19"
+      ],
+      "phase": "M3",
+      "status": "NOT_RUN",
+      "evidence": [],
+      "given": "实验含版本/辅助/补全/错误",
+      "when": "导出并读取manifest",
+      "then": "保留条件、范围和来源，敏感资产不默认导出"
+    },
+    {
+      "id": "AC12",
+      "title": "资源隐藏态",
+      "requirement_ids": [
+        "R19",
+        "R43"
+      ],
+      "work_package_ids": [
+        "W09"
+      ],
+      "phase": "M2",
+      "status": "NOT_RUN",
+      "evidence": [],
+      "given": "当前构建打开实验表/媒体",
+      "when": "隐藏或轻驻留",
+      "then": "记录进程树/CPU内存变化，隐藏不无谓绘制，结论依实际数据"
+    },
+    {
+      "id": "AC13",
+      "title": "完整退出语义",
+      "requirement_ids": [
+        "R19",
+        "R43"
+      ],
+      "work_package_ids": [
+        "W09"
+      ],
+      "phase": "M2",
+      "status": "NOT_RUN",
+      "evidence": [],
+      "given": "本地协调或远端客户端分别运行",
+      "when": "选择关闭UI或停止服务",
+      "then": "行为与提示匹配、端口与任务状态可复查"
+    },
+    {
+      "id": "AC14",
+      "title": "压力睡眠恢复",
+      "requirement_ids": [
+        "R19",
+        "R43"
+      ],
+      "work_package_ids": [
+        "W09"
+      ],
+      "phase": "M2",
+      "status": "NOT_RUN",
+      "evidence": [],
+      "given": "存在待答与草稿",
+      "when": "受控资源压力/睡眠/重连",
+      "then": "按合同恢复，不丢任务、不重复授权"
+    },
+    {
+      "id": "AC15",
+      "title": "品牌到安装的承诺一致",
+      "requirement_ids": [
+        "R03",
+        "R38",
+        "R39",
+        "R44"
+      ],
+      "work_package_ids": [
+        "W13",
+        "W14",
+        "W16"
+      ],
+      "phase": "M4",
+      "status": "NOT_RUN",
+      "evidence": [],
+      "given": "官网、下载与候选构建",
+      "when": "首次安装/升级/理解测试",
+      "then": "类别/功能/版本一致，旧数据可恢复，不伪造已支持平台"
+    },
+    {
+      "id": "AC16",
+      "title": "严格与增强视图",
+      "requirement_ids": [
+        "R22"
+      ],
+      "work_package_ids": [
+        "W06"
+      ],
+      "phase": "M1",
+      "status": "PARTIAL_CHOICE_VERIFIED",
+      "evidence": [
+        "docs/verification/systorch-m1-2026-10-24.md"
+      ],
+      "given": "只识别Sys1的客户端与扩展客户端",
+      "when": "取得结果",
+      "then": "strict无新增形状；增强可读来源；真实SDK失败则记录限制",
+      "scope": "Personal Choice only; final artifact identity in verification JSON. HTTP clients simulate concurrency; no full service, rich JSON paths, other question types or maintainer-device acceptance implied."
+    },
+    {
+      "id": "AC17",
+      "title": "概率补全保真",
+      "requirement_ids": [
+        "R23",
+        "R24"
+      ],
+      "work_package_ids": [
+        "W06"
+      ],
+      "phase": "M1/M3",
+      "status": "PARTIAL_CHOICE_VERIFIED",
+      "evidence": [
+        "docs/verification/systorch-m1-2026-10-24.md"
+      ],
+      "given": "用户选A并调整分布",
+      "when": "生成最终响应",
+      "then": "分布总和1、choice不被暗改、confidence按合同派生",
+      "scope": "Personal Choice only; final artifact identity in verification JSON. HTTP clients simulate concurrency; no full service, rich JSON paths, other question types or maintainer-device acceptance implied."
+    },
+    {
+      "id": "AC18",
+      "title": "条件/拒答不可变批准",
+      "requirement_ids": [
+        "R23",
+        "R25",
+        "R35"
+      ],
+      "work_package_ids": [
+        "W06",
+        "W07"
+      ],
+      "phase": "M1/M3",
+      "status": "PARTIAL_CHOICE_VERIFIED",
+      "evidence": [
+        "docs/verification/systorch-m1-2026-10-24.md"
+      ],
+      "given": "选择含先备份或拒绝作答",
+      "when": "向旧协议投影或自动fallback",
+      "then": "无法表达时显式停止；不随机答、不找源直到批准",
+      "scope": "Personal Choice only; final artifact identity in verification JSON. HTTP clients simulate concurrency; no full service, rich JSON paths, other question types or maintainer-device acceptance implied."
+    },
+    {
+      "id": "AC19",
+      "title": "任意JSON安全且可回溯",
+      "requirement_ids": [
+        "R26",
+        "R34"
+      ],
+      "work_package_ids": [
+        "W07"
+      ],
+      "phase": "M1",
+      "status": "PARTIAL_CHOICE_VERIFIED",
+      "evidence": [
+        "docs/verification/systorch-m1-2026-10-24.md"
+      ],
+      "given": "嵌套/空值/长中文/恶意HTML与URL",
+      "when": "显示摘要和展开",
+      "then": "原字段可见、无执行/自动内网获取、单位不变",
+      "scope": "Personal Choice only; final artifact identity in verification JSON. HTTP clients simulate concurrency; no full service, rich JSON paths, other question types or maintainer-device acceptance implied."
+    },
+    {
+      "id": "AC20",
+      "title": "设置搜索与覆盖来源",
+      "requirement_ids": [
+        "R29"
+      ],
+      "work_package_ids": [
+        "W08"
+      ],
+      "phase": "M2",
+      "status": "NOT_RUN",
+      "evidence": [],
+      "given": "全局/入口/设备有不同通知设置",
+      "when": "搜索别名查看有效值",
+      "then": "同一权威值、来源明确、恢复默认正确"
+    },
+    {
+      "id": "AC21",
+      "title": "Box不存在与几何映射",
+      "requirement_ids": [
+        "R30",
+        "R31"
+      ],
+      "work_package_ids": [
+        "W11"
+      ],
+      "phase": "M3",
+      "status": "NOT_RUN",
+      "evidence": [],
+      "given": "不同显示缩放/方向图片或目标不存在",
+      "when": "人框选或点不存在",
+      "then": "归一化正确；not_found不造合法框假成功"
+    },
+    {
+      "id": "AC22",
+      "title": "清理与配额",
+      "requirement_ids": [
+        "R21",
+        "R34"
+      ],
+      "work_package_ids": [
+        "W04"
+      ],
+      "phase": "M1/M3",
+      "status": "PARTIAL_CHOICE_VERIFIED",
+      "evidence": [
+        "docs/verification/systorch-m1-2026-10-24.md"
+      ],
+      "given": "待答/已答保留期不同且容量到限",
+      "when": "接新任务和清理",
+      "then": "明确拒收，合法待答不误删，结果仍可在保留期取得",
+      "scope": "Personal Choice only; final artifact identity in verification JSON. HTTP clients simulate concurrency; no full service, rich JSON paths, other question types or maintainer-device acceptance implied."
+    },
+    {
+      "id": "AC23",
+      "title": "通知隐私与静音",
+      "requirement_ids": [
+        "R27",
+        "R34"
+      ],
+      "work_package_ids": [
+        "W10"
+      ],
+      "phase": "M2",
+      "status": "NOT_RUN",
+      "evidence": [],
+      "given": "锁屏、共享环境、静音、跨端已处理",
+      "when": "收到新提醒或播报",
+      "then": "无敏感默认泄露、不擅自打断，静音不改变答案"
+    },
+    {
+      "id": "AC24",
+      "title": "维护证据不漂移",
+      "requirement_ids": [
+        "R37",
+        "R39",
+        "R42"
+      ],
+      "work_package_ids": [
+        "W01",
+        "W16",
+        "W17"
+      ],
+      "phase": "M0–M4",
+      "status": "NOT_RUN",
+      "evidence": [],
+      "given": "新构建或新会话接续",
+      "when": "交付与更新状态",
+      "then": "记录实际版本命令范围；未测试项不继承旧通过"
+    }
+  ],
+  "user_coverage": [
+    {
+      "user_id": "U1",
+      "requirement_ids": [
+        "R01"
+      ],
+      "source_branch": "alternate_or_retry",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U3",
+      "requirement_ids": [
+        "R01"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U5",
+      "requirement_ids": [
+        "R01"
+      ],
+      "source_branch": "alternate_or_retry",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U7",
+      "requirement_ids": [
+        "R01",
+        "R02"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U9",
+      "requirement_ids": [
+        "R01"
+      ],
+      "source_branch": "alternate_or_retry",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U11",
+      "requirement_ids": [
+        "R01",
+        "R02",
+        "R40"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U13",
+      "requirement_ids": [
+        "R02"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U15",
+      "requirement_ids": [
+        "R02",
+        "R40"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U17",
+      "requirement_ids": [
+        "R02",
+        "R40"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U19",
+      "requirement_ids": [
+        "R02"
+      ],
+      "source_branch": "alternate_or_retry",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U21",
+      "requirement_ids": [
+        "R01",
+        "R02",
+        "R37"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U23",
+      "requirement_ids": [
+        "R21"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U25",
+      "requirement_ids": [
+        "R03",
+        "R13"
+      ],
+      "source_branch": "alternate_or_retry",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U27",
+      "requirement_ids": [
+        "R03",
+        "R04",
+        "R08",
+        "R13",
+        "R20",
+        "R41"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U29",
+      "requirement_ids": [
+        "R01"
+      ],
+      "source_branch": "alternate_or_retry",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U31",
+      "requirement_ids": [
+        "R10",
+        "R11",
+        "R21",
+        "R22",
+        "R23",
+        "R24",
+        "R25",
+        "R26",
+        "R27",
+        "R28",
+        "R29",
+        "R30",
+        "R31",
+        "R32",
+        "R33",
+        "R34",
+        "R35",
+        "R36",
+        "R37",
+        "R40"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U33",
+      "requirement_ids": [
+        "R04",
+        "R16",
+        "R20",
+        "R38",
+        "R44"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U35",
+      "requirement_ids": [
+        "R06",
+        "R07",
+        "R08",
+        "R09",
+        "R10",
+        "R13",
+        "R20",
+        "R21",
+        "R27",
+        "R31",
+        "R45"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U37",
+      "requirement_ids": [
+        "R05",
+        "R46"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U39",
+      "requirement_ids": [
+        "R06",
+        "R07",
+        "R11",
+        "R14",
+        "R29"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U41",
+      "requirement_ids": [
+        "R03",
+        "R05",
+        "R14",
+        "R15",
+        "R44"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U43",
+      "requirement_ids": [
+        "R03",
+        "R14",
+        "R15",
+        "R44",
+        "R45"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U45",
+      "requirement_ids": [
+        "R05",
+        "R17",
+        "R18",
+        "R46"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U47",
+      "requirement_ids": [
+        "R05",
+        "R06",
+        "R07",
+        "R08",
+        "R09",
+        "R12"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U49",
+      "requirement_ids": [
+        "R05",
+        "R16",
+        "R28",
+        "R44",
+        "R46"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U51",
+      "requirement_ids": [
+        "R04",
+        "R16",
+        "R39",
+        "R42",
+        "R45"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U57",
+      "requirement_ids": [
+        "R04",
+        "R05",
+        "R39",
+        "R42",
+        "R46"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U59",
+      "requirement_ids": [
+        "R17"
+      ],
+      "source_branch": "alternate_or_retry",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U61",
+      "requirement_ids": [
+        "R01",
+        "R04",
+        "R05",
+        "R17",
+        "R18",
+        "R37",
+        "R38",
+        "R39",
+        "R41"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U63",
+      "requirement_ids": [
+        "R05",
+        "R17",
+        "R18",
+        "R19",
+        "R28",
+        "R38",
+        "R41",
+        "R43"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    },
+    {
+      "user_id": "U65",
+      "requirement_ids": [
+        "R04",
+        "R42",
+        "R46"
+      ],
+      "source_branch": "path_to_final_66",
+      "status": "READ_AND_MAPPED_NOT_A_NEW_IMPLEMENTATION_APPROVAL"
+    }
+  ],
+  "legacy_opinion_coverage": [
+    {
+      "legacy_opinion": 1,
+      "requirement_ids": [
+        "R21",
+        "R22"
+      ],
+      "status": "retained_or_clarified",
+      "source": "S02/06_意见覆盖与决策记录.md"
+    },
+    {
+      "legacy_opinion": 2,
+      "requirement_ids": [
+        "R06",
+        "R21",
+        "R34"
+      ],
+      "status": "retained_or_clarified",
+      "source": "S02/06_意见覆盖与决策记录.md"
+    },
+    {
+      "legacy_opinion": 3,
+      "requirement_ids": [
+        "R02",
+        "R40"
+      ],
+      "status": "retained_or_clarified",
+      "source": "S02/06_意见覆盖与决策记录.md"
+    },
+    {
+      "legacy_opinion": 4,
+      "requirement_ids": [
+        "R22",
+        "R23"
+      ],
+      "status": "retained_or_clarified",
+      "source": "S02/06_意见覆盖与决策记录.md"
+    },
+    {
+      "legacy_opinion": 5,
+      "requirement_ids": [
+        "R24",
+        "R28",
+        "R29"
+      ],
+      "status": "retained_or_clarified",
+      "source": "S02/06_意见覆盖与决策记录.md"
+    },
+    {
+      "legacy_opinion": 6,
+      "requirement_ids": [
+        "R25"
+      ],
+      "status": "retained_or_clarified",
+      "source": "S02/06_意见覆盖与决策记录.md"
+    },
+    {
+      "legacy_opinion": 7,
+      "requirement_ids": [
+        "R26"
+      ],
+      "status": "retained_or_clarified",
+      "source": "S02/06_意见覆盖与决策记录.md"
+    },
+    {
+      "legacy_opinion": 8,
+      "requirement_ids": [
+        "R09",
+        "R27",
+        "R28"
+      ],
+      "status": "retained_or_clarified",
+      "source": "S02/06_意见覆盖与决策记录.md"
+    },
+    {
+      "legacy_opinion": 9,
+      "requirement_ids": [
+        "R30",
+        "R31"
+      ],
+      "status": "retained_or_clarified",
+      "source": "S02/06_意见覆盖与决策记录.md"
+    },
+    {
+      "legacy_opinion": 10,
+      "requirement_ids": [
+        "R10",
+        "R32",
+        "R33"
+      ],
+      "status": "retained_or_clarified",
+      "source": "S02/06_意见覆盖与决策记录.md"
+    },
+    {
+      "legacy_opinion": 11,
+      "requirement_ids": [
+        "R11",
+        "R14",
+        "R40"
+      ],
+      "status": "retained_or_clarified",
+      "source": "S02/06_意见覆盖与决策记录.md"
+    },
+    {
+      "legacy_opinion": 12,
+      "requirement_ids": [
+        "R13",
+        "R16",
+        "R29"
+      ],
+      "status": "retained_or_clarified",
+      "source": "S02/06_意见覆盖与决策记录.md"
+    },
+    {
+      "legacy_opinion": 13,
+      "requirement_ids": [
+        "R35"
+      ],
+      "status": "retained_or_clarified",
+      "source": "S02/06_意见覆盖与决策记录.md"
+    },
+    {
+      "legacy_opinion": 14,
+      "requirement_ids": [
+        "R21",
+        "R22",
+        "R25",
+        "R34"
+      ],
+      "status": "retained_or_clarified",
+      "source": "S02/06_意见覆盖与决策记录.md"
+    },
+    {
+      "legacy_opinion": 15,
+      "requirement_ids": [
+        "R06",
+        "R11"
+      ],
+      "status": "retained_or_clarified",
+      "source": "S02/06_意见覆盖与决策记录.md"
+    },
+    {
+      "legacy_opinion": 16,
+      "requirement_ids": [
+        "R36"
+      ],
+      "status": "retained_or_clarified",
+      "source": "S02/06_意见覆盖与决策记录.md"
+    },
+    {
+      "legacy_opinion": 17,
+      "requirement_ids": [
+        "R03",
+        "R14",
+        "R15"
+      ],
+      "status": "retained_or_clarified",
+      "source": "S02/06_意见覆盖与决策记录.md"
+    }
+  ],
+  "decision_refs": [
+    {
+      "id": "D01",
+      "status": "USER_DIRECTION",
+      "requirement_ids": [
+        "R03",
+        "R14",
+        "R15"
+      ]
+    },
+    {
+      "id": "D02",
+      "status": "USER_DIRECTION",
+      "requirement_ids": [
+        "R06",
+        "R07",
+        "R08",
+        "R09"
+      ]
+    },
+    {
+      "id": "D03",
+      "status": "USER_DIRECTION",
+      "requirement_ids": [
+        "R10",
+        "R11"
+      ]
+    },
+    {
+      "id": "D04",
+      "status": "USER_DIRECTION",
+      "requirement_ids": [
+        "R04",
+        "R05",
+        "R46"
+      ]
+    },
+    {
+      "id": "D05",
+      "status": "USER_CORRECTION",
+      "requirement_ids": [
+        "R01",
+        "R17"
+      ]
+    },
+    {
+      "id": "D06",
+      "status": "PROPOSED",
+      "requirement_ids": [
+        "R18",
+        "R19",
+        "R43"
+      ]
+    },
+    {
+      "id": "D07",
+      "status": "PROPOSED",
+      "requirement_ids": [
+        "R12",
+        "R13",
+        "R44"
+      ]
+    },
+    {
+      "id": "D08",
+      "status": "PROPOSED",
+      "requirement_ids": [
+        "R21",
+        "R45"
+      ]
+    },
+    {
+      "id": "D09",
+      "status": "BASELINE_PROPOSAL_RETAINED",
+      "requirement_ids": [
+        "R22",
+        "R23",
+        "R24"
+      ]
+    },
+    {
+      "id": "D10",
+      "status": "BASELINE_SAFETY_RETAINED",
+      "requirement_ids": [
+        "R25",
+        "R30",
+        "R35"
+      ]
+    },
+    {
+      "id": "D11",
+      "status": "PROPOSED_GOVERNANCE",
+      "requirement_ids": [
+        "R16",
+        "R37",
+        "R39"
+      ]
+    },
+    {
+      "id": "D12",
+      "status": "EXECUTION_BOUNDARY",
+      "requirement_ids": [
+        "R37",
+        "R42"
+      ]
+    },
+    {
+      "id": "D13",
+      "status": "PROPOSED_STRATEGY",
+      "requirement_ids": [
+        "R02",
+        "R40",
+        "R41"
+      ]
+    }
+  ],
+  "hypothesis_refs": [
+    {
+      "id": "H01",
+      "title": "三入口直达优于统一首页",
+      "status": "UNTESTED",
+      "requirement_ids": [
+        "R06",
+        "R12"
+      ],
+      "acceptance_ids": [
+        "AC07",
+        "AC08"
+      ],
+      "supporting_observation": "同任务下无关导航减少且任务识别不退化",
+      "falsifier": "出现错任务或方向感丢失",
+      "sample_policy": "从真实任务观察起步，记录熟悉度/配置/设备；不以固定人数宣称普遍有效。"
+    },
+    {
+      "id": "H02",
+      "title": "后果预览改善理解",
+      "status": "UNTESTED",
+      "requirement_ids": [
+        "R26",
+        "R28"
+      ],
+      "acceptance_ids": [
+        "AC06",
+        "AC19"
+      ],
+      "supporting_observation": "复述后果更准确而无需无关展开",
+      "falsifier": "暗示效应或阅读增加而理解未改善",
+      "sample_policy": "从真实任务观察起步，记录熟悉度/配置/设备；不以固定人数宣称普遍有效。"
+    },
+    {
+      "id": "H03",
+      "title": "演示不会混淆真实模型能力",
+      "status": "UNTESTED",
+      "requirement_ids": [
+        "R08",
+        "R20"
+      ],
+      "acceptance_ids": [
+        "AC07"
+      ],
+      "supporting_observation": "参与者准确区分模拟与真实调用",
+      "falsifier": "把固定概率当质量证明",
+      "sample_policy": "从真实任务观察起步，记录熟悉度/配置/设备；不以固定人数宣称普遍有效。"
+    },
+    {
+      "id": "H04",
+      "title": "轻驻留降低停用压力",
+      "status": "UNTESTED",
+      "requirement_ids": [
+        "R19",
+        "R43"
+      ],
+      "acceptance_ids": [
+        "AC12",
+        "AC13",
+        "AC14"
+      ],
+      "supporting_observation": "按定义口径资源降低且待答可靠性不退化",
+      "falsifier": "省资源却漏答/丢失/恢复负担增加",
+      "sample_policy": "从真实任务观察起步，记录熟悉度/配置/设备；不以固定人数宣称普遍有效。"
+    },
+    {
+      "id": "H05",
+      "title": "人机实验跨面返回可用",
+      "status": "UNTESTED",
+      "requirement_ids": [
+        "R10",
+        "R12",
+        "R33"
+      ],
+      "acceptance_ids": [
+        "AC09",
+        "AC10",
+        "AC11"
+      ],
+      "supporting_observation": "样例身份/盲化/导出条件保持清楚",
+      "falsifier": "串样例/泄露模型建议/误读指标",
+      "sample_policy": "从真实任务观察起步，记录熟悉度/配置/设备；不以固定人数宣称普遍有效。"
+    },
+    {
+      "id": "H06",
+      "title": "动作型传播更准确而不过度缩窄定位",
+      "status": "UNTESTED",
+      "requirement_ids": [
+        "R38",
+        "R44"
+      ],
+      "acceptance_ids": [
+        "AC15"
+      ],
+      "supporting_observation": "能准确复述一个任务和边界",
+      "falsifier": "误认只做审批或能自动决定一切",
+      "sample_policy": "从真实任务观察起步，记录熟悉度/配置/设备；不以固定人数宣称普遍有效。"
+    },
+    {
+      "id": "H07",
+      "title": "正确ExoMind任务中的障碍可定位",
+      "status": "UNTESTED",
+      "requirement_ids": [
+        "R17",
+        "R41"
+      ],
+      "acceptance_ids": [
+        "AC24"
+      ],
+      "supporting_observation": "观察能区分表达/入口/执行/价值链问题",
+      "falsifier": "只重复架构太复杂而没有路径证据",
+      "sample_policy": "从真实任务观察起步，记录熟悉度/配置/设备；不以固定人数宣称普遍有效。"
+    },
+    {
+      "id": "H08",
+      "title": "独立软件比替代组合有净收益",
+      "status": "UNTESTED",
+      "requirement_ids": [
+        "R02",
+        "R40"
+      ],
+      "acceptance_ids": [
+        "AC01",
+        "AC07",
+        "AC09"
+      ],
+      "supporting_observation": "在相同任务、条件下降低总成本而不损可靠性",
+      "falsifier": "已有宿主或IM方案同样好且额外成本更低",
+      "sample_policy": "从真实任务观察起步，记录熟悉度/配置/设备；不以固定人数宣称普遍有效。"
+    }
+  ],
+  "claim_audit_ids": [
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07",
+    "C08",
+    "C09",
+    "C10",
+    "C11",
+    "C12",
+    "C13",
+    "C14",
+    "C15",
+    "C16",
+    "C17",
+    "C18",
+    "C19",
+    "C20",
+    "C21",
+    "C22",
+    "C23",
+    "C24",
+    "C25",
+    "C26",
+    "C27",
+    "C28"
+  ],
+  "source_count": 25,
+  "initial_intake_boundaries": {
+    "application_code_changed": false,
+    "product_tests_run": false,
+    "real_upstream_calls": false,
+    "commit_push_release": false,
+    "questions_resumed": false
+  },
+  "working_tree_dirty": true,
+  "m0_progress": {
+    "status": "LOCAL_PREVIEW_READY_FOR_REVIEW",
+    "evidence": "../verification/systorch-m0-2026-10-24.md",
+    "contract": "../design/SYSTORCH-M0-NAVIGATION-AND-STATE.md",
+    "runtime": "isolated debug daemon; synthetic upstream only",
+    "native": "not revalidated in this round",
+    "formal_m1_acceptance": "NOT_RUN"
+  },
+  "m1_progress": {
+    "state": "CHOICE_LOCAL_CANDIDATE_VERIFIED",
+    "build_id": "m1-local-20261024.1",
+    "base_version": "0.10.3",
+    "contract": "docs/contracts/08-持久Choice契约.md",
+    "verification": "docs/verification/systorch-m1-2026-10-24.md",
+    "new_worktree": false,
+    "commit_push_release": false,
+    "real_paid_model_calls": 0,
+    "android_maintainer_device": "NOT_RUN"
+  }
+}

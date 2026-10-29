@@ -13,20 +13,20 @@ test('compares release versions without treating a leading v as meaningful', () 
 
 test('checks public release metadata and reports whether an update is available', async () => {
   const result = await checkLatestRelease('0.5.0', async (input, init) => {
-    assert.equal(input, 'https://api.github.com/repos/ARCJ137442/jev-switch/releases/latest');
+    assert.equal(input, 'https://api.github.com/repos/ARCJ137442/SysTorch/releases/latest');
     assert.equal(init?.headers?.Accept, 'application/vnd.github+json');
     return new Response(JSON.stringify({
       tag_name: 'v0.6.0',
-      name: 'Jev-Switch 0.6.0',
-      html_url: 'https://github.com/ARCJ137442/jev-switch/releases/tag/v0.6.0',
+      name: 'SysTorch 0.6.0',
+      html_url: 'https://github.com/ARCJ137442/SysTorch/releases/tag/v0.6.0',
       published_at: '2026-10-01T00:00:00Z',
     }), { status: 200 });
   });
   assert.deepEqual(result, {
     currentVersion: '0.5.0',
     latestVersion: '0.6.0',
-    releaseUrl: 'https://github.com/ARCJ137442/jev-switch/releases/tag/v0.6.0',
-    releaseName: 'Jev-Switch 0.6.0',
+    releaseUrl: 'https://github.com/ARCJ137442/SysTorch/releases/tag/v0.6.0',
+    releaseName: 'SysTorch 0.6.0',
     publishedAt: '2026-10-01T00:00:00Z',
     updateAvailable: true,
   });

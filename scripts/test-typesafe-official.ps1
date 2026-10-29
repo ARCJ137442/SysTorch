@@ -5,7 +5,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$daemonPath = Join-Path $repoRoot 'rs/target/release/jev-switch.exe'
+$daemonPath = Join-Path $repoRoot 'rs/target/release/systorch-daemon.exe'
 $configSource = Join-Path $repoRoot 'rs/providers.example.toml'
 foreach ($required in @($daemonPath, $configSource, (Join-Path $repoRoot 'ui/dist/index.html'))) {
     if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {

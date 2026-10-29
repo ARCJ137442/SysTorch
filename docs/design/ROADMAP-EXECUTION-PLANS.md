@@ -1,5 +1,7 @@
 # Roadmap Execution Plans
 
+> **2026-10-30 SysTorch 当前执行**：[开始页与决策工作台实施计划](SYSTORCH-IMPLEMENTATION-PLAN.md)、[持久 Choice 契约](../contracts/08-持久Choice契约.md)、[资产/多模态契约](../contracts/09-SysTorch资产与多模态契约.md)与[普通会话契约](../contracts/10-SysTorch开始会话契约.md)。当前工作树包括多题持久人工作答、加密普通模型多轮会话、稳定问题 ID、会话附件和合成 HTTP/SQLite/Edge UI 回归；新候选尚未发布，Android 实体设备仍待验收。下面 2026-10-24 M1 和 `v0.8.0` 内容均为对应候选的历史状态。
+
 > **TL;DR**：这些是基于当前源码的执行状态和后续拆解，不是版本承诺。`v0.8.0` 候选已保留 provider attempt 双视图、Dagre 节点及跨层边走廊、Android 原生 JSON/剪贴板，并增加只读 Graph API、DAG 节点模型和 Dashboard Phase 1 布局编辑。维护者已确认 v0.7.1 Android 真机主要能力；后续 APK 回归、OEM 差异和全链路性能仍按版本独立记录。
 >
 > **作者**：GPT-6 Luna xhigh（OpenAI Codex）  

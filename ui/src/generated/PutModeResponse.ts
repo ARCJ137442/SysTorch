@@ -7,7 +7,7 @@ import type { RunMode } from "./RunMode";
  */
 export type PutModeResponse = { mode: RunMode, persisted: boolean, 
 /**
- * env 覆盖警示：`JEV_SWITCH_MODE` 非空（下次启动覆盖文件 mode），
- * 或本次写了密码且 `JEV_ADMIN_PASSWORD` 非空（下次启动覆盖回去）。
+ * Environment override warning: canonical/legacy mode or admin password variables
+ * will override the persisted value on the next start.
  */
 env_override_active: boolean, rebind: RebindInfo, };

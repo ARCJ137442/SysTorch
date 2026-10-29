@@ -4,28 +4,16 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$androidDisplayName = 'Jev Switch'
+$androidDisplayName = 'SysTorch'
 
-function Assert-MonochromePng {
+function Assert-DerivedPng {
     param(
         [string]$Path,
-        [string]$Description
+        [string]$ExpectedPath
     )
 
-    Add-Type -AssemblyName System.Drawing
-    $bitmap = [System.Drawing.Bitmap]::FromFile((Resolve-Path -LiteralPath $Path).Path)
-    try {
-        for ($y = 0; $y -lt $bitmap.Height; $y++) {
-            for ($x = 0; $x -lt $bitmap.Width; $x++) {
-                $pixel = $bitmap.GetPixel($x, $y)
-                if ($pixel.A -gt 8 -and ($pixel.R -ne $pixel.G -or $pixel.G -ne $pixel.B)) {
-                    throw "$Description contains a colored pixel at ($x, $y)."
-                }
-            }
-        }
-    }
-    finally {
-        $bitmap.Dispose()
+    if (-not (Test-Path -LiteralPath $ExpectedPath) -or (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $ExpectedPath -Algorithm SHA256).Hash) {
+        throw "Android launcher resource differs from the SVG-derived master: $Path"
     }
 }
 
@@ -76,7 +64,7 @@ $propertiesFile = Join-Path $androidRoot 'app/tauri.properties'
 $taskIconPath = Join-Path $resRoot 'drawable-nodpi/ic_task.png'
 
 if (-not (Test-Path -LiteralPath $appIcon -PathType Leaf)) {
-    throw "Canonical Jev-Switch icon is missing: $appIcon"
+    throw "Canonical SysTorch icon is missing: $appIcon"
 }
 & (Join-Path $PSScriptRoot '../verify-app-icon-source.ps1')
 if (-not (Test-Path -LiteralPath $keepaliveSource -PathType Container)) {
@@ -100,18 +88,39 @@ if ($gradleSource -match 'manifestPlaceholders\["usesCleartextTraffic"\] = "fals
     throw 'Android release cleartext setting is not enabled for the local HTTP gateway.'
 }
 
-$generatedSources = Join-Path $mainSourceRoot 'java/io/github/arcj137442/jevswitch/keepalive'
+$namespacePackage = 'io.github.arcj137442.systorch'
+$gradleSource = [IO.File]::ReadAllText($buildFile)
+$gradleSource = $gradleSource.Replace('namespace = "io.github.arcj137442.jevswitch"', "namespace = `"$namespacePackage`"")
+# The installed identity and signing key deliberately stay stable. Changing
+# namespace/JNI does not require abandoning the existing application sandbox.
+if ($gradleSource -notmatch 'applicationId = "io.github.arcj137442.(?:jevswitch|systorch)"') { throw 'Unrecognized installed Android identity; review data/signature compatibility first.' }
+$gradleSource = $gradleSource.Replace('applicationId = "io.github.arcj137442.systorch"', 'applicationId = "io.github.arcj137442.jevswitch"')
+[IO.File]::WriteAllText($buildFile, $gradleSource, [Text.UTF8Encoding]::new($false))
+$generatedSources = Join-Path $mainSourceRoot 'java/io/github/arcj137442/systorch/keepalive'
 New-Item -ItemType Directory -Path $generatedSources -Force | Out-Null
 Get-ChildItem -LiteralPath (Join-Path $keepaliveSource 'java') -Filter '*.kt' -File | ForEach-Object {
     Copy-Item -LiteralPath $_.FullName -Destination (Join-Path $generatedSources $_.Name) -Force
 }
 
 $mainActivitySource = Join-Path $tauriRoot 'android/main/MainActivity.kt'
-$generatedActivity = Join-Path $mainSourceRoot 'java/io/github/arcj137442/jevswitch/MainActivity.kt'
+$generatedActivity = Join-Path $mainSourceRoot 'java/io/github/arcj137442/systorch/MainActivity.kt'
+New-Item -ItemType Directory -Path (Split-Path -Parent $generatedActivity) -Force | Out-Null
 if (-not (Test-Path -LiteralPath $mainActivitySource -PathType Leaf)) {
     throw "Maintained Android MainActivity source is missing: $mainActivitySource"
 }
 Copy-Item -LiteralPath $mainActivitySource -Destination $generatedActivity -Force
+$compatRoot = Join-Path $mainSourceRoot 'java/io/github/arcj137442/jevswitch'
+New-Item -ItemType Directory -Path (Join-Path $compatRoot 'keepalive') -Force | Out-Null
+# Remove only stale files in the owned generated package, after checking the
+# absolute boundary. Maintained sources and other applications are untouched.
+$ownedJavaRoot = [IO.Path]::GetFullPath((Join-Path $mainSourceRoot 'java')).TrimEnd('\') + '\'
+foreach ($stale in @((Join-Path $compatRoot 'generated'), (Join-Path $compatRoot 'keepalive'))) {
+    $resolvedStale = [IO.Path]::GetFullPath($stale)
+    if (-not $resolvedStale.StartsWith($ownedJavaRoot, [StringComparison]::OrdinalIgnoreCase)) { throw 'Generated Kotlin cleanup escaped its owned root.' }
+    if (Test-Path -LiteralPath $resolvedStale) { Get-ChildItem -LiteralPath $resolvedStale -File -Filter '*.kt' | ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force } }
+}
+Copy-Item -LiteralPath (Join-Path $tauriRoot 'android/compat/MainActivity.kt') -Destination (Join-Path $compatRoot 'MainActivity.kt') -Force
+Copy-Item -LiteralPath (Join-Path $tauriRoot 'android/compat/KeepaliveComponents.kt') -Destination (Join-Path $compatRoot 'keepalive/KeepaliveComponents.kt') -Force
 Get-ChildItem -LiteralPath (Join-Path $keepaliveSource 'res') -File -Recurse | ForEach-Object {
     $relative = Get-PortableRelativePath -BasePath (Join-Path $keepaliveSource 'res') -Path $_.FullName
     $destination = Join-Path $resRoot $relative
@@ -124,7 +133,7 @@ Get-ChildItem -LiteralPath (Join-Path $keepaliveSource 'res') -File -Recurse | F
 New-Item -ItemType Directory -Path (Split-Path -Parent $taskIconPath) -Force | Out-Null
 Copy-Item -LiteralPath $appIcon -Destination $taskIconPath -Force
 if ((Get-FileHash -LiteralPath $taskIconPath -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $appIcon -Algorithm SHA256).Hash) {
-    throw 'Android recent-task icon does not match the canonical Jev Switch icon.'
+    throw 'Android recent-task icon does not match the canonical SysTorch icon.'
 }
 
 $manifestPath = Join-Path $mainSourceRoot 'AndroidManifest.xml'
@@ -147,20 +156,22 @@ foreach ($permission in @(
 }
 $application = $root.SelectSingleNode('application')
 [void]$application.SetAttribute('label', $androidNamespace, '@string/app_name')
-$activity = $application.SelectSingleNode("activity[@android:name='.MainActivity']", $namespaces)
+$activity = $application.SelectSingleNode('activity', $namespaces)
 if ($null -eq $activity) {
     throw 'Generated Android MainActivity is missing from the manifest.'
 }
 [void]$activity.SetAttribute('icon', $androidNamespace, '@mipmap/ic_launcher')
 [void]$activity.SetAttribute('roundIcon', $androidNamespace, '@mipmap/ic_launcher_round')
 [void]$activity.SetAttribute('label', $androidNamespace, '@string/main_activity_title')
-$service = $application.SelectSingleNode("service[@android:name='.keepalive.JevKeepaliveService']", $namespaces)
+[void]$activity.SetAttribute('name', $androidNamespace, 'io.github.arcj137442.jevswitch.MainActivity')
+$service = $application.SelectSingleNode("service[contains(@android:name,'JevKeepaliveService')]", $namespaces)
 if ($null -eq $service) {
     $service = $manifest.CreateElement('service')
-    $service.SetAttribute('name', $androidNamespace, '.keepalive.JevKeepaliveService')
+    $service.SetAttribute('name', $androidNamespace, 'io.github.arcj137442.jevswitch.keepalive.JevKeepaliveService')
     [void]$application.AppendChild($service)
 }
 [void]$service.SetAttribute('exported', $androidNamespace, 'false')
+[void]$service.SetAttribute('name', $androidNamespace, 'io.github.arcj137442.jevswitch.keepalive.JevKeepaliveService')
 [void]$service.SetAttribute('stopWithTask', $androidNamespace, 'false')
 [void]$service.SetAttribute('foregroundServiceType', $androidNamespace, 'specialUse')
 $subtype = $service.SelectSingleNode("property[@android:name='android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE']", $namespaces)
@@ -169,15 +180,16 @@ if ($null -eq $subtype) {
     $subtype.SetAttribute('name', $androidNamespace, 'android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE')
     [void]$service.AppendChild($subtype)
 }
-[void]$subtype.SetAttribute('value', $androidNamespace, 'Keep the explicitly enabled local Jev Switch gateway available while the app is in the background.')
+[void]$subtype.SetAttribute('value', $androidNamespace, 'Keep the explicitly enabled local SysTorch gateway available while the app is in the background.')
 
-$tileService = $application.SelectSingleNode("service[@android:name='.keepalive.JevGatewayTileService']", $namespaces)
+$tileService = $application.SelectSingleNode("service[contains(@android:name,'JevGatewayTileService')]", $namespaces)
 if ($null -eq $tileService) {
     $tileService = $manifest.CreateElement('service')
     $tileService.SetAttribute('name', $androidNamespace, '.keepalive.JevGatewayTileService')
     [void]$application.AppendChild($tileService)
 }
 [void]$tileService.SetAttribute('label', $androidNamespace, '@string/keepalive_tile_name')
+[void]$tileService.SetAttribute('name', $androidNamespace, 'io.github.arcj137442.jevswitch.keepalive.JevGatewayTileService')
 [void]$tileService.SetAttribute('icon', $androidNamespace, '@mipmap/ic_launcher')
 [void]$tileService.SetAttribute('permission', $androidNamespace, 'android.permission.BIND_QUICK_SETTINGS_TILE')
 [void]$tileService.SetAttribute('exported', $androidNamespace, 'true')
@@ -245,11 +257,11 @@ if ($tauriConfig.version -ne $version -or $androidConfig.version -ne $version) {
     throw "Android, Tauri, and UI versions must agree. UI=$version, Tauri=$($tauriConfig.version), Android=$($androidConfig.version)."
 }
 if ([string]$androidConfig.productName -ne $androidDisplayName) {
-    throw "Android productName must be '$androidDisplayName'; internal ids remain 'jev-switch'."
+    throw "Android productName must be '$androidDisplayName'; installed applicationId is kept for upgrade compatibility."
 }
 $versionCode = Get-AndroidVersionCode -Version $version
 
-$iconOutput = Join-Path ([IO.Path]::GetTempPath()) ("jev-switch-icons-{0}" -f [Guid]::NewGuid().ToString('N'))
+$iconOutput = Join-Path ([IO.Path]::GetTempPath()) ("systorch-icons-{0}" -f [Guid]::NewGuid().ToString('N'))
 try {
     New-Item -ItemType Directory -Path $iconOutput -Force | Out-Null
     Push-Location $ProjectRoot
@@ -300,7 +312,22 @@ try {
         throw "Android launcher output contains only $($launcherPngs.Count) raster resources."
     }
     foreach ($launcherPng in $launcherPngs) {
-        Assert-MonochromePng -Path $launcherPng.FullName -Description "Android launcher icon $($launcherPng.FullName)"
+        $relative = Get-PortableRelativePath -BasePath $resRoot -Path $launcherPng.FullName
+        Assert-DerivedPng -Path $launcherPng.FullName -ExpectedPath (Join-Path $generatedAndroid $relative)
+    }
+    # Android 13+ themed launcher icons use the same white torch mask; older
+    # systems keep their existing adaptive-color resource without unknown tags.
+    foreach ($adaptiveName in @('ic_launcher.xml','ic_launcher_round.xml')) {
+        $adaptiveSource = Join-Path $resRoot "mipmap-anydpi-v26/$adaptiveName"
+        if (Test-Path -LiteralPath $adaptiveSource) {
+            [xml]$adaptive = Get-Content -LiteralPath $adaptiveSource -Raw
+            $monochrome = $adaptive.DocumentElement.SelectSingleNode('monochrome')
+            if ($null -eq $monochrome) { $monochrome = $adaptive.CreateElement('monochrome'); [void]$adaptive.DocumentElement.AppendChild($monochrome) }
+            [void]$monochrome.SetAttribute('drawable', 'http://schemas.android.com/apk/res/android', '@drawable/ic_stat_systorch')
+            $adaptiveTarget = Join-Path $resRoot "mipmap-anydpi-v33/$adaptiveName"
+            New-Item -ItemType Directory -Path (Split-Path -Parent $adaptiveTarget) -Force | Out-Null
+            $adaptive.Save($adaptiveTarget)
+        }
     }
 }
 finally {
@@ -321,7 +348,7 @@ $properties += "tauri.android.versionName=$version"
 
 Write-Host "Android version: $version (versionCode $versionCode)"
 Write-Host "Android launcher resources synced from app-icon.png ($copied files)."
-Write-Host "Android user-facing name: $androidDisplayName; internal package/binary id remains jev-switch."
+Write-Host "Android user-facing name: $androidDisplayName; Kotlin/JNI use systorch; installed applicationId remains compatible."
 Write-Host 'Android recent-task icon and stale template icon cleanup verified.'
 Write-Host 'Android foreground keepalive service and Quick Settings tile synced.'
 Write-Host 'Android release permits HTTP for the embedded loopback gateway and user-selected LAN APIs.'

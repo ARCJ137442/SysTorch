@@ -1,0 +1,143 @@
+{
+  "date": "2026-10-24T02:46:03.577Z",
+  "candidate": "m1-systorch-20261024.5",
+  "version": "0.10.3",
+  "head": "11253af121c0e9f800b544af6c95cd6e4f613e1a",
+  "gitActions": "no new worktree, commit, push, tag or release",
+  "artifacts": {
+    "windows": {
+      "name": "SysTorch-m1-preview-20261024.5-windows-x64.exe",
+      "sha256": "e3c83788c2c292dc98c18f223f24375c7611219fc48c0dbb17194e505f9bd5e3",
+      "bytes": 18582016
+    },
+    "androidArm64": {
+      "name": "SysTorch-m1-preview-20261024.5-aarch64.apk",
+      "sha256": "6e6340f4187dc1f3df27ad76dc3e867e79c93b9e4047f309d64dce8a2d39745a",
+      "bytes": 16151995
+    },
+    "androidEmulator": {
+      "name": "SysTorch-m1-preview-20261024.5-x86_64.apk",
+      "sha256": "05b9a6ef8d989e7f67ff40dc97e2206632e7da2b62f793a3abb4fee979c744af",
+      "bytes": 17790392
+    }
+  },
+  "androidCertificateSha256": "2c15daa0102605e959abca45bac21aec07fe38f48c59c7e43a2abefe05b5b685",
+  "windowsUpgrade": {
+    "scope": "Windows native in-place rebrand, isolated legacy data and WebView profile",
+    "build": "m1-systorch-20261024.5",
+    "binaries": {
+      "old": "98703f4912800dd55f97673ea6d6602dbf478b8b1e3189be254f146228a3e81d",
+      "current": "e3c83788c2c292dc98c18f223f24375c7611219fc48c0dbb17194e505f9bd5e3"
+    },
+    "checks": [
+      "caller identity and owner capability preserved",
+      "old waiting/answered/cancelled/expired/erased tasks preserve authority and original answers",
+      "original idempotency keys still deduplicate or remain tombstoned",
+      "provider configuration, route edges and lifecycle commands unchanged",
+      "old language/theme/scale/status-bar preferences preserved",
+      "new native decision desk answers the old pending task; original caller retrieves its result",
+      "same 64-byte encryption/owner key, legacy data directory and WebView storage reused without copying or clearing",
+      "a second new-app restart retains the answer made after upgrade"
+    ],
+    "realModelCalls": 0,
+    "completed": "2026-10-24T02:40:15.441Z"
+  },
+  "androidUpgrade": {
+    "scope": "old signed M1 APK -> SysTorch in-place update on isolated Android API 35 emulator",
+    "build": "m1-systorch-20261024.5",
+    "apks": {
+      "old": "8ae9c41a891cc4c1b5bbe9da75ecbbdb2001fe82b1ff540262bef753a738e249",
+      "current": "05b9a6ef8d989e7f67ff40dc97e2206632e7da2b62f793a3abb4fee979c744af"
+    },
+    "checks": [
+      "explicit old gateway stop survives upgrade; native RPC starts the new daemon without an HTTP gateway dependency",
+      "caller identity and owner capability preserved",
+      "old waiting/answered/cancelled/expired/erased tasks preserve authority and original answers",
+      "original idempotency keys still deduplicate or remain tombstoned",
+      "provider configuration, route edges and lifecycle commands unchanged",
+      "old language/theme/scale/status-bar preferences preserved",
+      "new native decision desk answers the old pending task; original caller retrieves its result",
+      "same installed application ID, signer-compatible install -r and application UID; no data clearing during upgrade",
+      "legacy launcher and foreground-service component identities resolve through new SysTorch implementations",
+      "a second cold restart retains the answer accepted after upgrade",
+      "notification/tile intents work on Start and Routing without mounting Dashboard and do not replay on navigation",
+      "a cold-start notification/tile gesture is accepted once; reloading the UI does not replay it"
+    ],
+    "realModelCalls": 0,
+    "inputScope": "native WebView UI at 100%; 137% preference preservation asserted before changing test view scale; native zoomed input remains unverified",
+    "completed": "2026-10-24T02:45:16.005Z"
+  },
+  "externalChoice": {
+    "scope": "selected M1 candidate EXE, native human answer, two independent PowerShell 5.1 callers",
+    "checks": [
+      "first PowerShell 5.1 process exits after durable acceptance; receipt contains no token",
+      "re-running Submit reuses the exact persisted idempotency key and task",
+      "independent pre-answer query reports pending without cancellation",
+      "native owner decision desk answers the task while no caller process is alive",
+      "fresh PowerShell 5.1 query retrieves the strict result with the same caller token"
+    ],
+    "realModelCalls": 0,
+    "binary_sha256": "e3c83788c2c292dc98c18f223f24375c7611219fc48c0dbb17194e505f9bd5e3",
+    "script_sha256": "53f2a21cf5866615222d8eae29e39a2ff8ec3d566225324db8f264e9691abd97",
+    "completed": "2026-10-24T02:40:19.291Z"
+  },
+  "http": {
+    "started": "2026-10-24T02:40:02.448Z",
+    "binarySha256": "0573b356473ccfbc104c13658208c1f7ad0cbc83a354917dde22f593ef9ddd4a",
+    "scope": "isolated daemon, real HTTP/SQLite and Chromium, synthetic choices only",
+    "checks": [
+      "explicit identity required even on local loopback",
+      "caller task isolation and admin role does not imply answer permission",
+      "interleaved requests from two callers retain separate ownership and answers",
+      "a pending human task does not block the existing immediate model/DAG path",
+      "20 duplicate submissions are the same durable task; changed body conflicts",
+      "pending survives actual process exit and restart with stable caller/owner",
+      "20 concurrent conflicting answers select exactly one authoritative observation and strict result",
+      "completed result survives a second real restart without executing any upstream",
+      "caller-only revision, responder clarification, stale answer rejection and conditional projection stop",
+      "refusal, cancellation, erasure and persistent no-replay tombstones",
+      "wall-clock expiry is enforced before any late answer",
+      "IME and offline submission preserve the draft without reporting an authoritative answer",
+      "real UI submit → navigate draft → answer → caller result → refresh recovery at 1440px",
+      "real UI submit → navigate draft → answer → caller result → refresh recovery at 1024px",
+      "real UI submit → navigate draft → answer → caller result → refresh recovery at 390px",
+      "real UI submit → navigate draft → answer → caller result → refresh recovery at 360px",
+      "browser caller identity is reused by Choice/model APIs; readonly UI hides provider management and Choice denies unassigned answers",
+      "offline data-directory backup with owner key restores durable authority",
+      "missing/mismatched owner key blocks Choice acceptance without crashing the old model gateway; restoring the key recovers results",
+      "no fixture body, answer or credential plaintext in database or daemon logs"
+    ],
+    "realModelCalls": 0,
+    "syntheticModelCalls": 3,
+    "completed": "2026-10-24T02:40:10.437Z"
+  },
+  "checks": {
+    "rust": 288,
+    "rustTsRs": 372,
+    "ui": 87,
+    "nativeWindows": {
+      "passed": 19,
+      "ignored": 6
+    },
+    "format": "both workspaces passed",
+    "clippy": "both workspaces -D warnings passed",
+    "uiLintBuild": "passed",
+    "prototypeCases": 20,
+    "routeEditorCases": 4
+  },
+  "preservedSources": {
+    "ui/src/components/routing/DagCanvas.tsx": "28e616c415c0972c2822b3ab15c88efaaa3cdeea8fb82d4e1ba08e57602b973a",
+    "ui/src/components/routing/dag.ts": "8e881108a755434f86b696af8fc7a4952ac5b79a2b6e2dea8ff2f97a7c73d2ce",
+    "ui/src/pages/routingActivity.ts": "d95cae8786a974456622f2747c1fa175a901db8d98f2027b74d43a3a6b740741",
+    "ui/src/components/providers/ProviderLifecyclePanel.tsx": "bd2aa3e4de12369496bc1ae7bae27c897fc849a84717a257acdfb888353227d1",
+    "rs/crates/jev-core/src/router.rs": "a2dbff84b699e1a798b444674b7a081b0cd4344370b89ba246fdd5e4542e6e97"
+  },
+  "realPaidCalls": 0,
+  "limitations": [
+    "Windows EXE has no Authenticode signature",
+    "Android native upgrade/launch intents tested on isolated API 35 x86_64 emulator; ARM64 APK built, signed and inspected but no physical ARM device test",
+    "Android UI input tested at 100%; 137% preference preservation verified; native high-zoom touch not accepted",
+    "No formal installer/stable-key APK, CI, Docker or public-site migration run",
+    "Logo is a handoff-based candidate; visual recognition and final aesthetic acceptance belong to the maintainer"
+  ]
+}

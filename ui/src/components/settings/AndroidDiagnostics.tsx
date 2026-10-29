@@ -19,9 +19,10 @@ async function probeWebHealth(): Promise<WebProbe> {
   try {
     const response = await fetch(url, { signal: controller.signal });
     const body: unknown = await response.json().catch(() => null);
-    const identityOk = response.ok && typeof body === 'object' && body !== null
-      && (body as Record<string, unknown>).product === 'jev-switch'
-      && (body as Record<string, unknown>).status === 'ok';
+    const identity = body as Record<string, unknown> | null;
+    const identityOk = response.ok && identity !== null && typeof identity === 'object'
+      && (identity.brand === 'SysTorch' || identity.product === 'jev-switch')
+      && identity.status === 'ok';
     return { url, status: response.status, identityOk, error: identityOk ? null : 'Unexpected /health response' };
   } catch (error) {
     return { url, status: null, identityOk: false, error: error instanceof Error ? error.message : String(error) };

@@ -1,5 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { BarChart3, Boxes, DoorOpen, FlaskConical, LayoutDashboard, Route, Settings, type LucideIcon } from 'lucide-react';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { BarChart3, Boxes, DoorOpen, FlaskConical, LayoutDashboard, Route, Settings, Play, ListChecks, type LucideIcon } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { isTauri } from '@tauri-apps/api/core';
 import { getBase, fetchHealth } from '../api';
@@ -16,17 +16,21 @@ import { StatusBarContributionProvider, type StatusBarItem } from './statusBar';
 import { handleFormKeyDown } from './formKeyboard';
 import { cycleTopLevelRoute, isEditableShortcutTarget, isTopLevelShortcut, TOP_LEVEL_ROUTES } from './topLevelNavigation';
 import './shell.css';
+import { startupRoute, LAST_PAGE_KEY } from '../settings/startup';
+import { AndroidGatewayIntents } from './AndroidGatewayIntents';
+
+const productMark = new URL('../brand/systorch.svg', import.meta.url).href;
 
 /* ---------- hash 路由（手写，不引第三方 router） ---------- */
 
-export type Route = 'home' | 'dashboard' | 'providers' | 'endpoints' | 'routing' | 'playground' | 'stats' | 'settings';
+export type Route = 'start' | 'desk' | 'home' | 'dashboard' | 'providers' | 'endpoints' | 'routing' | 'playground' | 'stats' | 'settings';
 
-const ROUTES: readonly Route[] = ['home', 'dashboard', 'providers', 'endpoints', 'routing', 'playground', 'stats', 'settings'];
-const DEFAULT_ROUTE: Route = 'dashboard';
+const ROUTES: readonly Route[] = ['start', 'desk', 'home', 'dashboard', 'providers', 'endpoints', 'routing', 'playground', 'stats', 'settings'];
+const DEFAULT_ROUTE: Route = 'start';
 
 function parseHash(hash: string): Route {
   const path = hash.replace(/^#\/?/, '').split(/[?#]/)[0];
-  return (ROUTES as readonly string[]).includes(path) ? (path as Route) : DEFAULT_ROUTE;
+  return (ROUTES as readonly string[]).includes(path) ? (path as Route) : startupRoute(ROUTES) as Route;
 }
 
 /** `/#/dashboard`（默认）· `/#/providers` · `/#/endpoints` · `/#/routing` · `/#/playground` */
@@ -39,6 +43,7 @@ export function useHashRoute(): Route {
     window.addEventListener('hashchange', onChange);
     return () => window.removeEventListener('hashchange', onChange);
   }, []);
+  useEffect(() => { try { localStorage.setItem(LAST_PAGE_KEY, route); } catch { /* No storage is required to navigate. */ } }, [route]);
   return route;
 }
 
@@ -97,7 +102,9 @@ interface ShellProps {
   children: ReactNode;
 }
 
-const NAV: ReadonlyArray<{ route: Route; labelKey: 'shell.navDashboard' | 'shell.navProviders' | 'entry.tab' | 'shell.navRouting' | 'shell.navPlayground' | 'shell.navStats' | 'shell.navSettings'; href: string; icon: LucideIcon }> = [
+export const SHELL_NAVIGATION: ReadonlyArray<{ route: Route; labelKey: 'decision.start' | 'decision.desk' | 'shell.navDashboard' | 'shell.navProviders' | 'entry.tab' | 'shell.navRouting' | 'shell.navPlayground' | 'shell.navStats' | 'shell.navSettings'; href: string; icon: LucideIcon }> = [
+  { route: 'start', labelKey: 'decision.start', href: '#/start', icon: Play },
+  { route: 'desk', labelKey: 'decision.desk', href: '#/desk', icon: ListChecks },
   { route: 'dashboard', labelKey: 'shell.navDashboard', href: '#/dashboard', icon: LayoutDashboard },
   { route: 'providers', labelKey: 'shell.navProviders', href: '#/providers', icon: Boxes },
   { route: 'endpoints', labelKey: 'entry.tab', href: '#/endpoints', icon: DoorOpen },
@@ -111,17 +118,30 @@ const NAV: ReadonlyArray<{ route: Route; labelKey: 'shell.navDashboard' | 'shell
 export function Shell({ route, children }: ShellProps) {
   return (
     <FeedbackProvider>
+      <AndroidGatewayIntents />
       <ShellFrame route={route}>{children}</ShellFrame>
     </FeedbackProvider>
   );
 }
 
 function ShellFrame({ route, children }: ShellProps) {
+  const shellRef = useRef<HTMLDivElement>(null);
+  const [layoutWidth, setLayoutWidth] = useState(() => window.innerWidth / (Number(document.documentElement.style.zoom) || 1));
+  useLayoutEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+    const measure = () => setLayoutWidth(shell.clientWidth);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(shell);
+    return () => observer.disconnect();
+  }, []);
   const server = useServerStatusProbe();
   const { conflict, handlers } = useConflictControl();
   const { toasts } = useToast();
   const { t } = useI18n();
   const auth = useAuth();
+  const startWorkspace = route === 'start';
   const endpointLabel = (getBase() || window.location.origin).replace(/^https?:\/\//, '');
 
   // #43 cloud 态：任一 admin 请求 401/403 → 登录小窗；成功后整页刷新重拉
@@ -132,7 +152,7 @@ function ShellFrame({ route, children }: ShellProps) {
   const [showStatusBar, setShowStatusBar] = useState(readShowStatusBar);
   const [pageStatusItems, setPageStatusItems] = useState<readonly StatusBarItem[]>([]);
   const registerPageStatusItems = useCallback((items: readonly StatusBarItem[]) => setPageStatusItems(items), []);
-  const currentNav = useMemo(() => NAV.find((item) => item.route === route) ?? NAV[0], [route]);
+  const currentNav = useMemo(() => SHELL_NAVIGATION.find((item) => item.route === (route === 'home' ? 'dashboard' : route)) ?? SHELL_NAVIGATION[0], [route]);
   useEffect(() => {
     setAuthErrorHandler(() => setNeedLogin(true));
     const onApiBaseChange = () => setApiBaseVersion((version) => version + 1);
@@ -156,7 +176,7 @@ function ShellFrame({ route, children }: ShellProps) {
 
   useEffect(() => {
     const availableRoutes = auth.isReadOnly
-      ? TOP_LEVEL_ROUTES.filter((item) => item === 'dashboard' || item === 'playground' || item === 'stats' || item === 'settings')
+      ? TOP_LEVEL_ROUTES.filter((item) => item === 'start' || item === 'desk' || item === 'dashboard' || item === 'playground' || item === 'stats' || item === 'settings')
       : TOP_LEVEL_ROUTES;
     const onTopLevelShortcut = (event: KeyboardEvent) => {
       // Keep browser tab switching in a normal web page; Tauri owns Ctrl+Tab.
@@ -189,7 +209,7 @@ function ShellFrame({ route, children }: ShellProps) {
 
   return (
     <ServerStatusContext.Provider value={server}>
-    <div className="app-shell flex h-full min-h-0 flex-col bg-bg text-ink">
+    <div ref={shellRef} className={`app-shell flex h-full min-h-0 flex-col bg-bg text-ink${startWorkspace ? ' app-shell--start' : ''}${layoutWidth < 1280 ? ' app-shell--compact' : ''}${layoutWidth < 540 ? ' app-shell--mobile' : ''}${layoutWidth < 360 ? ' app-shell--tiny' : ''}`}>
       <CommandPalette />
       {needLogin && (
         <AdminLogin
@@ -212,22 +232,25 @@ function ShellFrame({ route, children }: ShellProps) {
         className="app-shell__header shrink-0 border-b"
         style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}
       >
-        <div className="app-shell__header-inner">
+        <div className={`app-shell__header-inner${startWorkspace ? ' app-shell__header-inner--start' : ''}`}>
             <a
-              href="#/dashboard"
+              href="#/start"
               className="app-shell__brand flex items-center gap-2 font-semibold"
               style={{ fontSize: 'var(--text-base)', color: 'var(--text)' }}
             >
-              <span>Jev Switch</span>
+              <img src={productMark} width="24" height="24" alt="" aria-hidden="true" />
+              <span>{pkg.productName}</span>
             </a>
-            <nav aria-label="primary" className="app-shell__nav flex min-w-0 items-center gap-1">
-              {NAV.filter((item) => !auth.isReadOnly || item.route === 'dashboard' || item.route === 'playground' || item.route === 'stats' || item.route === 'settings').map((item) => {
+            <nav aria-label={t('decision.navigation')} className="app-shell__nav flex min-w-0 items-center gap-1">
+              {!startWorkspace && SHELL_NAVIGATION.filter((item) => !auth.isReadOnly || item.route === 'start' || item.route === 'desk' || item.route === 'dashboard' || item.route === 'playground' || item.route === 'stats' || item.route === 'settings').map((item) => {
                 const active =
                   item.route === route || (item.route === 'dashboard' && route === 'home');
                 return (
                   <a
                     key={item.route}
                     href={item.href}
+                    aria-label={t(item.labelKey)}
+                    title={t(item.labelKey)}
                     aria-current={active ? 'page' : undefined}
                     className={`app-shell__nav-link inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 transition-colors${active ? ' app-shell__nav-link--active' : ''}`}
                     style={{
@@ -239,7 +262,7 @@ function ShellFrame({ route, children }: ShellProps) {
                     }}
                   >
                     <item.icon size={15} strokeWidth={1.8} aria-hidden="true" />
-                    {t(item.labelKey)}
+                    <span className="app-shell__nav-label">{t(item.labelKey)}</span>
                   </a>
                 );
               })}
@@ -323,7 +346,7 @@ function ShellFrame({ route, children }: ShellProps) {
 
       {/* toast 槽位 — B1 tint 胶囊 */}
       {toasts.length > 0 && (
-        <div className="app-shell__toasts fixed bottom-4 right-4 z-50 flex w-80 flex-col gap-2" aria-live="polite">
+        <div className="app-shell__toasts fixed bottom-4 right-4 z-50 flex flex-col gap-2" style={{ width: Math.min(320, Math.max(1, layoutWidth - 32)), overflowWrap: 'anywhere' }} aria-live="polite">
           {toasts.map((item) => (
             <div
               key={item.id}

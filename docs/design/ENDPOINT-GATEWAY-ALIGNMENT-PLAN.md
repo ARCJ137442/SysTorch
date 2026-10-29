@@ -1,5 +1,10 @@
 # Jev Switch 入口网关：认知对齐、决策与实施计划
 
+> **历史文档说明（2026-10-30）**：本文记录 Jev Switch 网关阶段的决策和逐日验证，保留当时的产品名、路径与证据，不代表当前发行边界。SysTorch 当前产品计划、品牌和 0.11.0 预发布状态见 [实施计划](SYSTORCH-IMPLEMENTATION-PLAN.md)、[品牌迁移记录](SYSTORCH-BRAND-MIGRATION.md) 与 [发布核验](../verification/v0.11.0-pre-release-2026-10-30.md)。
+
+
+> **2026-10-24 阅读边界**：本文保留既有网关语义及各版本历史验收；Jev Switch 当前实施转至[分阶段计划](SYSTORCH-IMPLEMENTATION-PLAN.md)。M0 修正与原型之后，M1 已接通真实个人 Choice，见[契约 08](../contracts/08-持久Choice契约.md)和[候选核验](../verification/systorch-m1-2026-10-24.md)，尚未正式发行或迁移品牌。本文带日期的“当前状态/下一步”只适用于其记录时点，未被新裁决改变的协议不变量继续有效。
+
 **日期：2026-09-24（北京时间）**<br>
 **整理：GPT-6 Astra / Codex；演练场专项修订：GPT-6 Luna**<br>
 **当前状态（2026-09-30）：**正式版为 [v0.4.0](https://github.com/ARCJ137442/jev-switch/releases/tag/v0.4.0)，包含 v0.2.0 桌面/Docker 能力与 headless CLI Phase 1；Linux/Windows CLI、Windows MSI/NSIS/Portable/Standalone、Docker 资产和对应 CI/Release 均已通过。Termux arm64 通过本机 `cargo install` 使用 CLI，不宣称已提供 Android 预编译包。v0.4.0 已完成 Lucide 图标信息辅助、provider probe 并发、共享 health 和遥测调度快修，并通过 Windows 原生隔离核验，但**尚未经人工实测**；受控四-provider fixture 的 probe wall time 从串行中位数 1244.3ms 降到并发中位数 312.2ms，这不是全链路或跨硬件性能结论。详见[CLI 验证](../verification/cli-phase1-2026-09-30.md)、[UI 图标/性能验证](../verification/ui-icon-performance-2026-09-30.md)及[0.4.0 发布核验](../verification/v0.4.0-release-candidate-2026-09-30.md)。下方及时间戳附录中的 v0.1.0/v0.2.0 事实继续作为其对应版本的历史证据，不覆盖当前源码或 Release 状态。
@@ -95,7 +100,7 @@
 | 编号 | 用户决定/原话 | 落地含义 |
 |---|---|---|
 | D01 | “API地址+key+模型id”是“最小功能入口” | 用统一调用概念解释两侧，管理界面保持职责区分 |
-| D02 | “严格区分『上游对Jev-Switch提供的入口』与『Jev Switch对外提供的入口』” | 不再用同一组“入口卡片”混淆上游账号资源与对外服务 |
+| D02 | “严格区分『上游对Jev Switch提供的入口』与『Jev Switch对外提供的入口』” | 不再用同一组“入口卡片”混淆上游账号资源与对外服务 |
 | D03 | 上游“账号+API key复用，模型根据前二者变动” | 账号凭据在接入配置中复用，模型资源随配置上下文维护 |
 | D04 | 选择“一份接入配置一张卡” | 允许同地址不同账号有不同卡片；不采用一张品牌总卡包多账号的方案 |
 | D05 | 对外“每个入口独立提供配置……内部是一种路由策略” | 对外入口管理必须真正控制执行，不能仅做展示记录 |
@@ -285,7 +290,7 @@ P6 最新截图、文档、提交推送与既定发布验证
 - [x] P6 按单一脚本构建一批 Windows MSI、NSIS 与便携候选，并校验清单/载荷哈希。
 - [x] P6 Release dry-run 远端 CI、Windows MSI/NSIS/便携 ZIP 构建与 artifact 上传；解包后八项制品 SHA-256 与 manifest 一致。
 - [ ] 完成 P6 公开展示素材筛选及正式发布；含敏感配置的截图继续只用于本机核验。
-- [ ] 全部目标验收完成后，正常退出便携版并清理 `E:\\tmp` 中确认属于本轮 Jev-Switch 的临时构建/解压文件；保留 `%APPDATA%\\jev-switch` 用户配置与调用历史，不触碰无关临时文件。
+- [ ] 全部目标验收完成后，正常退出便携版并清理 `E:\\tmp` 中确认属于本轮 Jev Switch 的临时构建/解压文件；保留 `%APPDATA%\\jev-switch` 用户配置与调用历史，不触碰无关临时文件。
 
 P5 已有旧便携运行与真实 Laya/Vercel 调用、结构化请求历史、DAG/入口/比较页、Docker cloud 持久化、原生几何/DOM 和隔离生命周期测试证据；20:48 的 artifact 冷启动、21:30 的同包三种比较与 21:48 的 Vercel 真实调用补齐了当前 Release dry-run 包的进程、资源、HTTP、历史与 route trace 证据。当前 Tauri MCP 不可用且原生 app inventory 为空，精确候选上的原生窗口尺寸/截图和托盘 Hide/Restore/Exit 仍未验收。P6 本机截图证据索引、README 状态、同批 MSI/NSIS/便携构建、远端 dry-run CI 与 artifact 哈希核验已完成；干净公开素材筛选和正式发布仍待完成。
 
@@ -477,9 +482,9 @@ Docker 镜像 `jev-switch:typesafe-confidence-cost-final-20260925` 以 `typesafe
 
 源码测试检查表明，额外启动本地 mock 服务来复测入口数据库生命周期不是当前主要缺口，现有 Rust 集成测试已覆盖对应后端行为：
 
-- [`endpoints_runtime.rs`](../../rs/crates/jev-switch-daemon/tests/endpoints_runtime.rs) 的 `endpoint_routes_are_persisted_replaced_and_disabled_at_runtime` 覆盖直接上游调用、入口及双候选路由创建、公开调用、入口重命名/停用后拒绝请求，并断言停用调用未触达 provider。
+- [`endpoints_runtime.rs`](../../rs/crates/systorch-daemon/tests/endpoints_runtime.rs) 的 `endpoint_routes_are_persisted_replaced_and_disabled_at_runtime` 覆盖直接上游调用、入口及双候选路由创建、公开调用、入口重命名/停用后拒绝请求，并断言停用调用未触达 provider。
 - 同文件 `persisted_endpoint_route_is_restored_by_new_build_state` 在释放首个 app state 后重新 `build_state`，核对 SQLite 图、公开模型和恢复后的真实调度；`endpoint_and_global_strategy_settings_drive_real_scheduler_paths` 覆盖 scheduler 策略与 trace。
-- [`history_retention.rs`](../../rs/crates/jev-switch-daemon/tests/history_retention.rs) 的 `endpoint_delete_keeps_token_history_with_foreign_keys_enabled_and_after_restart` 覆盖真实调用记录中的 usage/cost、入口删除后 history/stat/event 保留及新 state 恢复。
+- [`history_retention.rs`](../../rs/crates/systorch-daemon/tests/history_retention.rs) 的 `endpoint_delete_keeps_token_history_with_foreign_keys_enabled_and_after_restart` 覆盖真实调用记录中的 usage/cost、入口删除后 history/stat/event 保留及新 state 恢复。
 
 这些是隔离配置、fake adapter 的 Rust HTTP 集成测试，不是跨进程已安装 Tauri 验收，也不证明 Vercel TypeSafe 新版 `gatewayCost` 已在真实请求中记录。本轮不重复增加同义 mock 测试；剩余外部验收仍是最新版 MSI 实装、已安装进程复用/托盘/配置生命周期，以及真实 Vercel 请求与费用日志。
 
@@ -493,7 +498,7 @@ Docker 镜像 `jev-switch:typesafe-confidence-cost-final-20260925` 以 `typesafe
 
 ## P5 增量：新版已安装启动、真实 TypeSafe 调用与包内 UI 联调（2026-09-25 21:42）
 
-- **安装与运行身份：**用户完成 UAC 并安装后，本轮启动新安装版 Tauri。机器级安装登记为 ProductCode `{408A33CD-E2A4-481F-8CCE-F6C9777C3554}`，安装路径 `本机临时目录\jev-nsis-install-20260925\app`；安装日志以 `Installation completed successfully` 结束。Tauri PID 11680 的窗口标题为 `Jev-Switch` 且 Responding；子进程 daemon PID 84236 监听 `127.0.0.1:11435`。`/health` 返回 `typesafe-confidence-cost-perms-20260925`。安装的 shell/daemon SHA256 分别为 `0B38C9947C76FE56DDFBC5B30131F8C68EEC049FB8382FC5AF01C05175677530`、`E071CB195E7963E2F40F7CFF85C9EB148477CF13A0BD9FD78AB022CA1951264A`。
+- **安装与运行身份：**用户完成 UAC 并安装后，本轮启动新安装版 Tauri。机器级安装登记为 ProductCode `{408A33CD-E2A4-481F-8CCE-F6C9777C3554}`，安装路径 `本机临时目录\jev-nsis-install-20260925\app`；安装日志以 `Installation completed successfully` 结束。Tauri PID 11680 的窗口标题为 `Jev Switch` 且 Responding；子进程 daemon PID 84236 监听 `127.0.0.1:11435`。`/health` 返回 `typesafe-confidence-cost-perms-20260925`。安装的 shell/daemon SHA256 分别为 `0B38C9947C76FE56DDFBC5B30131F8C68EEC049FB8382FC5AF01C05175677530`、`E071CB195E7963E2F40F7CFF85C9EB148477CF13A0BD9FD78AB022CA1951264A`。
 - **接续原配置并修复真实 404：**升级保留了原 Vercel key（只确认 `api_key_set=true`，未读取或记录 key）。其旧 base `https://ai-gateway.vercel.sh/v4/ai/evaluation-model` 与当前 adapter 不匹配；将 base 更新到 `https://ai-gateway.vercel.sh/typesafe/v1/systemone`，写入时省略 key 字段以保留凭据。第一次实际调用返回 404，Vercel 指出找不到 `jev-vercel`；检查保存路由后发现 `jev-vercel → typesafe-ai/jev` 缺少 `upstream_model`。补齐 `upstream_model=typesafe-ai/jev` 后，图保留 9 条边与 priority 10，运行时热切生效。
 - **真实上游结果：**新版已安装 daemon 通过保留的 Vercel 凭据，完成一条 Noul 请求（HTTP 200、`typesafe-ai/jev`、311/20 input/output tokens、1166 ms、1 upstream call）及一条 Choice+Score 组合请求（HTTP 200、Choice=`billing` / confidence 1.0、Score=2.38 / confidence 0.44、400/46 tokens、597 ms、1 upstream call）。两条持久事件均记录 `cost_usd=0.0`，provider metadata 另带 `gatewayCost=0` 与各自 `marketCost`；不把市场价折算成网关成本。修复前的 404 事件也保留，作为迁移缺陷的证据。
 - **安装包 UI 页面核验：**没有改安装目录。只读复制包内 `ui/dist` 到 E 盘临时目录，在副本 `index.html` 注入 `window.__JEV_BASE__=http://127.0.0.1:11435`，通过隔离静态服务器和 Codex IAB 浏览器核验 Dashboard（daemon healthy、9 条路由及调用活动）、Providers（2/2 启用，凭据只显示为已配置）、Routing/DAG（9 条边，`jev-vercel → typesafe-ai/jev / typesafe-ai/jev`）、Playground（可并选 `jev` 与 `jev-vercel` 两个公开入口）。1280×720 浏览器视口下 Playground 输入和目标区域使用横向可用空间，未见旧左侧空白式布局。此证据是安装包静态 UI 对已安装 daemon 的浏览器核验，不是原生 Tauri WebView 截图或窗口几何验收；DAG/Playground 未改生产配置、未额外触发模型调用。
@@ -593,7 +598,7 @@ Vercel 当前官方文档确认 TypeSafe Gateway URL 由 `https://ai-gateway.ver
 
 ## P5 增量：新版 MSI 安装版启动、真实上游与多入口比较（2026-09-26 08:02）
 
-- **安装与运行身份：**用户完成 UAC 并安装新版 MSI 后，由本轮启动安装版 `本机临时目录\jev-nsis-install-20260925\app\jev-switch.exe`。MSI 安装登记的 ProductCode 为 `{A01FC442-D138-4096-944C-7E80DD725222}`。Tauri PID 81208 的主窗口标题为 Jev-Switch；其子 daemon PID 83312 监听 `127.0.0.1:11435`。`GET /health` 为 200，产品/版本/API revision 为 `jev-switch` / `0.1.0` / 1，`build_revision=null`。安装主程序、daemon 和 JS 哈希分别与 release shell、release daemon、`ui/dist/assets/index-BY96iTcq.js` 完全一致；JS SHA-256 为 `6C75A5A229333C8C3521219D053F0F7F33810CEB18A234B7A2895807617BCF57`。`11436`、`5173` 未监听，Laya `127.0.0.1:18767` 保持运行。
+- **安装与运行身份：**用户完成 UAC 并安装新版 MSI 后，由本轮启动安装版 `本机临时目录\jev-nsis-install-20260925\app\jev-switch.exe`。MSI 安装登记的 ProductCode 为 `{A01FC442-D138-4096-944C-7E80DD725222}`。Tauri PID 81208 的主窗口标题为 Jev Switch；其子 daemon PID 83312 监听 `127.0.0.1:11435`。`GET /health` 为 200，产品/版本/API revision 为 `jev-switch` / `0.1.0` / 1，`build_revision=null`。安装主程序、daemon 和 JS 哈希分别与 release shell、release daemon、`ui/dist/assets/index-BY96iTcq.js` 完全一致；JS SHA-256 为 `6C75A5A229333C8C3521219D053F0F7F33810CEB18A234B7A2895807617BCF57`。`11436`、`5173` 未监听，Laya `127.0.0.1:18767` 保持运行。
 - **正式配置与迁移：**仅用管理 API 的掩码状态核对 Vercel key 已设置，没有读取或输出密钥。正式 `%APPDATA%\jev-switch\jev-switch.db` 的 `migrations` 已应用至版本 7，历史数据保留；提供商配置文件没有复制到计划或日志。
 - **新版安装版真实调用：**Vercel TypeSafe 公开入口 `jev-vercel` 返回 HTTP 200，request ID `jev-14`，route trace 为 `typesafe-ai/jev → vercel`，1 次上游调用、337/32 input/output tokens、1372 ms；SQLite event 14 保存相同 provider/model/status/usage/latency/request ID/route trace，`cost_usd=0.0`。Laya 公开入口 `laya-english` 两次均 HTTP 200：event 13 为 190 ms、50/0 tokens；event 15 为 209 ms、109/0 tokens。两条 trace 都指明 `laya-english → laya → laya-english`，且逐字段写入 AppData SQLite。
 - **UI 核验：**安装 daemon 提供的 UI 浏览器视图显示 Routing 的“入口”页有 7 个真实入口卡片；“调用路由 DAG”读到当前 9 条边，图上有左右两端、入口策略和提供商模型端口，当前不是旧版静态图。Playground 同一输入选择公开入口 `laya-english` 与直连上游 `laya / laya-english` 后，“运行全部”得到两列成功结果，分别 222 ms 与 284 ms；公开入口列展示 `laya-english → laya / laya-english` 的实际路由，横向布局在 1280×720 浏览器视口使用双列结果区。Dashboard 中 `jev-13` 与 `jev-14` 的活动摘要分别以结构化字段展示，原始 JSON 默认折叠。
@@ -731,7 +736,7 @@ Jeview 明确把每次完整请求和响应、以及明文 TypeSafe key 存入�
 
 ## 13:21 原生窗口读取失败复核（2026-09-26，北京时间）
 
-- Computer Use 枚举到唯一 Jev-Switch 窗口，归属进程 `本机临时目录\jev-switch-wix-verified-20260926-114045-417\jev-switch.exe`（PID 38364）；首个窗口状态返回“window is minimized”。
+- Computer Use 枚举到唯一 Jev Switch 窗口，归属进程 `本机临时目录\jev-switch-wix-verified-20260926-114045-417\jev-switch.exe`（PID 38364）；首个窗口状态返回“window is minimized”。
 - 按 computer-use 技能的 guidance 恢复流程，重新列举应用、重新绑定窗口并重试激活，仍返回 `failed to activate captured window`。未复用旧坐标/索引，未调用其它桌面自动化通道；没有拿到截图，也没有执行点击、键盘输入或退出。
 - 随后只读复核 PID 38364 仍来自 11:40 便携目录；11435 仍由 PID 85628 监听，`/health` 为 HTTP 200。原生 WebView 页面/视觉及托盘菜单验收仍未验证，不能以运行进程或浏览器页替代。
 
@@ -745,7 +750,7 @@ Jeview 明确把每次完整请求和响应、以及明文 TypeSafe key 存入�
 
 ## 13:56 前台 Computer Use 重试与原生 WebView DOM 验收（2026-09-26，北京时间）
 
-- 按用户要求重新枚举并绑定唯一 Jev-Switch 窗口（壳 PID 38364）。第一次可见窗口内容为全黑；等待并重新读取后截图显示 Windows 锁屏画面，窗口无障碍树仍有 WebView 区域和标题栏。向目标窗口发送 `Ctrl+R` 返回 `failed to activate captured window`；刷新状态后按技能流程仅重试一次，仍失败。没有继续点击/输入，也未把窗口句柄可枚举误记为前台 UI 可操作。该画面下尚不能完成真实页面视觉与系统托盘菜单验收。
+- 按用户要求重新枚举并绑定唯一 Jev Switch 窗口（壳 PID 38364）。第一次可见窗口内容为全黑；等待并重新读取后截图显示 Windows 锁屏画面，窗口无障碍树仍有 WebView 区域和标题栏。向目标窗口发送 `Ctrl+R` 返回 `failed to activate captured window`；刷新状态后按技能流程仅重试一次，仍失败。没有继续点击/输入，也未把窗口句柄可枚举误记为前台 UI 可操作。该画面下尚不能完成真实页面视觉与系统托盘菜单验收。
 - 新增并显式运行 ignored 原生测试 `native_webview_routes_the_four_pages_and_measures_responsive_layout`，1/1 通过。它使用独立隐藏 Tauri WebView、临时 profile 和当前健康的本地 UI/daemon，不操作用户实例或上游凭据；12 个组合（四页 × 三种逻辑窗口尺寸）均验证目标路由已激活、页面标题存在、主题控件存在、light→dark→light 恢复，以及 document 没有横向溢出。`cargo test --manifest-path src-tauri/Cargo.toml` 为 10 passed、6 ignored；`cargo fmt --manifest-path src-tauri/Cargo.toml -- --check` 与 `git diff --check -- src-tauri/src/main.rs` 通过；11435 `/health` 仍为 HTTP 200，daemon PID 85628 未变。
 - 该 DOM 探针给出原生 WebView 的结构/尺寸实测，但没有生成可供人工审核的四页截图，也没有覆盖竖屏、超宽屏或实际显示器 DPI。两次早期测试已跑完 12 组断言，但在测试进程内删除 WebView2 profile 时遭文件锁失败；第三次已通过并记录 profile 延迟清理。相关隔离目录位于 `本机临时目录\jev-tauri-webview-*`，不在仓库或用户配置目录。
 - 下一步仍需在工作站处于可交互桌面时完成真实界面截图、托盘菜单点击、实际关窗/再启动恢复。当前用户服务健康与隔离 WebView DOM 证据可以保留，不应替代这些现场验收。
@@ -808,7 +813,7 @@ Jeview 明确把每次完整请求和响应、以及明文 TypeSafe key 存入�
 - 使用本次源码构建 Docker 镜像 `jev-switch:local-final-20260926`（digest `sha256:5b6f4dea1c8715e92c561bf9871e54ea739438b844908d9aede7bdcd63400a73`）。专用临时容器只映射 `127.0.0.1:11436`：容器健康为 healthy、`/health` 与 UI 为 200、无凭据 admin 为 401；数据目录 `/data` 为 0700，SQLite 与 providers.toml 为 0600。容器收到 SIGTERM 后以 0 退出，专属容器/数据卷已清理；没有触碰 11435 或其他容器。
 - 169 个源码、测试、生成类型、计划与发布文档已形成一个本地提交；两个固定连 5173/9222 的一次性 CDP 检查脚本仍留在工作树，避免把旧预览辅助工具混进产品提交。工作树只剩这两个未跟踪的本机辅助脚本。
 - 针对上述源码重建 MSI、NSIS 与便携版，最终便携候选为 `src-tauri/target/release/bundle/portable/jev-switch-20260926-final2/`。manifest 的 shell、daemon、资源 daemon 副本、UI index、JS、CSS、MSI、NSIS 八项哈希全部逐项匹配；其中 shell `68AEAB08590A2299A980C5C178428F2B1F5FB9E25A41266B4BE9676F8504320C`、daemon `CB835925E7E4B932AC09319FDD01B9B4D5849814669FA531C0FC5654DCD54274`、MSI `F20B3BF71B4EB9271E2C149F4CCA19FE667D5685B4C8E7FE7155B79C3438ECEB`、NSIS `F9F8F6E6FB88D4F6AD50C0EEDA49B892A004B391845092F52988208366A2DFC6`；随包 daemon `--healthcheck` 返回 0。`final` 目录已存在时脚本拒绝覆盖，随后使用独立 `final2` 完成打包。MSI/NSIS 未安装、未触发 UAC。
-- 用户表示旧窗口已关闭；但只读复核仍见旧候选壳 PID 68020 与 daemon PID 69348，11435 仍由该 daemon 监听。此状态符合已实测的关窗驻留托盘行为。当前没有可用的 Tauri MCP，CUA 也没有原生窗口/托盘控制能力；因此尚未冷启动 `final2`。必须先从 Jev-Switch 托盘菜单执行「退出」，再核实 PID/11435 释放，随后在同一 `%APPDATA%` 下冷启动 `final2` 并验证真实 WebView、历史/配置恢复、托盘 Hide/Restore/Exit。不能把兼容健康探针、manifest 校验或先前实例人工操作记作该候选的桌面验收。
+- 用户表示旧窗口已关闭；但只读复核仍见旧候选壳 PID 68020 与 daemon PID 69348，11435 仍由该 daemon 监听。此状态符合已实测的关窗驻留托盘行为。当前没有可用的 Tauri MCP，CUA 也没有原生窗口/托盘控制能力；因此尚未冷启动 `final2`。必须先从 Jev Switch 托盘菜单执行「退出」，再核实 PID/11435 释放，随后在同一 `%APPDATA%` 下冷启动 `final2` 并验证真实 WebView、历史/配置恢复、托盘 Hide/Restore/Exit。不能把兼容健康探针、manifest 校验或先前实例人工操作记作该候选的桌面验收。
 - `f1670e7` 已推送到 `origin/main`。首次 Release dry-run 暴露 Windows job 在 fresh checkout 中先运行 Tauri `cargo test`、但尚未生成 `ui/dist` 的工作流缺陷；详见下方复测记录。
 
 ## 19:48 发布 dry-run 修复、截图复核与 final2 运行状态（2026-09-26，北京时间）
@@ -825,13 +830,13 @@ Jeview 明确把每次完整请求和响应、以及明文 TypeSafe key 存入�
 
 ## 20:48 Release dry-run 便携包冷启动与 Laya 路由验收（2026-09-26，北京时间）
 
-- 用户确认旧实例已退出。重新检查时没有 Jev-Switch 进程，`11435` 无监听；启动 `E:\\tmp\\jev-switch-ci-portable-36238959899\\jev-switch.exe`，shell PID `47168`，daemon PID `59096`，二者 `ExecutablePath` 均来自该便携目录。daemon `/health` 返回 `status=ok`、version `0.1.0`、build revision `f850d3f8245217ae21e5a617d424ed27e45b4e1a`，端口仅由该目录 daemon 监听。
+- 用户确认旧实例已退出。重新检查时没有 Jev Switch 进程，`11435` 无监听；启动 `E:\\tmp\\jev-switch-ci-portable-36238959899\\jev-switch.exe`，shell PID `47168`，daemon PID `59096`，二者 `ExecutablePath` 均来自该便携目录。daemon `/health` 返回 `status=ok`、version `0.1.0`、build revision `f850d3f8245217ae21e5a617d424ed27e45b4e1a`，端口仅由该目录 daemon 监听。
 - 对比 package manifest、便携文件和当前服务：shell、daemon、资源副本、UI `index.html` 的 SHA-256 全部相符；实际 HTTP 返回的 `index.html`、`/assets/index-rsyine2x.js`、`/assets/index-Cp7fxIgV.css` 分别与清单一致。与已下载 ZIP 内 MSI/NSIS 的八项同批哈希核验相结合，确认本轮联调使用的是该 Release dry-run artifact，而不是先前的 5173 Demo。
 - 进程沿用现有 `%APPDATA%\\jev-switch`。管理 API 仍读到启用的 Laya/Vercel 两份接入配置、7 个已启用入口、9 条路由；Vercel 凭据仍由 daemon 保管，任何明文均未输出。只读 SQLite 检查有 27 条调用记录，前 26 条保留；第 27 条 `jev-27` 为本次新增请求。
 - 通过便携 daemon `POST /v1/systemone`，以合成请求调用 `laya-english`。收到 HTTP 200、header 与 body 一致的 request ID `jev-27`、一个答案、一个上游调用、usage（49 input / 0 output）。响应与持久历史均记录 `selected_provider=laya`、`selected_model=laya-english`、`strategy=failover`、一条上游尝试及非空 route trace；`gateway_latency_ms=198`。新记录已显示在 Dashboard，阅读摘要把入口/路径、成功状态、耗时、token 和上游次数放在前面，“展开原始 JSON”仍折叠。
 - 使用 Codex In-app Browser 查看 11435 当前服务：Dashboard 在 405×655 浏览器视口下卡片自动堆叠；Routing 入口页显示 7 个入口，DAG 标签页显示同步状态与 9 条边；Providers 页读取到两份现有配置和模型。浏览器页面只是同一 daemon 服务的 CSS/DOM 检查，**不记作 Tauri 原生 WebView 截图**。当前 Computer Use inventory 为 `apps=[]`，且没有 Tauri MCP；不以 PowerShell/UI Automation 冒充窗口测量。用户先前提交的六张 Tauri 原图及安装版 Hide/Restore 人工确认仍由 §19:48 记录。
 - 新包不需要 MSI/NSIS，也未触发 UAC。应用保持运行，避免为验证关闭行为而清除当前 UI/服务状态。由于没有可用原生窗口/托盘输入，精确候选的首窗逻辑尺寸、原生 WebView 页面截图、托盘 Hide/Restore/Exit 和 Exit 后恢复留待以后有原生控制面时验证；P5 不因 API/资源通过而整体勾为完成。远端 workflow-dispatch 与 artifact 上传此前已通过；正式 GitHub Release 未创建。
-- 用户新增收尾要求：**全部目标完成后**，清理 `E:\\tmp` 中与本轮 Jev-Switch 构建、CI artifact 解压和便携运行相关的临时目录。执行前先正常退出便携 shell/daemon，只按确认过的精确路径清理；保留 `%APPDATA%\\jev-switch` 中真实配置、密钥存储和调用历史，并避开 `E:\\tmp` 内无关文件。该清理目前未执行，因为验收未结束且便携版仍在运行。
+- 用户新增收尾要求：**全部目标完成后**，清理 `E:\\tmp` 中与本轮 Jev Switch 构建、CI artifact 解压和便携运行相关的临时目录。执行前先正常退出便携 shell/daemon，只按确认过的精确路径清理；保留 `%APPDATA%\\jev-switch` 中真实配置、密钥存储和调用历史，并避开 `E:\\tmp` 内无关文件。该清理目前未执行，因为验收未结束且便携版仍在运行。
 - 复核工作树只含既有未跟踪 `scripts/cdp-e2e.mjs` 与 `scripts/cdp-tiny.mjs`，未把它们加入证据提交。便携验收的可复核字段及 SHA-256 见 [单独运行记录](../verification/portable-runtime-acceptance-2026-09-26.md)。
 
 ## 21:30 P4 Release 包三组合回归

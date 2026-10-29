@@ -7,6 +7,15 @@ export class DocumentHistory<T> {
   get canUndo() { return this.past.length > 0; }
   get canRedo() { return this.future.length > 0; }
   reset(value: T): T { this.past = []; this.future = []; return this.current = structuredClone(value); }
+  /** Rebase every snapshot when a save receipt includes another editor's work.
+   * Undo must reverse our edits without deleting those untouched remote edges. */
+  rebase(transform: (value: T) => T, currentTransform: (value: T) => T = transform): T {
+    const past = this.past.map(value => transform(structuredClone(value)));
+    const future = this.future.map(value => transform(structuredClone(value)));
+    const current = currentTransform(structuredClone(this.current));
+    this.past = past; this.future = future; this.current = current;
+    return current;
+  }
   push(value: T): T {
     if (JSON.stringify(value) === JSON.stringify(this.current)) return this.current;
     this.past.push(structuredClone(this.current));

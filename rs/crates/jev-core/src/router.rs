@@ -202,7 +202,7 @@ pub struct PlanItem {
 }
 
 pub struct Router {
-    /// 边表：`RwLock` 支撑 A7 admin `PUT /v1/admin/routes` 运行时热替换
+    /// 边表：`RwLock` 支撑 admin route transactions 运行时热替换
     /// （无重启；已注册上游不受影响）。读路径全同步，guard 不跨 await。
     edges: std::sync::RwLock<Vec<RouteEdge>>,
     upstreams: std::sync::RwLock<HashMap<UpstreamId, std::sync::Arc<dyn UpstreamAdapter>>>,
@@ -258,7 +258,28 @@ impl Router {
         self.sticky.lock().expect("sticky lock").clear();
     }
 
-    /// 热替换边表（A7 admin `PUT /v1/admin/routes`：整表替换、无重启）。
+    /// Publish a prepared provider set and its routes together. `plan` takes
+    /// edges before upstreams too, so it cannot resolve against a half-published
+    /// graph. Already dispatched Arc adapters remain alive for in-flight calls.
+    pub fn replace_configuration(
+        &self,
+        edges: Vec<RouteEdge>,
+        upstreams: Vec<Box<dyn UpstreamAdapter>>,
+    ) {
+        let next = upstreams
+            .into_iter()
+            .map(|up| (up.id().to_string(), std::sync::Arc::from(up)))
+            .collect();
+        {
+            let mut current_edges = self.edges.write().expect("edges lock");
+            let mut current_upstreams = self.upstreams.write().expect("upstreams lock");
+            *current_edges = edges;
+            *current_upstreams = next;
+        }
+        self.sticky.lock().expect("sticky lock").clear();
+    }
+
+    /// 热替换已校验的内部边快照；公共写入只接受边操作事务。
     /// 同时清空 sticky 记忆 —— 拓扑变了，旧粘性候选不再可信。
     /// 调用方负责先校验无环（[`check_acyclic`]）。
     pub fn replace_edges(&self, edges: Vec<RouteEdge>) {
