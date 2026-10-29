@@ -7,11 +7,23 @@ param(
 $ErrorActionPreference = 'Stop'
 $canonicalTorchIconSha256 = '75279A8A77CDE421EDFF56C79255A8C12366FFA424CD8918E05CB8535606B5A0'
 $masterSvg = Join-Path $PSScriptRoot '../ui/src/brand/systorch.svg'
-if ((Get-FileHash -LiteralPath $masterSvg -Algorithm SHA256).Hash -ne '567E4C4F50D11FEAD18A922F8BA4425BBEF677035F131F5CE77DDF5E3BF6A122') { throw 'The canonical routing-torch SVG changed; review and regenerate all icon surfaces.' }
+$canonicalMasterSvgSha256 = '567E4C4F50D11FEAD18A922F8BA4425BBEF677035F131F5CE77DDF5E3BF6A122'
+function Get-NormalizedTextSha256([string]$Path) {
+    # Git may check out text files with CRLF on Windows even when the committed
+    # source uses LF. Hash normalized UTF-8 text so line-ending conversion is
+    # not mistaken for a visual change to the canonical logo.
+    $content = [IO.File]::ReadAllText((Resolve-Path -LiteralPath $Path).Path)
+    $normalized = $content -replace "`r`n?", "`n"
+    $bytes = [Text.UTF8Encoding]::new($false).GetBytes($normalized)
+    $sha256 = [Security.Cryptography.SHA256]::Create()
+    try { return [Convert]::ToHexString($sha256.ComputeHash($bytes)) }
+    finally { $sha256.Dispose() }
+}
+if ((Get-NormalizedTextSha256 $masterSvg) -ne $canonicalMasterSvgSha256) { throw 'The canonical routing-torch SVG changed; review and regenerate all icon surfaces.' }
 if ((Get-FileHash -LiteralPath $IcoPath -Algorithm SHA256).Hash -ne '9568D66714075814CEB8775CC0BF67A7179411436FE8483200C4AF0BACCB0B7A') { throw 'ICO frames differ from the SVG-derived color master.' }
 if ((Get-FileHash -LiteralPath (Join-Path $PSScriptRoot '../src-tauri/icons/tray.png') -Algorithm SHA256).Hash -ne '3493EE4B44ECD1FDA968AE9FEE2D0D25A2F774C4AC69862171043753930EED4C') { throw 'Tray icon differs from the derived monochrome torch.' }
 foreach ($derivedSvg in @('../src-tauri/app-icon.svg','../src-tauri/shell/icon.svg')) {
-    if ((Get-FileHash -LiteralPath (Join-Path $PSScriptRoot $derivedSvg) -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $masterSvg -Algorithm SHA256).Hash) { throw 'Native SVG differs from the shared product master.' }
+    if ((Get-NormalizedTextSha256 (Join-Path $PSScriptRoot $derivedSvg)) -ne (Get-NormalizedTextSha256 $masterSvg)) { throw 'Native SVG differs from the shared product master.' }
 }
 
 function Assert-MonochromeBitmap([System.Drawing.Bitmap]$Bitmap, [string]$Description) {
