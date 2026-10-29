@@ -13,8 +13,9 @@ WORKDIR /src/ui
 COPY ui/package.json ui/package-lock.json ./
 RUN npm ci
 COPY ui/ ./
-# ts-rs 生成类型从 daemon crate 引用共享 JsonValue；独立 UI 构建阶段
-# 也需要把它按仓库相对路径复制进构建上下文。
+# ts-rs 生成类型仍分别引用 protocol 与 daemon crate 中的共享 JsonValue；
+# 独立 UI 构建阶段也需要把两份绑定按仓库相对路径复制进构建上下文。
+COPY rs/crates/jev-protocol/bindings/ /src/rs/crates/jev-protocol/bindings/
 COPY rs/crates/systorch-daemon/bindings/ /src/rs/crates/systorch-daemon/bindings/
 # npm run build = tsc --noEmit && vite build（契约级类型门禁随镜像构建生效）
 RUN npm run build
