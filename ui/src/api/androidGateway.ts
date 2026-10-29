@@ -25,7 +25,7 @@ function normalizeNotificationPermissionState(value: unknown): AndroidNotificati
 }
 
 export function isAndroidTauri(): boolean {
-  return isTauri() && /Android/i.test(navigator.userAgent);
+  return isTauri() && typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
 }
 
 export async function getAndroidGatewayStatus(): Promise<AndroidGatewayStatus | null> {

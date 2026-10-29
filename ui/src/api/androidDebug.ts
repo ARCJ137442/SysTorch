@@ -3,7 +3,7 @@ import { invoke, isTauri } from '@tauri-apps/api/core';
 export interface AndroidDebugLogStatus { enabled: boolean; path: string | null }
 
 export function isAndroidTauriRuntime(): boolean {
-  return isTauri() && /Android/i.test(navigator.userAgent);
+  return isTauri() && typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
 }
 
 export async function getAndroidDebugLogStatus(): Promise<AndroidDebugLogStatus | null> {

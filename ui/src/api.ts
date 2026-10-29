@@ -62,7 +62,7 @@ export function getBase(): string {
     // Android Tauri owns the embedded daemon and its WebView origin is not the
     // daemon HTTP origin. Keep the UI on the local backend unless the user has
     // explicitly configured another address.
-    if (isTauri() && /Android/i.test(navigator.userAgent) && !fromGlobal && !saved) {
+    if (isTauri() && typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent) && !fromGlobal && !saved) {
       return DEFAULT_BASE;
     }
     // 正式构建始终随托管源走，不能以11435端口猜测是否由daemon提供。

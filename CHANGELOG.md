@@ -16,6 +16,10 @@
 - Windows EXE 目前没有 Authenticode 证书；Windows 可能显示未知发布者提示。
 - 此版本是预发布，自动 CI 通过不等同于维护者人工验收。Android 真机附件选择、权限拒绝和后台生命周期仍需设备实测；不同上游对题型与媒体支持不完全相同。
 
+### Fixed
+
+- Browser platform checks now guard access to navigator in non-browser runtimes. This keeps native owner-token dispatch deterministic in Node 20 test environments while retaining the same in-app Android detection.
+
 ### 用户叙事与对照场景
 
 #### Agent 提交问题，必要时由人接手，再取回结果

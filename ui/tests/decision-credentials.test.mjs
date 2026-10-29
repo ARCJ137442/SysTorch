@@ -6,7 +6,9 @@ test('native owner credentials stay bound to the gateway captured before asynchr
   const oldWindow = globalThis.window;
   const oldFetch = globalThis.fetch;
   const oldTauri = globalThis.isTauri;
+  const oldNavigator = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
   globalThis.isTauri = true;
+  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: undefined });
   let resolveNative;
   const requests = [];
   globalThis.window = { location: { href: 'http://127.0.0.1:11436/#/desk', origin: 'http://127.0.0.1:11436' }, addEventListener(){}, dispatchEvent() {}, __TAURI_INTERNALS__: { invoke: () => new Promise(resolve => { resolveNative = resolve; }) } };
@@ -22,7 +24,13 @@ test('native owner credentials stay bound to the gateway captured before asynchr
     assert.equal(requests.length, 0, 'the local capability must never be sent to the new gateway');
     await assert.rejects(api.decisionRequest('/identity'), error => error.code === 'decision_auth_required');
     assert.equal(requests.length, 0, 'a cached local owner capability is not valid for a remote gateway');
-  } finally { globalThis.window = oldWindow; globalThis.fetch = oldFetch; globalThis.isTauri = oldTauri; }
+  } finally {
+    globalThis.window = oldWindow;
+    globalThis.fetch = oldFetch;
+    globalThis.isTauri = oldTauri;
+    if (oldNavigator) Object.defineProperty(globalThis, 'navigator', oldNavigator);
+    else delete globalThis.navigator;
+  }
 });
 
 test('a caller change and logout cannot revive a prior browser owner capability', async () => {
