@@ -1,9 +1,9 @@
-# 用户叙事文档：Jev-Switch 使用旅程
+# 用户叙事文档：SysTorch 使用旅程
 
-> **TL;DR：**本文前六节是较早的体验构想，不能作为 v0.1.0 能力证明；路线图旅程需结合对应实现状态阅读。当前正式版 v0.4.0 的便携/Standalone 桌面核心路径已由维护者人工验收；安装器、Android 和全链路性能仍按各自边界处理。能力边界以 [README](../README.md) 为准，优先级和后续验收以 [ROADMAP](../ROADMAP.md) 为准。
+> **TL;DR：**本文前六节是较早的体验构想，不能作为已实现能力证明；路线图旅程需结合对应实现状态阅读。当前 v0.12.0 是未经维护者人工验收的 SysTorch 预发布候选；能力边界以 [README](../README.md) 和[发布核验](verification/v0.12.0-pre-release-2026-10-30.md)为准，优先级和后续验收以 [ROADMAP](../ROADMAP.md) 为准。
 
-**当前基线**：v0.4.0（桌面核心路径已人工验收，安装器/Android 仍未验收）及未排期的后续方向<br>
-**本次更新**：2026-09-30<br>
+**当前基线**：v0.12.0 SysTorch 预发布候选；桌面/Android 人工验收尚未完成<br>
+**原始叙事更新**：2026-09-30<br>
 **目标读者**：开发者、技术决策者、运维工程师<br>
 **作者/维护者**：GPT-6 Luna xhigh（OpenAI Codex）<br>
 **AI 披露**：本文由 AI 协助整理；前六节保留早期叙事材料，新补充场景明确标为路线图提案，不代表已经实现。
@@ -35,7 +35,7 @@
 
 ### 旅程 1：5 分钟快速启动（Alex 的第一天）
 
-**场景**: Alex 克隆了仓库，想快速测试 Jev-Switch
+**场景**: Alex 克隆了仓库，想快速测试 SysTorch
 
 #### 步骤
 
@@ -61,7 +61,7 @@ cargo run --manifest-path rs/Cargo.toml
 4. **测试 Playground**（1 分钟）
    - 选择 model: `jev`
    - 输入一个 Choice 问题
-   - 点击 "Run Jev"，看到路由到 vercel
+   - 点击“发起决策”，看到请求经路由到 vercel
 
 **结果**: ✅ 5 分钟内完成首次调用，零配置门槛
 
@@ -86,7 +86,7 @@ cargo run --manifest-path rs/Cargo.toml
 
 3. **验证路由**
    - Playground 选择 `my-model`
-   - Run Jev，看到请求成功
+   - 发起决策请求，看到调用成功
 
 **关键交互**: 电路板拖拽建边，直观易懂
 
@@ -94,7 +94,7 @@ cargo run --manifest-path rs/Cargo.toml
 
 ### 旅程 3：切换到团队模式（Morgan 的部署日）
 
-**场景**: Morgan 要把 Jev-Switch 部署到云端，给团队 5 人使用
+**场景**: Morgan 要把 SysTorch 部署到云端，给团队 5 人使用
 
 #### 步骤
 
@@ -206,7 +206,7 @@ POST /v1/admin/providers/{id}/probe
 **方案**: Playground 页面
 1. 选择配置了 failover 的 model（如 `jev`）
 2. 故意关闭 priority=10 的上游（vercel）
-3. Run Jev，观察 Dashboard 流水
+3. 发起决策请求，观察 Dashboard 流水
 4. 看到 "failover: vercel → laya"
 
 ---
@@ -225,11 +225,11 @@ chmod 600 rs/providers.example.toml
 
 **方案**: Docker + cloud mode
 ```bash
-docker build -t jev-switch .
+docker build -t systorch .
 docker run -d -p 11435:11435 \
   -e JEV_SWITCH_MODE=cloud \
   -e ADMIN_PASSWORD=<secret> \
-  jev-switch
+  systorch
 ```
 
 配置文件挂载到 `/app/config.toml`
@@ -285,7 +285,7 @@ jev → laya (priority=20)
 
 ## 六、成功指标
 
-用户完成以下里程碑，说明 Jev-Switch 满足需求：
+用户完成以下里程碑，说明 SysTorch 满足需求：
 
 | 里程碑 | 描述 | 目标时间 |
 |--------|------|---------|
@@ -311,13 +311,13 @@ Alex 从 GitHub 下载 standalone 独立版，不用先判断安装器类型，�
 
 ### 旅程 2：把配置和历史放在自己选的位置
 
-Morgan 把 Jev-Switch 放在项目盘的工作目录里，希望换电脑时能连同配置一起迁移；另一位用户更愿意让数据留在自己的系统用户目录。两人都能在设置中看见当前数据目录与目标目录。切换位置前，Jev-Switch 会说明将迁移哪些配置和历史，复制后核对 SQLite 与运行配置，再确认使用新路径；空间不足或校验失败时仍从旧目录启动，数据不会悄悄变成一份空白。
+Morgan 把 SysTorch 放在项目盘的工作目录里，希望换电脑时能连同配置一起迁移；另一位用户更愿意让数据留在自己的系统用户目录。两人都能在设置中看见当前数据目录与目标目录。切换位置前，SysTorch 会说明将迁移哪些配置和历史，复制后核对 SQLite 与运行配置，再确认使用新路径；空间不足或校验失败时仍从旧目录启动，数据不会悄悄变成一份空白。
 
 **用户得到的变化**：数据位置从隐式规则变成可见、可迁移、可核验的选择；程序文件和用户数据分开管理。
 
 ### 旅程 3：找到已有的本地或云端 Jev 服务
 
-Alex 记得家里机器和测试云主机上可能已经跑着 Jev 服务，但不记得各自端口。她只选择自己有权检查的主机或网段，Jev-Switch 逐步列出端口响应、协议兼容性、模型清单和鉴权要求；这一步不发起推理。Alex 选中一项后可以主动做带费用提示的模型测试，确认地址和凭据后再快速添加为提供商。未选中的网络范围不会被扫描，扫描结果也不会自动改配置。
+Alex 记得家里机器和测试云主机上可能已经跑着 Jev 服务，但不记得各自端口。她只选择自己有权检查的主机或网段，SysTorch 逐步列出端口响应、协议兼容性、模型清单和鉴权要求；这一步不发起推理。Alex 选中一项后可以主动做带费用提示的模型测试，确认地址和凭据后再快速添加为提供商。未选中的网络范围不会被扫描，扫描结果也不会自动改配置。
 
 **用户得到的变化**：从猜端口、抄 API 地址，变为先看证据和在线状态，再由自己决定测试与接入。
 
@@ -367,15 +367,15 @@ Jordan 白天在明亮办公室使用浅色主题，晚上改为深色；另一�
 
 ### 旅程 11：打开首页就知道网关正在做什么
 
-Taylor 启动 Jev-Switch 后不必先翻活动记录或打开系统任务管理器。首页的会话仪表盘用一条最近 10 分钟的双向流量曲线显示入口接收和出口发送，旁边的即时指标告诉他当前速率、从本次启动开始累计的收发量、活跃请求数、成功/失败与 failover；资源卡把 daemon 和桌面壳的 CPU/内存分开显示。一次慢请求出现时，他可以展开延迟分解，看出是网关选择路径慢还是上游响应慢，再跳到对应的 request ID 和 route trace。空闲时曲线保持真实的零值；应用重启后会话计数明确从新的时间段开始，历史记录不会被覆盖。
+Taylor 启动 SysTorch 后不必先翻活动记录或打开系统任务管理器。首页的会话仪表盘用一条最近 10 分钟的双向流量曲线显示入口接收和出口发送，旁边的即时指标告诉他当前速率、从本次启动开始累计的收发量、活跃请求数、成功/失败与 failover；资源卡把 daemon 和桌面壳的 CPU/内存分开显示。一次慢请求出现时，他可以展开延迟分解，看出是网关选择路径慢还是上游响应慢，再跳到对应的 request ID 和 route trace。空闲时曲线保持真实的零值；应用重启后会话计数明确从新的时间段开始，历史记录不会被覆盖。
 
 **用户得到的变化**：从“服务到底有没有流量、是不是应用自己卡住了”只能靠猜，变成首页同时给出真实活动、资源头寸和可追溯路径；数字有明确口径，图表有异常时才发光，不靠装饰制造活跃感。
 
-**当前实现边界**：v0.4.0 提供 daemon 会话遥测、最近约 10 分钟曲线、入口/出口 JSON 字节、请求状态和 daemon 进程资源；上游逐跳延迟与 Tauri WebView 精确资源仍显示为不可用。UI 图标/性能首轮记录见[验证报告](verification/ui-icon-performance-2026-09-30.md)，自动化发布范围见[核验记录](verification/v0.4.0-release-candidate-2026-09-30.md)，不替代人工验收和全链路 p50/p95/p99 基线。
+**历史实现边界（v0.4.0）**：本旅程最初记录的遥测范围与“不可用”字段只适用于当时的构建；v0.12.0 能力与未验收项以[当前 README](../README.md)和[预发布核验](verification/v0.12.0-pre-release-2026-10-30.md)为准。旧性能数字不外推为新版本或跨设备结论。
 
 ## 九、v0.2.0 批量体验旅程（已发布能力与保留边界）
 
-Riley 打开 Jev-Switch，按 `Ctrl+K` 搜索“路由图”，无需离开当前页面即可跳转。一次真实请求到达后，Routing DAG 中对应的入口到 provider 边短暂显示成功、重试或失败状态；Dashboard 的运行遥测同时显示本次会话流量、活跃请求、gateway latency 和 adapter attempt latency。Riley 将主题设置为“跟随系统”，切换 Windows 深色模式后页面立即同步。需要对外展示时，他从 GitHub Pages 首页看到真实截图、当前下载入口和限制说明。
+Riley 打开 SysTorch，按 `Ctrl+K` 搜索“路由图”，无需离开当前页面即可跳转。一次真实请求到达后，Routing DAG 中对应的入口到 provider 边短暂显示成功、重试或失败状态；Dashboard 的运行遥测同时显示本次会话流量、活跃请求、gateway latency 和 adapter attempt latency。Riley 将主题设置为“跟随系统”，切换 Windows 深色模式后页面立即同步。需要对外展示时，他从 GitHub Pages 首页看到真实截图、当前下载入口和限制说明。
 
 **前后变化**：从“翻页、看静态图、另开任务管理器和手抄地址”变成“键盘一步导航、沿真实事件看路由、首页看会话健康、系统主题自动跟随、网站直接解释产品”。
 
@@ -383,7 +383,7 @@ Riley 打开 Jev-Switch，按 `Ctrl+K` 搜索“路由图”，无需离开当�
 
 ## 十、v0.4.0 CLI 与首轮 UI 性能旅程
 
-Sam 在 Termux 或 SSH 中用 `jev-switch-cli status`、`models` 和 `events` 检查 daemon；需要编辑路由或复杂调试时仍回到 Web UI/Tauri。Dashboard 对多个 provider 的本机连通探测并发执行并一次更新，切到其他标签页后运行遥测暂停，返回时再恢复。
+Sam 在 Termux 或 SSH 中用 `systorch-cli status`、`models` 和 `events` 检查 daemon；需要编辑路由或复杂调试时仍回到 Web UI/Tauri。Dashboard 对多个 provider 的本机连通探测并发执行并一次更新，切到其他标签页后运行遥测暂停，返回时再恢复。
 
 **前后变化**：从逐个等待 provider、重复刷新健康状态和后台持续轮询，变为有限并发批量探测、共享健康状态和前台优先采样。CLI 仍是 API 薄客户端，不是完整 TUI 或 Android 原生应用。
 

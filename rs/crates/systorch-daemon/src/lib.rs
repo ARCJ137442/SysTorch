@@ -4,7 +4,8 @@
 //! 整合：jev-protocol / jev-core / jev-adapters / config / auth / axum HTTP server。
 //!
 //! 路由：
-//! - `POST /v1/systemone` — 主入口：Jev 协议请求
+//! - `POST /v1/systemone` — 兼容入口：TypeSafe/Jev request core
+//! - `POST /v1/systorch/systemone` — SysTorch 请求超集；保留同一 TypeSafe core，并验证题序元数据
 //! - `GET  /health`        — liveness（**双态皆放行** —— 探活需要）
 //! - `GET  /v1/models`     — 列出可达 model + upstream + capability
 //! - `GET /v1/admin/providers`、`PUT/DELETE /v1/admin/providers/:id`、`GET /v1/admin/routes`、
@@ -40,14 +41,16 @@ pub mod events;
 pub mod lifecycle;
 pub mod listen;
 pub mod startup;
+pub mod systorch_api;
 pub mod telemetry;
 pub mod tokens;
 
 use axum::{
     body::Bytes,
-    extract::{Extension, State},
+    extract::{Extension, Request as AxumRequest, State},
     http::{header, HeaderMap, HeaderName, HeaderValue, Method, StatusCode},
     middleware,
+    middleware::Next,
     response::{IntoResponse, Response},
     routing::{get, post, put},
     Json, Router,
@@ -69,6 +72,7 @@ use std::{
     sync::{Arc, Mutex, RwLock},
     time::Instant,
 };
+use systorch_api::SysTorchRequest;
 use tower_http::{
     cors::{AllowOrigin, CorsLayer},
     services::ServeDir,
@@ -113,7 +117,7 @@ pub struct AppState {
     pub strip_unknown_fields: Arc<std::sync::atomic::AtomicBool>,
 }
 
-#[derive(Debug, Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Serialize, serde::Deserialize)]
 #[cfg_attr(
     feature = "ts-rs",
     derive(::ts_rs::TS),
@@ -123,6 +127,10 @@ pub struct ErrorBody {
     pub error: String,
     pub upstream: Option<String>,
     pub retryable: bool,
+    // Canonical SysTorch callers may receive the safe route trace; legacy errors omit it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[cfg_attr(feature = "ts-rs", ts(optional))]
+    pub route_trace: Option<serde_json::Value>,
 }
 
 /// 构造统一错误体（contracts/05 §3）—— **`error` 字符串先过 redact**（红线 4）。
@@ -137,6 +145,7 @@ fn error_response(
         error: redact(&error.into(), keys),
         upstream,
         retryable,
+        route_trace: None,
     };
     (status, Json(body)).into_response()
 }
@@ -544,7 +553,10 @@ pub fn build_app(state: AppState) -> Router {
             Method::OPTIONS,
         ])
         .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
-        .expose_headers([HeaderName::from_static("x-jev-request-id")]);
+        .expose_headers([
+            HeaderName::from_static("x-jev-request-id"),
+            HeaderName::from_static("x-systorch-request-id"),
+        ]);
 
     // 静态 UI 目录：容器内指到 /app/ui/dist；本地默认仓库相对 ui/dist。
     let ui_dist = std::env::var("SYSTORCH_UI_DIST")
@@ -560,11 +572,13 @@ pub fn build_app(state: AppState) -> Router {
     // 调用 token 门（cloud；local loopback 直通、非 loopback 403）
     let v1 = Router::new()
         .route("/v1/systemone", post(systemone_handler))
+        .route("/v1/systorch/systemone", post(systorch_systemone_handler))
         .route("/v1/models", get(models_handler))
         .layer(middleware::from_fn_with_state(
             state.clone(),
             auth::require_call_token,
-        ));
+        ))
+        .layer(middleware::from_fn(no_store_v1_response));
 
     let asset_routes = assets::routes().layer(middleware::from_fn_with_state(
         state.clone(),
@@ -849,6 +863,47 @@ async fn systemone_handler(
     caller: Option<Extension<tokens::CallerIdentity>>,
     body: Bytes,
 ) -> Response {
+    systemone_handler_with_format(
+        state,
+        headers,
+        caller,
+        body,
+        RequestFormat::JevCompatibility,
+    )
+    .await
+}
+
+/// Prevent browser, WebView and intermediary caches from retaining model input/output.
+async fn no_store_v1_response(request: AxumRequest, next: Next) -> Response {
+    let mut response = next.run(request).await;
+    response
+        .headers_mut()
+        .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
+    response
+}
+
+async fn systorch_systemone_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    caller: Option<Extension<tokens::CallerIdentity>>,
+    body: Bytes,
+) -> Response {
+    systemone_handler_with_format(state, headers, caller, body, RequestFormat::SysTorch).await
+}
+
+#[derive(Clone, Copy)]
+enum RequestFormat {
+    JevCompatibility,
+    SysTorch,
+}
+
+async fn systemone_handler_with_format(
+    state: AppState,
+    headers: HeaderMap,
+    caller: Option<Extension<tokens::CallerIdentity>>,
+    body: Bytes,
+    request_format: RequestFormat,
+) -> Response {
     let keys = known_keys_snapshot(&state);
     if !state
         .gateway_enabled
@@ -865,17 +920,17 @@ async fn systemone_handler(
     // 0. 协议解析：本地 400（criteria 缺失/错形态、未知 type、必填缺失、
     //    questions 非 record…）—— 按 contracts/01 §6 不发上游。
     //    手工 Bytes 提取：axum Json 提取器对 data 类错误回 422，契约要求 400。
-    let mut req: JevRequest = match serde_json::from_slice(&body) {
-        Ok(request) => request,
-        Err(error) => {
-            return error_response(
-                StatusCode::BAD_REQUEST,
-                error.to_string(),
-                None,
-                false,
-                &keys,
-            )
+    let parsed: Result<JevRequest, String> = match request_format {
+        RequestFormat::JevCompatibility => {
+            serde_json::from_slice(&body).map_err(|error| error.to_string())
         }
+        RequestFormat::SysTorch => serde_json::from_slice::<SysTorchRequest>(&body)
+            .map_err(|error| error.to_string())
+            .and_then(|request| request.into_request().map_err(str::to_owned)),
+    };
+    let mut req = match parsed {
+        Ok(request) => request,
+        Err(error) => return error_response(StatusCode::BAD_REQUEST, error, None, false, &keys),
     };
 
     let extension_keys = request_extension_keys(&req);
@@ -989,6 +1044,14 @@ async fn systemone_handler(
         Ok(response) => serde_json::to_vec(response)
             .ok()
             .map(|bytes| bytes.len() as u64),
+        Err(failure) if matches!(request_format, RequestFormat::SysTorch) => {
+            let mut body = failure.error_body.clone();
+            body.route_trace = Some(failure.route_trace.clone());
+            serde_json::to_vec(&body)
+                .ok()
+                .map(|bytes| bytes.len() as u64)
+                .or(Some(failure.response_bytes))
+        }
         Err(failure) => Some(failure.response_bytes),
     };
     let trace = match &result {
@@ -1003,11 +1066,24 @@ async fn systemone_handler(
     );
     let mut response = match result {
         Ok(response) => Json(response).into_response(),
+        Err(failure) if matches!(request_format, RequestFormat::SysTorch) => {
+            let status = failure.response.status();
+            let mut body = failure.error_body;
+            body.route_trace = Some(failure.route_trace);
+            (status, Json(body)).into_response()
+        }
         Err(failure) => failure.response,
     };
     if let Some(request_id) = request_id {
         if let Ok(value) = HeaderValue::from_str(&request_id) {
-            response.headers_mut().insert("x-jev-request-id", value);
+            response
+                .headers_mut()
+                .insert("x-jev-request-id", value.clone());
+            if matches!(request_format, RequestFormat::SysTorch) {
+                response
+                    .headers_mut()
+                    .insert("x-systorch-request-id", value);
+            }
         }
     }
     response
@@ -1240,6 +1316,7 @@ struct RequestFailure {
     response: Response,
     route_trace: serde_json::Value,
     response_bytes: u64,
+    error_body: ErrorBody,
 }
 
 async fn run_request_with_strategy_traced(
@@ -1258,25 +1335,21 @@ async fn run_request_with_strategy_traced(
             tracing::warn!(error = %redact(&failure.error.to_string(), keys), status = failure.error.http_status(), "invoke failed");
             let status = StatusCode::from_u16(failure.error.http_status())
                 .unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
-            let error_message = redact(&failure.error.to_string(), keys);
-            let response_bytes = serde_json::to_vec(&serde_json::json!({
-                "error": error_message,
-                "upstream": failure.error.error_body_upstream(),
-                "retryable": failure.error.retryable(),
-            }))
-            .map(|bytes| bytes.len() as u64)
-            .unwrap_or(0);
-            let response = error_response(
-                status,
-                failure.error.to_string(),
-                failure.error.error_body_upstream().map(str::to_string),
-                failure.error.retryable(),
-                keys,
-            );
+            let error_body = ErrorBody {
+                error: redact(&failure.error.to_string(), keys),
+                upstream: failure.error.error_body_upstream().map(str::to_string),
+                retryable: failure.error.retryable(),
+                route_trace: None,
+            };
+            let response_bytes = serde_json::to_vec(&error_body)
+                .map(|bytes| bytes.len() as u64)
+                .unwrap_or(0);
+            let response = (status, Json(error_body.clone())).into_response();
             Err(RequestFailure {
                 response,
                 route_trace: failure.route_trace,
                 response_bytes,
+                error_body,
             })
         }
     }
@@ -1843,7 +1916,10 @@ mod tests {
                 Method::OPTIONS,
             ])
             .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
-            .expose_headers([HeaderName::from_static("x-jev-request-id")]);
+            .expose_headers([
+                HeaderName::from_static("x-jev-request-id"),
+                HeaderName::from_static("x-systorch-request-id"),
+            ]);
         // tower-http 不提供只读 introspection；构造成功 + 预检行为由 curl 实测覆盖。
         // 此处至少锁定构造路径可编译（防 very_permissive 回潮需人工改回本函数）。
         let _ = layer;

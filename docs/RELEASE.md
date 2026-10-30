@@ -6,18 +6,18 @@ The release pipelines are .github/workflows/release.yml and .github/workflows/an
 
 ## 当前版本 / Current release
 
-0.11.0 是 SysTorch 的预发布版本。发布页只提供两个面向用户的附件：Windows x64 Standalone EXE 与稳定签名 Android arm64 APK。CI 仍验证 Rust、UI、Tauri、CLI、Docker 和 Android 构建，但 CLI、安装器、便携 ZIP、签名状态清单及 Android manifest 不作为此版本的 Release 附件。
+0.12.0 是 SysTorch 的预发布版本。发布页只提供两个面向用户的附件：Windows x64 Standalone EXE 与稳定签名 Android arm64 APK。CI 仍验证 Rust、UI、Tauri、CLI、Docker 和 Android 构建，但 CLI、安装器、便携 ZIP、签名状态清单及 Android manifest 不作为此版本的 Release 附件。
 
-Version 0.11.0 is a SysTorch pre-release. The public release contains exactly two assets: the Windows x64 Standalone EXE and stable-signed Android arm64 APK. CI still validates Rust, UI, Tauri, CLI, Docker, and Android builds; CLI packages, installers, portable ZIPs, signing status files, and the Android manifest are not attached to this release.
+Version 0.12.0 is a SysTorch pre-release. The public release contains exactly two assets: the Windows x64 Standalone EXE and stable-signed Android arm64 APK. CI still validates Rust, UI, Tauri, CLI, Docker, and Android builds; CLI packages, installers, portable ZIPs, signing status files, and the Android manifest are not attached to this release.
 
 | 平台 / Platform | 附件 / Asset | 身份与限制 / Identity and limits |
 |---|---|---|
-| Windows x64 | SysTorch-0.11.0-windows-x64.exe | 单文件 Standalone；目前没有 Authenticode 证书，Windows 可能显示未知发布者。 |
-| Android arm64 | SysTorch-0.11.0-android-aarch64.apk | 使用现有稳定签名；显示名为 SysTorch，applicationId 保持旧值以支持覆盖升级与原沙箱数据。 |
+| Windows x64 | SysTorch-0.12.0-windows-x64.exe | 单文件 Standalone；目前没有 Authenticode 证书，Windows 可能显示未知发布者。 |
+| Android arm64 | SysTorch-0.12.0-android-aarch64.apk | 使用现有稳定签名；显示名为 SysTorch，applicationId 保持旧值以支持覆盖升级与原沙箱数据。 |
 
-发布状态、CI run、SHA-256、签名指纹及未完成人工项目必须更新在 [0.11.0 核验记录](verification/v0.11.0-pre-release-2026-10-30.md)。新版本发布为 GitHub prerelease；版本号本身仍是 SemVer 0.11.0，不加 pre 后缀。
+发布状态、CI run、SHA-256、签名指纹及未完成人工项目必须更新在 [0.12.0 核验记录](verification/v0.12.0-pre-release-2026-10-30.md)。新版本发布为 GitHub prerelease；版本号本身仍是 SemVer 0.12.0，不加 pre 后缀。
 
-Record the release status, CI run, SHA-256, signer fingerprint, and remaining hands-on checks in the [0.11.0 verification record](verification/v0.11.0-pre-release-2026-10-30.md). Publish it as a GitHub prerelease; the SemVer remains 0.11.0 without a pre suffix.
+Record the release status, CI run, SHA-256, signer fingerprint, and remaining hands-on checks in the [0.12.0 verification record](verification/v0.12.0-pre-release-2026-10-30.md). Publish it as a GitHub prerelease; the SemVer remains 0.12.0 without a pre suffix.
 
 ## 版本一致性 / Version consistency
 
@@ -81,21 +81,21 @@ WINDOWS_SIGNING_REQUIRED is currently not enabled, so the Windows EXE is not Aut
 2. 只暂存该版本需要的源码、图标、文档和工作流；排除 .tmp、.vite、构建目录、密钥和本机配置。
 3. 检查 git diff --cached --check、git diff --cached --stat 与完整 staged diff。若 whitespace 检查只标到 ts-rs 原样生成的 ui/src/generated 文件，不要手工改类型；以 CI 再生成后的 diff 门禁为准。
 4. 提交到当前 main，推送 origin；origin 必须为 https://github.com/ARCJ137442/SysTorch.git。
-5. 确认 main CI 通过后，创建并推送 v0.11.0 tag。
+5. 确认 main CI 通过后，创建并推送 v0.12.0 tag。
 6. 等待 Release workflow 所有必需 jobs 结束；失败时修复原因并重新验证。
 7. 核对 GitHub prerelease 状态、页面说明和公开资产数量；必须恰好只有一个 Windows EXE 与一个 Android APK。
 8. 下载两个资产到临时目录，核对 SHA-256、Windows 签名状态、APK signer SHA-256 和 APK applicationId；不得把临时目录或签名材料提交。
-9. Release published 事件触发 Pages；确认首页展示 0.11.0 预发布标识和这两个正确附件。
+9. Release published 事件触发 Pages；确认首页展示 0.12.0 预发布标识和这两个正确附件。
 
 1. Review the repository rules, active plan, and diff; preserve legacy IDs, protocols, and storage compatibility.
 2. Stage only source, icons, docs, and workflows for this release. Exclude .tmp, .vite, build folders, secrets, and machine-local configuration.
 3. Review git diff --cached --check, the staged stat, and the full staged diff. If whitespace checking flags only canonical ts-rs output under ui/src/generated, do not hand-edit generated types; use the CI regeneration diff gate as the source of truth.
 4. Commit on main and push origin; verify origin is https://github.com/ARCJ137442/SysTorch.git.
-5. Wait for main CI to pass, then create and push tag v0.11.0.
+5. Wait for main CI to pass, then create and push tag v0.12.0.
 6. Wait for all required Release jobs; fix failures and revalidate if needed.
 7. Verify GitHub prerelease status, release text, and public asset count: exactly one Windows EXE and one Android APK.
 8. Download both assets to a temporary directory and verify SHA-256, Windows signing status, APK signer SHA-256, and APK applicationId. Never commit build scratch space or signing material.
-9. The published Release event refreshes Pages; confirm the site shows the 0.11.0 prerelease and the two correct downloads.
+9. The published Release event refreshes Pages; confirm the site shows the 0.12.0 prerelease and the two correct downloads.
 
 ## 远端品牌信息 / GitHub metadata
 
@@ -103,6 +103,6 @@ GitHub About description 使用英文与中文各一句、用竖线分隔，并�
 
 The GitHub About description uses one English sentence and one Chinese sentence separated by a vertical bar:
 
-Turn questions into next steps with a traceable decision runtime | 用可追溯的决策运行时，把问题变成下一步
+Turn questions into next steps | 把眼前的问题，变成下一步
 
 官网 Pages 自动读取最近发布的 Release，包含 prerelease；不能使用只返回最新正式版的 /releases/latest API。

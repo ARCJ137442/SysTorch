@@ -23,6 +23,7 @@ import type { ModelsResponse } from './generated/ModelsResponse';
 import type { NoulAnswer } from './generated/NoulAnswer';
 import type { NoulKind } from './generated/NoulKind';
 import type { Question } from './generated/Question';
+import type { SysTorchRequest } from './generated/SysTorchRequest';
 import type { UpstreamCapabilityEntry } from './generated/UpstreamCapabilityEntry';
 import type { Usage } from './generated/Usage';
 import { getCallerToken as getMemoryCallerToken } from './auth/callerSession';
@@ -40,6 +41,7 @@ export type {
   NoulAnswer,
   NoulKind,
   Question,
+  SysTorchRequest,
   UpstreamCapabilityEntry,
   Usage,
 };
@@ -134,8 +136,8 @@ export async function fetchModels(): Promise<ModelsResponse> {
 }
 
 /**
- * `/v1/systemone` 错误 — 携带 status + 生成类型 `ErrorBody` 三字段
- * （contracts/05 §3），供 UI 按 design/01 §7 分型文案（422 capability / 503 retryable）。
+ * SystemOne call error. Canonical SysTorch responses may include a safe route trace;
+ * the legacy `/v1/systemone` error body keeps its original three fields.
  */
 export class SystemOneError extends Error {
   readonly status: number;
@@ -159,7 +161,20 @@ export class SystemOneError extends Error {
 }
 
 export async function postSystemOne(req: JevRequest, signal?: AbortSignal): Promise<JevResponse> {
-  const res = await fetch(`${getBase()}/v1/systemone`, {
+  return postSystemOneAt('/v1/systemone', req, signal);
+}
+
+/** Canonical SysTorch superset endpoint; `question_order` is consumed locally. */
+export async function postSysTorchSystemOne(req: SysTorchRequest, signal?: AbortSignal): Promise<JevResponse> {
+  return postSystemOneAt('/v1/systorch/systemone', req, signal);
+}
+
+async function postSystemOneAt(
+  path: string,
+  req: JevRequest | SysTorchRequest,
+  signal?: AbortSignal,
+): Promise<JevResponse> {
+  const res = await fetch(`${getBase()}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...callAuthHeaders() },
     body: JSON.stringify(req),
@@ -181,7 +196,7 @@ export async function postSystemOne(req: JevRequest, signal?: AbortSignal): Prom
           res.status,
           typeof eb.upstream === 'string' ? eb.upstream : null,
           eb.retryable === true,
-          res.headers.get('x-jev-request-id'),
+          res.headers.get('x-systorch-request-id') ?? res.headers.get('x-jev-request-id'),
         );
       }
     }

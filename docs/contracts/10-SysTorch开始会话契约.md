@@ -4,7 +4,7 @@
 
 ## 1. 边界
 
-- 对上游的即时调用仍使用 `POST /v1/systemone`，请求仍是 Jev `JevRequest`，响应仍是 `JevResponse`。本功能不改变路由、adapter、失败回退或调用历史协议。
+- 对上游的即时调用使用 canonical SysTorch `POST /v1/systorch/systemone`，保留 TypeSafe-compatible `model/state/questions` 核心并携带 `question_order`；兼容旧客户端的 `POST /v1/systemone` 仍使用 Jev `JevRequest`。两条入口共用同一鉴权、路由、adapter、失败回退和调用历史流程，响应仍是按稳定 question ID 映射的 `JevResponse`。
 - 会话正文是另一份独立记录：每条用户消息保存原始 Jev 请求，每条模型回复保存完整 `JevResponse`；失败保存稳定错误码、HTTP 状态、可重试标志与请求 ID。不会把聊天消息伪装成额外的 provider attempt，也不会从仅含路由元数据的 `call_logs` 猜测正文。
 - 单个用户消息可包含多个稳定 question ID；`question_order` 保留 UI 次序。SysTorch 题目与 TypeSafe/Jev 的题型结构一致，`JevResponse` 保留完整答案、usage、route trace 和 adapter extra。
 - 已有 DAG、route glow、provider 生命周期和持久人工 Choice 仍走原路径。普通模型会话不创建人工作答任务。
@@ -91,7 +91,7 @@ Content-Type: application/json
 
 ## 5. 恢复与失败
 
-- 先原子追加用户请求，再向 `/v1/systemone` 发出请求，最后追加成功 response 或失败记录。窗口关闭/daemon 重启后，已有消息可以读取；若只有 request 而没有回复，摘要标记 `interrupted=true`，开始页明确显示“请求已保存但没有记录回复”，由用户检查状态后手动重试，绝不静默自动重发。
+- 先原子追加用户请求，再向 `/v1/systorch/systemone` 发出带同一 `question_order` 的 SysTorch 请求，最后追加成功 response 或失败记录。窗口关闭/daemon 重启后，已有消息可以读取；若只有 request 而没有回复，摘要标记 `interrupted=true`，开始页明确显示“请求已保存但没有记录回复”，由用户检查状态后手动重试，绝不静默自动重发。
 - 若模型成功而 response 密文保存暂时失败，当前窗口仍显示真实响应并提示未能保存；用户可保留窗口或开新会话。已提交的上游调用不可假装从未发生。
 - response/failure 必须绑定已存在且未回复的 `reply_to`；重复回复、未知目标、旧 revision 和无效题序都原子拒绝，数据库旧 payload 保持不变。
 - 已归档、置顶、删除和回复分别影响元数据或记录；归档不等于删除，删除不保留可解密正文。

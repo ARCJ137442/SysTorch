@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent as ReactClipboardEvent } from 'react';
 import { ArrowDown, ArrowUp, ArrowUpRight, Camera, CircleHelp, FilePlus2, ImagePlus, LoaderCircle, Menu, Plus, RefreshCw, Settings, Trash2, X } from 'lucide-react';
-import { fetchModels, postSystemOne, SystemOneError, type Answer, type JevRequest, type JevResponse, type Question } from '../api';
+import { fetchModels, postSysTorchSystemOne, SystemOneError, type Answer, type JevRequest, type JevResponse, type Question } from '../api';
 import { answerDecision, appendStartSessionMessage, decisionRequest, deleteDecisionAsset, deleteStartSession, fetchStartSessionAsset, fetchTaskAsset, listStartSessions, patchStartSession, readStartSession, setDecisionCredential, submitDecision, type StartMessage, type StartSession, type StartSessionSummary, type Task, type Observation, type RequestAsset, type Submission, DecisionError } from '../api/decisions';
 import { useI18n, type MessageKey } from '../i18n';
 import type { ModelEntry } from '../generated/ModelEntry';
@@ -9,6 +9,7 @@ import { subscribeAuth } from '../auth/callerSession';
 import { useAuth } from '../auth/AuthContext';
 import { readStartSessionIndex, sessionQuestion, sessionState, writeStartSessionIndex, type StartSessionIndex } from './startSessionIndex';
 import { START_ROLE_ITEMS, StartSessionSidebar } from './StartSessionSidebar';
+import { RouteTraceDisclosure } from '../components/decisions/RouteTraceDisclosure';
 import { assetReferences, buildAssetDescriptors, createDraftAttachments, revokeDraftAttachments, withAssetReferences, type DraftAttachment } from './decisionAssets';
 import './decisions.css';
 
@@ -432,7 +433,7 @@ function Start({ ready, authError, connectionError, onIdentityConnected, onRefre
     if (!pending) return;
     gate.current = true; setBusy(true); setError('');
     try {
-      const response = await postSystemOne(pending.request);
+      const response = await postSysTorchSystemOne({ ...pending.request, question_order: pending.question_order });
       const reply: StartMessage = { kind: 'response', id: newChatId('msg'), created_at: Math.floor(Date.now() / 1000), reply_to: pending.id, response };
       const appended = await appendChatMessage(session.summary.id, session.summary.revision, reply);
       const updated = await markChatRead(appended);
@@ -628,7 +629,7 @@ function Start({ ready, authError, connectionError, onIdentityConnected, onRefre
         followLatestReply.current = true;
         let response: JevResponse;
         try {
-          response = await postSystemOne(request);
+          response = await postSysTorchSystemOne({ ...request, question_order: requestMessage.question_order });
         } catch (providerError) {
           const failureMessage: StartMessage = {
             kind: 'failure', id: newChatId('msg'), created_at: Math.floor(Date.now() / 1000), reply_to: requestMessageId,
@@ -896,14 +897,23 @@ function StartConversation({ session, busy, onRetry }: { session: StartSession; 
         <header><strong>{t('decision.modelReply')}</strong><span>{t('decision.attemptFailed')}</span></header>
         <p>{message.error_code}{message.status ? ` · HTTP ${message.status}` : ''}</p>
         {message.request_id && <small>{t('decision.requestId')}: {message.request_id}</small>}
+        <RouteTraceDisclosure requestId={message.request_id}/>
       </article>;
+      const responseMetadata = message.response as unknown as Record<string, unknown>;
+      const responseDetails = { ...responseMetadata };
+      delete responseDetails.route_trace;
+      delete responseDetails.request_id;
       return <article className="decision-response-message" key={message.id}>
         <header><strong>{t('decision.modelReply')}</strong><span>{message.response.model ?? ''}</span></header>
         {questions.map(question => <section className="decision-answer-part" key={question.id}>
           <h2>{question.question}</h2>
           <strong className="decision-response-answer">{answerLabel(message.response.answers[question.id], question)}</strong>
         </section>)}
-        <details><summary>{t('decision.route')}</summary><pre>{JSON.stringify(message.response, null, 2)}</pre></details>
+        <RouteTraceDisclosure
+          requestId={typeof responseMetadata.request_id === 'string' ? responseMetadata.request_id : null}
+          initialTrace={responseMetadata.route_trace}
+        />
+        <details className="decision-response-raw"><summary>{t('decision.responseDetails')}</summary><pre>{JSON.stringify(responseDetails, null, 2)}</pre></details>
       </article>;
     })}
     {session.summary.interrupted && <article className="decision-response-message" role="status">

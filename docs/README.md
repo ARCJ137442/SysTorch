@@ -9,16 +9,16 @@ SysTorch is a structured decision runtime for people, models, and agents. It kee
 
 ## 当前预发布 / Current pre-release
 
-0.11.0 是 SysTorch 品牌迁移与「开始／决策台」产品工作面的首个预发布版本，提供 Windows Standalone EXE 和稳定签名 Android arm64 APK。发布状态、准确附件、兼容边界和未完成人工验收见 [0.11.0 发布说明](releases/0.11.0.md) 与 [候选核验](verification/v0.11.0-pre-release-2026-10-30.md)。自动测试、CI 构建与设备人工验收是不同证据，不互相替代。
+0.12.0 是当前 SysTorch 预发布版本，收口 canonical SysTorch API、结构化路由轨迹与「开始／决策台」对调用历史的呈现，提供 Windows Standalone EXE 和稳定签名 Android arm64 APK。发布状态、准确附件、兼容边界和未完成人工验收见 [0.12.0 发布说明](releases/0.12.0.md) 与 [候选核验](verification/v0.12.0-pre-release-2026-10-30.md)。自动测试、CI 构建与设备人工验收是不同证据，不互相替代。
 
-Version 0.11.0 is the first pre-release for the SysTorch brand and the Start / Decision Desk workspaces. It provides a Windows Standalone EXE and a stable-signed Android arm64 APK. See the [0.11.0 release notes](releases/0.11.0.md) and [candidate verification](verification/v0.11.0-pre-release-2026-10-30.md) for exact assets, compatibility, and remaining hands-on checks. Automated tests, CI builds, and device acceptance are separate evidence.
+Version 0.12.0 is the current SysTorch pre-release. It consolidates the canonical SysTorch API, structured route traces, and call-history disclosure in Start / Decision Desk. It provides a Windows Standalone EXE and a stable-signed Android arm64 APK. See the [0.12.0 release notes](releases/0.12.0.md) and [candidate verification](verification/v0.12.0-pre-release-2026-10-30.md) for exact assets, compatibility, and remaining hands-on checks. Automated tests, CI builds, and device acceptance are separate evidence.
 
 ## 从这里开始 / Start here
 
 | 需要 / Need | 文档 / Document |
 |---|---|
 | 产品介绍、能力与快速开始 / Product overview and quick start | [README 中文](../README.md) · [README English](../README.en.md) |
-| 下载、升级和版本边界 / Download, upgrade, release boundaries | [0.11.0 发布说明](releases/0.11.0.md) · [发版手册](RELEASE.md) |
+| 下载、升级和版本边界 / Download, upgrade, release boundaries | [0.12.0 发布说明](releases/0.12.0.md) · [发版手册](RELEASE.md) |
 | Agent 提交 Choice、离开后由人作答、再取回结果 / Agent submits a Choice, leaves, then retrieves a human answer | [外部调用指南](guides/SYSTORCH-EXTERNAL-CHOICE.md) |
 | SysTorch 请求、资产与多模态字段 / Request, asset, and multimodal fields | [契约索引](contracts/00-INDEX.md) · [HTTP 契约](contracts/05-HTTP契约.md) · [资产契约](contracts/09-SysTorch资产与多模态契约.md) |
 | 普通「开始」会话、加密和恢复 / Start sessions, encryption, and recovery | [会话契约](contracts/10-SysTorch开始会话契约.md) |
@@ -30,9 +30,9 @@ Version 0.11.0 is the first pre-release for the SysTorch brand and the Start / D
 
 ## 验证记录 / Verification records
 
-日期化核验只证明其标明版本、构建身份、设备和测试范围。当前候选的验证结论以 [0.11.0 核验记录](verification/v0.11.0-pre-release-2026-10-30.md) 为准；此前 Android、Windows、路由和上游测试记录继续作为各自版本的历史证据，不自动扩展为 0.11.0 结果。
+日期化核验只证明其标明版本、构建身份、设备和测试范围。0.12.0 发行资产的验证结论见 [0.12.0 核验记录](verification/v0.12.0-pre-release-2026-10-30.md)；canonical SysTorch request 与 TypeSafe 投影的专项证据见 [请求超集核验](verification/systorch-request-superset-2026-10-30.md)。此前 Android、Windows、路由和上游测试记录继续作为各自版本的历史证据，不自动扩展到新工作树。
 
-Dated verification proves only the revision, build identity, device, and scope it names. The [0.11.0 verification record](verification/v0.11.0-pre-release-2026-10-30.md) is authoritative for the current candidate. Earlier Android, Windows, routing, and provider records remain historical evidence for their versions.
+Dated verification proves only the revision, build identity, device, and scope it names. The [0.12.0 verification record](verification/v0.12.0-pre-release-2026-10-30.md) is authoritative for release assets; the [request-superset verification](verification/systorch-request-superset-2026-10-30.md) records the canonical SysTorch API and TypeSafe projection work. Earlier Android, Windows, routing, and provider records remain historical evidence for their versions.
 
 ## 历史档案 / Historical archive
 

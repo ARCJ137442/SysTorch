@@ -13,11 +13,11 @@ SysTorch 是面向人、模型与 Agent 的结构化决策运行时。产品显�
 - 常规配置写入必须是原子资源操作；不得重新开放会破坏用户现有配置的整表覆盖入口。
 - Android、Windows 旧标识、签名和用户数据目录是升级兼容边界；没有迁移方案前不得改 installed identity。
 - 不要新开 worktree，除非用户明确要求。
-- 不要提交、推送或发布，除非用户明确授权。当前任务已授权发布 SysTorch 0.11.0 预发布版。
+- 不要提交、推送或发布，除非用户明确授权。当前任务已授权发布 SysTorch 0.12.0 预发布版。
 
 ## 当前交付状态
 
-0.11.0 是 SysTorch 品牌迁移与「开始／决策台」的预发布候选；以 docs/verification/v0.11.0-pre-release-2026-10-30.md 中的证据为准。只有实际 Release workflow 完成后才能说 CI 与发布附件成功。该版本未经维护者人工实测；自动测试、CI 构建、模拟器核验和真机验收必须分别陈述。
+0.12.0 是 SysTorch canonical API、开始页路由轨迹呈现与双端预发布候选；以 docs/verification/v0.12.0-pre-release-2026-10-30.md 中的证据为准。只有实际 Release workflow 完成后才能说 CI 与发布附件成功。该版本未经维护者人工实测；自动测试、CI 构建、模拟器核验和真机验收必须分别陈述。
 
 GitHub Release 预期只公开 Windows x64 Standalone EXE 与稳定签名 Android arm64 APK。Windows 当前没有 Authenticode 证书。Android applicationId 与稳定密钥保留以支持原位覆盖升级。
 

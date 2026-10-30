@@ -14,7 +14,7 @@ SysTorch 是面向人、模型与 Agent 的**结构化决策运行时**：把一
 
 ![SysTorch「开始」工作面和决策回复](docs/gallery/images/start-desktop.png)
 
-> 图册截图来自合成数据的本地界面预览，不是 0.11.0 EXE／APK 的版本截图；具体证据边界见[图册说明](docs/gallery/README.md)。
+> 图册截图来自合成数据的本地界面预览，不是 0.12.0 EXE／APK 的版本截图；具体证据边界见[图册说明](docs/gallery/README.md)。
 
 <p align="center">
   <a href="docs/gallery/README.md">浏览截图图册 · View the product gallery</a>
@@ -45,16 +45,16 @@ SysTorch 是面向人、模型与 Agent 的**结构化决策运行时**：把一
 
 当前内置上游适配器：Vercel、Laya、TypeSafe SystemOne 和 OpenRouter。OpenRouter 是上游转换适配器，不是 OpenAI/Anthropic 聊天兼容入口。对外服务仍使用 Jev/SystemOne 决策协议；SysTorch 是产品名，不绑定单一模型或供应商。
 
-## 预发布说明 · v0.11.0
+## 预发布说明 · v0.12.0
 
-v0.11.0 是新的 SysTorch 品牌预发布版。自动化构建和测试通过后发布，**尚未经维护者人工验收**。
+v0.12.0 是 SysTorch 的预发布版，收口 canonical SysTorch API、结构化路由轨迹和「开始／决策台」对调用历史的呈现。它面向 Windows x64 与 Android arm64，**尚未经维护者人工验收**。
 
 - Windows 提供单文件 Standalone EXE。当前没有 Authenticode 证书，Windows 可能显示未知发布者提示。
 - Android 提供 arm64 APK，使用稳定 Android 签名；安装身份保留旧值以支持覆盖升级和读取既有任务数据，应用显示名与界面品牌为 SysTorch。
 - Android 真机相机/相册、权限拒绝、后台生命周期等仍需维护者在设备上验收。
 - 预发布版本用于测试，不表示所有上游都支持所有题型或媒体格式。
 
-[下载 v0.11.0 预发布版](https://github.com/ARCJ137442/SysTorch/releases/tag/v0.11.0)
+[下载 v0.12.0 预发布版](https://github.com/ARCJ137442/SysTorch/releases/tag/v0.12.0)
 
 ## 快速开始
 
@@ -101,4 +101,4 @@ npm run lint --prefix ui
 npm run build --prefix ui
 ~~~
 
-Release 与兼容标识说明见[发版手册](docs/RELEASE.md)；未来方向见[路线图](ROADMAP.md)。旧版 Jev Switch 的截图、tag 和故障核验保留在历史档案中，不代表 SysTorch 0.11.0 当前状态。
+Release 与兼容标识说明见[发版手册](docs/RELEASE.md)；未来方向见[路线图](ROADMAP.md)。旧版 Jev Switch 的截图、tag 和故障核验保留在历史档案中，不代表 SysTorch 0.12.0 当前状态。

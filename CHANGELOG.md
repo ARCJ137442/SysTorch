@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.12.0] - 2026-10-30 · 预发布 / Pre-release
+
+### Added
+
+- canonical `POST /v1/systorch/systemone` 作为 SysTorch 请求超集入口；验证 `question_order` 后仅将 TypeSafe-compatible 核心投影给上游，保留旧 `/v1/systemone` 调用兼容。
+- 「开始」成功回复以结构化路由轨迹展示真实上游尝试；失败回复可按请求 ID 展开既有调用历史，查看失败原因、重试策略、耗时与最终路径。
+- README、图册、发布手册和 GitHub About 使用统一的 SysTorch 口号，发布说明提供中英双语。
+
+### Compatibility and boundaries
+
+- 未扩张旧版加密会话消息格式；失败消息继续保存请求 ID，展开时从已有 request history 按需读取轨迹。
+- Windows Standalone 当前无 Authenticode 证书；Android arm64 APK 使用既有稳定签名和 applicationId，可覆盖安装。
+- 本版作为 GitHub prerelease 发布，**尚未经维护者人工验收**。CI 和合成测试不等同于真实 Android 设备验收或真实上游推理。
+
+### 用户叙事与对照场景
+
+#### 一个调用经过多次上游尝试，仍能回到同一条决策会话
+
+- **起点**：调用方提交一条包含结构化问题的 SysTorch 请求，预期请求会沿已配置 DAG 到达可用决策服务。
+- **问题**：首个上游可能失败，而调用方只看到 HTTP 错误时，难以确认是否重试、换了哪条路径，以及最后一次失败发生在哪里。
+- **操作**：调用方使用 canonical SysTorch API；成功回复中的路由轨迹可展开。最终失败时，界面按 request ID 读取既有调用记录。
+- **结果**：多次上游尝试、状态、重试决策、延迟和入口路径可以在同一请求上下文中核对。
+- **对照**：普通调用仍使用已有 TypeSafe-compatible 请求字段；将 `/v1/systorch/systemone` 剔除扩展字段后，仍可按原来的 Jev/SystemOne 形状向兼容上游转发。
+- **边界**：路由轨迹只包含安全的调用元数据，不包含请求正文、答案、API key 或上游响应原文。真实供应商行为受当前凭据和路由配置影响；本版本未由维护者进行 Windows/Android 手动验收。
+
+#### One request may try several upstreams while the caller keeps one request identity
+
+- **Starting point**: A caller sends a structured SysTorch request through its configured DAG to a compatible decision service.
+- **Problem**: The first upstream may fail. If the caller sees only an HTTP error, it cannot tell whether the gateway retried, which route it took, or where the final failure occurred.
+- **Action**: The caller uses the canonical SysTorch API. Successful replies expose a collapsible route trace; final failures can retrieve the existing call record by request ID.
+- **Result**: Provider attempts, statuses, retry decisions, latency, and the selected route can be inspected in the same request context.
+- **Comparison**: Ordinary requests retain the TypeSafe-compatible core. Removing SysTorch extensions from `/v1/systorch/systemone` yields the existing Jev/SystemOne-compatible shape for upstream projection.
+- **Boundary**: Traces contain safe call metadata, not request bodies, answers, API keys, or raw upstream response bodies. Actual provider behavior depends on credentials and route configuration. The maintainer has not manually accepted this Windows/Android pre-release.
+
 ## [0.11.0] - 2026-10-30 · 预发布 / Pre-release
 
 ### Added

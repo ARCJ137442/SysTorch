@@ -14,7 +14,7 @@ SysTorch is a **structured decision runtime for people, models, and agents**. It
 
 ![SysTorch Start workspace and decision reply](docs/gallery/images/start-desktop.png)
 
-> The gallery uses synthetic local previews; these are not screenshots of the 0.11.0 EXE or APK. See the [gallery notes](docs/gallery/README.md) for evidence boundaries.
+> The gallery uses synthetic local previews; these are not screenshots of the 0.12.0 EXE or APK. See the [gallery notes](docs/gallery/README.md) for evidence boundaries.
 
 <p align="center">
   <a href="docs/gallery/README.md">View the product gallery · 浏览截图图册</a>
@@ -45,16 +45,16 @@ Core workflows do not require OpenAI, Anthropic, or another general text-generat
 
 Built-in upstream adapters are Vercel, Laya, TypeSafe SystemOne, and OpenRouter. OpenRouter is an upstream translation adapter, not an OpenAI/Anthropic chat-compatible gateway. Public model calls use the Jev/SystemOne decision protocol; SysTorch is the product name and is not bound to one model or provider.
 
-## Pre-release · v0.11.0
+## Pre-release · v0.12.0
 
-v0.11.0 is the first pre-release under the SysTorch brand. Automated builds and checks are required before publishing; **maintainer hands-on acceptance has not yet been performed**.
+v0.12.0 is a SysTorch pre-release that consolidates the canonical SysTorch API, structured route traces, and the way Start / Decision Desk exposes call history. It targets Windows x64 and Android arm64 and **has not been accepted hands-on by the maintainer**.
 
 - Windows ships a single-file Standalone EXE. No Authenticode certificate is configured, so Windows may show an unknown publisher warning.
 - Android ships an arm64 APK signed with the stable Android key. The installed application identity stays unchanged for in-place upgrades and access to existing task data; the displayed app name and product brand are SysTorch.
 - Physical Android camera/gallery selection, permission-denial paths, and background lifecycle still need maintainer device verification.
 - This pre-release does not claim every provider supports every question or media type.
 
-[Download the v0.11.0 pre-release](https://github.com/ARCJ137442/SysTorch/releases/tag/v0.11.0)
+[Download the v0.12.0 pre-release](https://github.com/ARCJ137442/SysTorch/releases/tag/v0.12.0)
 
 ## Quick start
 
@@ -101,4 +101,4 @@ npm run lint --prefix ui
 npm run build --prefix ui
 ~~~
 
-See the [release guide](docs/RELEASE.md) and [roadmap](ROADMAP.md). Older Jev Switch screenshots, tags, and incident records remain historical evidence; they do not describe the current SysTorch 0.11.0 state.
+See the [release guide](docs/RELEASE.md) and [roadmap](ROADMAP.md). Older Jev Switch screenshots, tags, and incident records remain historical evidence; they do not describe the current SysTorch 0.12.0 state.

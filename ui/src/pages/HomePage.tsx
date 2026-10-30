@@ -22,7 +22,7 @@ import { useI18n, type MessageKey } from '../i18n';
 /**
  * 首页 Home（块 5 · docs/12 裁决 #9，IA 三页→四页，默认 #/home）。
  * ① 状态仪表盘：系统卡（daemon/version/uptime/mode/bind/env 警示/设密态）+
- *    提供商卡（N/M + service-row 列表）+ 路由卡（models/edges/prefix）+ Run Jev 入口。
+ *    提供商卡（N/M + service-row 列表）+ 路由卡（models/edges/prefix）+ 决策请求入口。
  * ② 统一操作区：mode 切换（cloud 激活 400 → 设密对话框带密原子上锁）、
  *    listen 显示/编辑（auto 恢复成对默认，失败旧监听保持）、主题/语言切换
  *    （与 Shell 顶栏同组件两处渲染）、快捷磁贴。
@@ -401,7 +401,7 @@ export function HomePage() {
         </a>
       </div>
 
-      {/* Run Jev 请求入口 */}
+      {/* SysTorch 决策请求入口 */}
       <section className="overflow-hidden rounded-card border border-border bg-panel">
         {panelHead(
           t('home.runCard'),

@@ -1,4 +1,6 @@
-# Jev-Switch 国际化使用指南
+# SysTorch 国际化使用指南
+
+> **维护说明（2026-10-30）**：本文主体记录 2026-09-24 的翻译流程快照；原 key 数、组件清单和部分示例已过时，不作为当前覆盖率声明。当前翻译源位于 `ui/src/i18n/`，新增用户可见文案须同时更新 `en` 与 `zh` 并通过 UI TypeScript/test 门禁；界面品牌统一使用 SysTorch，旧存储键仅作兼容。
 
 **版本**: v1.0  
 **日期**: 2026-09-24  
@@ -22,7 +24,7 @@ http://localhost:11435/?lang=en
 
 **方式 3: 浏览器控制台**
 ```javascript
-localStorage.setItem('jev-switch-lang', 'zh');
+localStorage.setItem('jev_lang', 'zh');
 location.reload();
 ```
 
@@ -145,8 +147,8 @@ t('home.rebindOk', { mode: 'cloud', from: '127.0.0.1:11435', to: '0.0.0.0:11435'
    - ❌ "Save" → "保存文件到磁盘"
 
 2. **保留品牌/术语**
-   - ✅ Jev-Switch, HTTP, POST, GET（不翻译）
-   - ❌ "Jev-Switch" → "杰夫-切换器"
+   - ✅ SysTorch, HTTP, POST, GET（不翻译）
+   - ❌ "SysTorch" → 音译产品名
 
 3. **语境适配**
    - "Run" 在按钮上 → "运行"
@@ -183,7 +185,7 @@ npm run build --prefix ui
 
 **A**: 检查三个可能原因：
 1. **浏览器缓存** → 强制刷新（Ctrl+Shift+R）
-2. **localStorage 未生效** → 打开控制台检查 `localStorage.getItem('jev-switch-lang')`
+2. **localStorage 未生效** → 打开控制台检查 `localStorage.getItem('jev_lang')`
 3. **构建未更新** → `npm run build --prefix ui`
 
 ### Q3: 如何添加第三种语言（如日语）？

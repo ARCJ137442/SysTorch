@@ -123,6 +123,15 @@ export const getMyCallerStats = async (token: string, from: number, to: number):
 export const getMyActivity = (token: string, since = 0, limit = 50) =>
   callTokenRequest<EventsPage>(`/v1/events/my?${new URLSearchParams({ since: String(since), limit: String(limit) })}`, token);
 
+/** Read the matching trace under the active caller scope, or local/admin scope. */
+export const getActivityByRequestId = (requestId: string) => {
+  const query = new URLSearchParams({ request_id: requestId, limit: '1' });
+  const callerToken = getCallerToken();
+  return callerToken
+    ? callTokenRequest<EventsPage>(`/v1/events/my?${query}`, callerToken)
+    : managementRequest<EventsPage>(`/v1/admin/events?${query}`, undefined);
+};
+
 export const getMyActivityBefore = (token: string, before: number, limit = 50) =>
   callTokenRequest<ActivityPage>(`/v1/events/my?${new URLSearchParams({ before: String(before), limit: String(limit) })}`, token);
 

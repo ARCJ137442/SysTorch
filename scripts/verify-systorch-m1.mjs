@@ -26,6 +26,7 @@ const upstream = createHttpServer(async (req, res) => {
   if (req.url !== '/v1/systemone') { res.writeHead(404).end(); return; }
   const chunks=[]; for await (const chunk of req) chunks.push(chunk);
   const body=JSON.parse(Buffer.concat(chunks));
+  assert.equal(body.question_order, undefined, 'presentation-only SysTorch order must be consumed before provider dispatch');
   syntheticModelCalls++;
   if (body.assets) forwardedAssets = body.assets;
   const questionId=Object.keys(body.questions)[0];
@@ -42,7 +43,7 @@ let child, browser, logs = '';
 async function request(url, token, body, method = body === undefined ? 'GET' : 'POST') {
   const response = await fetch(`${base}${url}`, { method, headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) }, ...(body === undefined ? {} : { body: JSON.stringify(body) }), signal: AbortSignal.timeout(5000) });
   const text = await response.text(); let data; try { data = JSON.parse(text); } catch { data = text; }
-  if (url.startsWith('/v1/systorch/')) assert.equal(response.headers.get('cache-control'),'no-store');
+  if (url.startsWith('/v1/systorch/') || url === '/v1/systemone') assert.equal(response.headers.get('cache-control'),'no-store');
   return { status: response.status, data };
 }
 async function uploadSyntheticAsset(token, bytes, mimeType) {
@@ -133,8 +134,23 @@ try {
   const immediate = await request('/v1/systemone', undefined, { model: 'm1-fixture', state: {}, questions: { ready: { type: 'noul', instructions: 'Is the synthetic fixture ready?' } } });
   assert.equal(immediate.status, 200); assert.equal(immediate.data.answers.ready.probability, 0.9);
   assert.equal(immediate.data.route_trace.selected_provider, 'fixture');
+  const canonicalImmediate = await request('/v1/systorch/systemone', undefined, {
+    model: 'm1-fixture', state: {},
+    questions: { ready: { type: 'noul', instructions: 'Is the synthetic fixture ready?' } },
+    question_order: ['ready'],
+  });
+  assert.equal(canonicalImmediate.status, 200, JSON.stringify(canonicalImmediate.data));
+  assert.equal(canonicalImmediate.data.answers.ready.probability, 0.9);
+  const dispatchedBeforeInvalidOrder = syntheticModelCalls;
+  const invalidOrder = await request('/v1/systorch/systemone', caller, {
+    model: 'm1-fixture', state: {},
+    questions: { ready: { type: 'noul', instructions: 'Is the synthetic fixture ready?' } },
+    question_order: ['unknown-question'],
+  });
+  assert.equal(invalidOrder.status, 400);
+  assert.equal(syntheticModelCalls, dispatchedBeforeInvalidOrder, 'invalid order must be rejected before provider dispatch');
   assert.equal((await request(route(task.id), caller)).data.status, 'pending');
-  check('a pending human task does not block the existing immediate model/DAG path');
+  check('legacy Jev and canonical SysTorch request paths share DAG routing; question order is consumed before TypeSafe-compatible upstream dispatch');
 
   const chatImage = await uploadSyntheticImage(caller);
   const chatAudio = await uploadSyntheticAsset(caller, Buffer.from('RIFFsynthetic-wav'), 'audio/wav');
@@ -161,7 +177,8 @@ try {
   assert.equal(chatStart.status, 201);
   assert.equal(chatStart.data.summary.title, 'Should the synthetic chat be retained?');
   assert.equal(chatStart.data.summary.interrupted, true);
-  const chatModelResponse = await request('/v1/systemone', caller, chatRequest);
+  const chatSysTorchRequest = { ...chatRequest, question_order: ['ready'] };
+  const chatModelResponse = await request('/v1/systorch/systemone', caller, chatSysTorchRequest);
   assert.equal(chatModelResponse.status, 200, JSON.stringify(chatModelResponse.data));
   assert.equal(chatModelResponse.data.answers.ready.probability, 0.9);
   for (const [reference, uploaded] of Object.entries(chatUploads)) {
@@ -202,7 +219,7 @@ try {
   });
   assert.equal(secondUserMessage.status, 200);
   assert.equal(secondUserMessage.data.summary.archived, false, 'new activity returns an archived chat to recent chats');
-  const secondModelResponse = await request('/v1/systemone', caller, chatRequest);
+  const secondModelResponse = await request('/v1/systorch/systemone', caller, chatSysTorchRequest);
   const secondReply = await request(`/v1/systorch/sessions/${chatId}/messages`, caller, {
     expected_revision: 5,
     message: { kind: 'response', id: 'chat-reply-2', created_at: Math.floor(Date.now() / 1000), reply_to: 'chat-request-2', response: secondModelResponse.data },
@@ -441,11 +458,12 @@ try {
   await callerPage.getByLabel('Current entry').selectOption('model:m1-fixture');
   await callerPage.getByLabel('Question',{exact:true}).fill('Caller model fixture');
   await callerPage.getByLabel('Alternatives · one per line').fill('Keep the local result\nContinue testing');
-  const modelRequest = callerPage.waitForRequest(r=>r.url().endsWith('/v1/systemone') && r.method()==='POST');
+  const modelRequest = callerPage.waitForRequest(r=>r.url().endsWith('/v1/systorch/systemone') && r.method()==='POST');
   await callerPage.getByRole('button',{name:'Submit decision',exact:true}).click();
   const emittedModelRequest = await modelRequest;
   assert.equal(emittedModelRequest.headers().authorization,`Bearer ${caller}`);
   assert.equal(emittedModelRequest.postDataJSON().model,'m1-fixture');
+  assert.deepEqual(emittedModelRequest.postDataJSON().question_order, Object.keys(emittedModelRequest.postDataJSON().questions));
   await callerPage.getByRole('heading',{name:'Caller model fixture',exact:true}).waitFor();
   await callerContext.close();
   check('browser caller identity is reused by Choice/model APIs; readonly UI hides provider management and Choice denies unassigned answers');
@@ -462,13 +480,15 @@ try {
   await chatPage.getByLabel('Question', { exact: true }).fill('Should this local chat survive a restart?');
   await chatPage.getByLabel('Alternatives · one per line').fill('Keep the local chat\nContinue testing');
   const firstSessionWrite = chatPage.waitForResponse(r => /\/v1\/systorch\/sessions\/start_[^/]+\/messages$/.test(r.url()) && r.request().method() === 'POST');
-  const firstModelRequest = chatPage.waitForRequest(r => r.url().endsWith('/v1/systemone') && r.method() === 'POST');
+  const firstModelRequest = chatPage.waitForRequest(r => r.url().endsWith('/v1/systorch/systemone') && r.method() === 'POST');
   await chatPage.getByRole('button', { name: 'Submit decision', exact: true }).click();
   const firstWrite = await firstSessionWrite;
   assert.equal(firstWrite.status(), 201);
   const sessionId = new URL(firstWrite.url()).pathname.split('/')[4];
   assert.equal((await firstWrite.json()).summary.title, 'Should this local chat survive a restart?');
-  assert.equal((await firstModelRequest).postDataJSON().model, 'm1-fixture');
+  const firstModelCall = await firstModelRequest;
+  assert.equal(firstModelCall.postDataJSON().model, 'm1-fixture');
+  assert.deepEqual(firstModelCall.postDataJSON().question_order, Object.keys(firstModelCall.postDataJSON().questions));
   await chatPage.getByRole('heading', { name: 'Should this local chat survive a restart?', exact: true }).waitFor();
   assert.equal(await chatPage.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1), false);
 
@@ -570,7 +590,7 @@ try {
   assert.deepEqual((await request(`${route(task.id)}/result`, caller)).data, result.data);
   await stop();
   check('missing/mismatched owner key blocks Choice acceptance without crashing the old model gateway; restoring the key recovers results');
-  const db = await readFile(path.join(root, 'jev-switch.db'));
+  const db = await readFile(path.join(root, 'systorch.db'));
   assert(!db.includes(Buffer.from('SYNTHETIC_PRIVATE_CONTEXT'))); assert(!db.includes(Buffer.from('Insufficient evidence'))); assert(!db.includes(Buffer.from('CHAT_PRIVATE_SENTINEL')));
   assert(!logs.includes('SYNTHETIC_PRIVATE_CONTEXT')); assert(!logs.includes(owner)); assert(!logs.includes(caller));
   check('no fixture body, answer or credential plaintext in database or daemon logs');

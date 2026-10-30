@@ -22,6 +22,7 @@ use axum::body::Body;
 use axum::http::Request;
 use http_body_util::BodyExt;
 use jev_adapters::upstream_laya::LayaUpstream;
+use jev_adapters::upstream_typesafe::TypeSafeUpstream;
 use jev_adapters::upstream_vercel::VercelUpstream;
 use jev_core::adapter::{Registry, RetryPolicy, UpstreamAdapter};
 use jev_core::router::{MatchMode, RouteEdge};
@@ -129,6 +130,13 @@ async fn android_webview_origin_can_read_health_and_preflight_admin_requests() {
         health.headers().get("access-control-allow-origin").unwrap(),
         "http://tauri.localhost"
     );
+    assert!(health
+        .headers()
+        .get("access-control-expose-headers")
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .contains("x-systorch-request-id"));
 
     let preflight = app
         .oneshot(
@@ -291,6 +299,194 @@ async fn telemetry_reports_session_counters_after_a_request() {
     assert_eq!(value["total_requests"], 1);
     assert_eq!(value["active_requests"], 0);
     assert_eq!(calls.load(Ordering::SeqCst), 1);
+    let _ = std::fs::remove_dir_all(path.parent().unwrap());
+}
+
+#[tokio::test]
+async fn systorch_request_order_is_consumed_before_typesafe_projection() {
+    let upstream = wiremock::MockServer::start().await;
+    let response = serde_json::json!({
+        "model": "typesafe-ai/jev",
+        "answers": {
+            "first": {"type": "noul", "probability": 0.8},
+            "second": {"type": "noul", "probability": 0.2}
+        },
+        "upstream_calls": 1
+    });
+    wiremock::Mock::given(wiremock::matchers::method("POST"))
+        .and(wiremock::matchers::path("/v1/systemone"))
+        .respond_with(wiremock::ResponseTemplate::new(200).set_body_json(response))
+        .expect(1)
+        .mount(&upstream)
+        .await;
+
+    let path = temp_config("systorch-request", "# empty\n");
+    let mut registry = Registry::new(vec![edge("jev", "typesafe", 0)]);
+    registry.register(Box::new(
+        TypeSafeUpstream::new_with_id(
+            "typesafe".into(),
+            format!("{}/v1/systemone", upstream.uri()),
+            None,
+        )
+        .expect("TypeSafe fixture adapter"),
+    ));
+    let app = build_app(state_with(registry, path.clone()));
+    let request = serde_json::json!({
+        "model": "jev",
+        "state": {"text": "synthetic only"},
+        "questions": {
+            "first": {"type": "noul", "instructions": "first question"},
+            "second": {"type": "noul", "instructions": "second question"}
+        },
+        "question_order": ["second", "first"],
+        "extensions": {"vendor_hint": {"private": true}},
+        "future_sys_torch_field": "preserve at the gateway boundary"
+    });
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/systorch/systemone")
+                .header("content-type", "application/json")
+                .body(Body::from(request.to_string()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let status = response.status().as_u16();
+    assert_eq!(response.headers().get("cache-control").unwrap(), "no-store");
+    let systorch_request_id = response
+        .headers()
+        .get("x-systorch-request-id")
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert_eq!(
+        response.headers().get("x-jev-request-id").unwrap(),
+        systorch_request_id
+    );
+    let body = response.into_body().collect().await.unwrap().to_bytes();
+    let body = String::from_utf8_lossy(&body).to_string();
+    assert_eq!(status, 200, "{body}");
+    let response: serde_json::Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(response["answers"]["first"]["probability"], 0.8);
+    let received = upstream.received_requests().await.unwrap();
+    assert_eq!(received.len(), 1);
+    let projected: serde_json::Value = serde_json::from_slice(&received[0].body).unwrap();
+    assert_eq!(
+        projected,
+        serde_json::json!({
+            "model": "jev",
+            "state": {"text": "synthetic only"},
+            "questions": {
+                "first": {"type": "noul", "instructions": "first question"},
+                "second": {"type": "noul", "instructions": "second question"}
+            }
+        }),
+        "TypeSafe projection keeps the core and removes SysTorch order/extensions"
+    );
+
+    let invalid_order = serde_json::json!({
+        "model": "jev",
+        "state": null,
+        "questions": {"first": {"type": "noul", "instructions": "first"}},
+        "question_order": ["missing"]
+    });
+    let (status, body) = send(
+        app,
+        "POST",
+        "/v1/systorch/systemone",
+        Some(invalid_order.to_string()),
+    )
+    .await;
+    assert_eq!(
+        status, 400,
+        "invalid order must be rejected before upstream dispatch: {body}"
+    );
+    assert_eq!(upstream.received_requests().await.unwrap().len(), 1);
+    let _ = std::fs::remove_dir_all(path.parent().unwrap());
+}
+
+#[tokio::test]
+async fn canonical_failure_returns_trace_and_legacy_error_shape_stays_compatible() {
+    let upstream = wiremock::MockServer::start().await;
+    wiremock::Mock::given(wiremock::matchers::method("POST"))
+        .and(wiremock::matchers::path("/v1/systemone"))
+        .respond_with(
+            wiremock::ResponseTemplate::new(503)
+                .set_body_json(serde_json::json!({"error":"synthetic upstream unavailable"})),
+        )
+        .mount(&upstream)
+        .await;
+
+    let path = temp_config("systorch-error-trace", "# empty\n");
+    let mut registry = Registry::new(vec![edge("jev", "typesafe", 0)]);
+    registry.register(Box::new(
+        TypeSafeUpstream::new_with_id(
+            "typesafe".into(),
+            format!("{}/v1/systemone", upstream.uri()),
+            None,
+        )
+        .expect("TypeSafe fixture adapter"),
+    ));
+    let app = build_app(state_with(registry, path.clone()));
+
+    let canonical = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/systorch/systemone")
+                .header("content-type", "application/json")
+                .body(Body::from(noul_body("jev")))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(canonical.status().as_u16(), 503);
+    let request_id = canonical
+        .headers()
+        .get("x-systorch-request-id")
+        .unwrap()
+        .to_str()
+        .unwrap()
+        .to_owned();
+    assert_eq!(
+        canonical
+            .headers()
+            .get("x-jev-request-id")
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        request_id
+    );
+    let body = canonical.into_body().collect().await.unwrap().to_bytes();
+    let body: serde_json::Value = serde_json::from_slice(&body).unwrap();
+    assert_eq!(body["route_trace"]["outcome"], "failed");
+    assert!(!body["route_trace"]["attempts"]
+        .as_array()
+        .unwrap()
+        .is_empty());
+
+    let (status, history) = send(
+        app.clone(),
+        "GET",
+        &format!("/v1/admin/events?request_id={request_id}&limit=1"),
+        None,
+    )
+    .await;
+    assert_eq!(status, 200, "{history}");
+    let history: serde_json::Value = serde_json::from_str(&history).unwrap();
+    let detail: serde_json::Value =
+        serde_json::from_str(history["events"][0]["detail"].as_str().unwrap()).unwrap();
+    assert_eq!(detail["route_trace"]["outcome"], "failed");
+    assert_eq!(detail["request_id"], request_id);
+
+    let (status, legacy_error) = send(app, "POST", "/v1/systemone", Some(noul_body("jev"))).await;
+    assert_eq!(status, 503);
+    let legacy_error: serde_json::Value = serde_json::from_str(&legacy_error).unwrap();
+    assert!(legacy_error.get("route_trace").is_none());
     let _ = std::fs::remove_dir_all(path.parent().unwrap());
 }
 

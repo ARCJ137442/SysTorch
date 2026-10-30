@@ -102,7 +102,7 @@ jobs:
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "publish=$PUBLISH" >> "$GITHUB_OUTPUT"
-          if [ "$VERSION" = "0.10.2" ] || [ "$VERSION" = "0.11.0" ] || [[ "$VERSION" == *-* ]]; then
+          if [ "$VERSION" = "0.10.2" ] || [ "$VERSION" = "0.11.0" ] || [ "$VERSION" = "0.12.0" ] || [[ "$VERSION" == *-* ]]; then
             echo "prerelease=true" >> "$GITHUB_OUTPUT"
           else
             echo "prerelease=false" >> "$GITHUB_OUTPUT"

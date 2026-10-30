@@ -1,6 +1,6 @@
 # SysTorch：外部程序提交后退出，人在 APP 回答，再取回结果
 
-适用于 SysTorch 0.11.0 预发布版；新回执默认使用 http://127.0.0.1:11435。脚本不会保存调用 Token。M1 隔离预览及其 11436 沙箱属于历史候选，不能与新 Release 的任务或回执混用。
+适用于 SysTorch 0.12.0 预发布版；新回执默认使用 http://127.0.0.1:11435。脚本不会保存调用 Token。M1 隔离预览及其 11436 沙箱属于历史候选，不能与新 Release 的任务或回执混用。
 
 ## 1. 在哪里创建调用 Token
 
@@ -30,7 +30,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\examples\choic
 2. 阅读题目后选择 `Review the changes first`。
 3. **点选只是草稿**。再点击「提交回答」，等待权威保存成功反馈。
 
-不要切换 API 地址来查找另一个实例中的任务：任务属于接收它的数据库与调用身份。SysTorch 0.11.0 默认本机端口是 11435；2026-10-24 M1 隔离预览使用独立 11436，旧回执应继续指向原实例。
+不要切换 API 地址来查找另一个实例中的任务：任务属于接收它的数据库与调用身份。SysTorch 0.12.0 默认本机端口是 11435；2026-10-24 M1 隔离预览使用独立 11436，旧回执应继续指向原实例。
 
 ## 4. 第二次运行：新进程取回原任务
 
@@ -84,6 +84,6 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\examples\choic
 
 脚本兼容 Windows PowerShell 5.1 和 PowerShell 7；Linux/macOS 可用 `pwsh -File ./scripts/examples/choice-client.ps1 …`。非 Windows 环境需指定 `-ReceiptPath` 为自己的可写位置，默认地址仍指运行脚本的那台机器。Android 上的 127.0.0.1 是手机自身，从电脑访问手机需明确启用局域网访问并使用手机地址，不会自动穿透网络。
 
-历史核验（2026-10-24）：两个独立 Windows PowerShell 5.1 进程、M1 Standalone 预览和原生决策台完成重复提交、等待、作答与取回验证。该记录不是 SysTorch 0.11.0 人工验收。脚本不注入主人密钥、不读取现用数据、不调用任何付费上游。
+历史核验（2026-10-24）：两个独立 Windows PowerShell 5.1 进程、M1 Standalone 预览和原生决策台完成重复提交、等待、作答与取回验证。该记录不是 SysTorch 0.12.0 人工验收。脚本不注入主人密钥、不读取现用数据、不调用任何付费上游。
 
 机器核验摘要与精确脚本／EXE 哈希见[本轮证据](../verification/systorch-brand-and-external-choice-2026-10-24.json)，可通过 `scripts/verify-choice-example.mjs` 在独立配置和原生 WebView 中复现。该验证器测试时通过进程环境提供合成 Token；这是测试夹具自己的变量，不是 SysTorch 自动注入的产品配置。

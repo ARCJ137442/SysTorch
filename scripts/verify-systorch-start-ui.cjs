@@ -2,13 +2,19 @@
 // Vite server first. Every /v1 request is intercepted and answered with synthetic
 // fixtures; this script never contacts a real gateway or upstream provider.
 const assert = require('node:assert/strict');
-const { chromium } = require('playwright');
+const fs = require('node:fs/promises');
+const path = require('node:path');
+const { chromium } = require(process.env.SYSTORCH_PLAYWRIGHT_PACKAGE ?? 'playwright');
 const base = process.argv[2] ?? 'http://127.0.0.1:5175';
 assert.equal(new URL(base).hostname, '127.0.0.1', 'Only a loopback preview may be tested.');
 const appUrl = base.replace(/\/$/, '');
+const outputRoot = path.resolve(process.env.SYSTORCH_START_UI_OUTPUT_DIR ?? '.tmp/verify-systorch-start-ui');
+const outputDirectory = path.join(outputRoot, "run-" + Date.now());
+const screenshot = name => path.join(outputDirectory, name);
 let browser;
 
 async function main() {
+  await fs.mkdir(outputDirectory, { recursive: true });
   browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1280, height: 820 } });
   const page = await context.newPage();
@@ -20,8 +26,30 @@ async function main() {
   const headers = {
     'access-control-allow-origin': '*',
     'access-control-allow-headers': '*',
-    'access-control-allow-methods': 'GET,POST,DELETE,OPTIONS',
+    'access-control-allow-methods': 'GET,POST,PATCH,DELETE,OPTIONS',
+    'access-control-expose-headers': 'x-systorch-request-id,x-jev-request-id',
   };
+  const chatSessions = new Map();
+  const questionTitle = message => {
+    const id = message?.question_order?.[0] ?? Object.keys(message?.request?.questions ?? {})[0];
+    const instructions = message?.request?.questions?.[id]?.instructions;
+    if (typeof instructions === 'string') return instructions;
+    if (instructions && typeof instructions === 'object' && typeof instructions.text === 'string') return instructions.text;
+    return '新会话';
+  };
+  const sessionSummary = session => {
+    const requests = session.messages.filter(message => message.kind === 'request');
+    const replied = new Set(session.messages.filter(message => message.kind === 'response' || message.kind === 'failure').map(message => message.reply_to));
+    const latestRequest = requests.at(-1);
+    return {
+      id: session.id, revision: session.revision, created_at: session.created_at, updated_at: session.updated_at,
+      pinned: session.pinned, archived: session.archived, last_read_at: session.last_read_at,
+      title: questionTitle(requests[0]), message_count: session.messages.length,
+      has_unread_reply: session.messages.some(message => (message.kind === 'response' || message.kind === 'failure') && message.created_at > session.last_read_at),
+      interrupted: !!latestRequest && !replied.has(latestRequest.id),
+    };
+  };
+  const sessionPayload = session => ({ summary: sessionSummary(session), messages: session.messages });
   const now = Math.floor(Date.now() / 1000);
   const task = {
     id: 'decision-preview-001', caller: 'test-caller', assignee: 'human:owner', revision: 1,
@@ -36,11 +64,69 @@ async function main() {
   };
   await context.route('**/v1/**', async route => {
     const url = new URL(route.request().url());
+    const responseHeaders = { ...headers };
     let body = {};
     let responseStatus = 200;
     if (url.pathname === '/v1/models') body = { object: 'list', data: [{ id: 'typesafe-ai/jev', object: 'model', upstream: 'typesafe' }], upstreams: [] };
     else if (url.pathname === '/v1/auth/me') body = { id: 'test-caller', role: 'admin' };
+    else if ((url.pathname === '/v1/admin/events' || url.pathname === '/v1/events/my') && url.searchParams.has('request_id')) {
+      const requestId = url.searchParams.get('request_id');
+      assert.equal(requestId, 'jev-ui-synthetic-failure');
+      const routeTrace = {
+        requested_model: 'typesafe-ai/jev', outcome: 'failed', upstream_calls: 2, request_id: requestId,
+        attempts: [
+          { attempt: 1, provider_id: 'vercel', upstream_model: 'typesafe-ai/jev', outcome: 'failed', upstream_status: 429, latency_ms: 9, error_kind: 'upstream_http', retry_decision: 'next_candidate' },
+          { attempt: 1, provider_id: 'typesafe', upstream_model: 'jev-latest', outcome: 'failed', upstream_status: 503, latency_ms: 14, error_kind: 'upstream_http', retry_decision: 'fail' },
+        ],
+      };
+      body = { events: [{ id: 701, timestamp: now, kind: 'request', detail: JSON.stringify({ request_id: requestId, route_trace: routeTrace }) }], next_since: 701, next_before: null, has_more: false };
+    }
     else if (url.pathname === '/v1/systorch/identity') body = { id: 'test-caller', can_answer: true, entry: 'human:owner', retention_seconds: 604800 };
+    else if (url.pathname === '/v1/systorch/sessions' && route.request().method() === 'GET') {
+      const archived = new URLSearchParams(url.search).get('archived') === 'true';
+      body = [...chatSessions.values()].filter(session => session.archived === archived).sort((a, b) => Number(b.pinned) - Number(a.pinned) || b.updated_at - a.updated_at).map(sessionSummary);
+    }
+    else if (/^\/v1\/systorch\/sessions\/[^/]+\/messages$/.test(url.pathname) && route.request().method() === 'POST') {
+      const id = decodeURIComponent(url.pathname.split('/')[4]);
+      const input = route.request().postDataJSON();
+      let session = chatSessions.get(id);
+      if (!session) {
+        assert.equal(input.expected_revision, 0);
+        session = { id, revision: 0, created_at: now, updated_at: now, pinned: false, archived: false, last_read_at: 0, messages: [] };
+        chatSessions.set(id, session);
+      }
+      if (input.expected_revision !== session.revision) {
+        responseStatus = 409; body = { code: 'session_revision_conflict', error: 'Reload this chat before retrying.' };
+      } else {
+        const duplicate = session.messages.find(message => message.id === input.message.id);
+        if (duplicate) assert.deepEqual(duplicate, input.message, 'retries must reuse the same chat message body');
+        else session.messages.push(input.message);
+        session.revision += duplicate ? 0 : 1; session.updated_at = now; session.archived = false;
+        body = sessionPayload(session);
+      }
+    }
+    else if (/^\/v1\/systorch\/sessions\/[^/]+$/.test(url.pathname) && route.request().method() === 'GET') {
+      const session = chatSessions.get(decodeURIComponent(url.pathname.split('/')[4]));
+      if (!session) { responseStatus = 404; body = { code: 'session_not_found', error: 'Chat not found.' }; }
+      else body = sessionPayload(session);
+    }
+    else if (/^\/v1\/systorch\/sessions\/[^/]+$/.test(url.pathname) && route.request().method() === 'PATCH') {
+      const session = chatSessions.get(decodeURIComponent(url.pathname.split('/')[4]));
+      const update = route.request().postDataJSON();
+      if (!session) { responseStatus = 404; body = { code: 'session_not_found', error: 'Chat not found.' }; }
+      else if (update.expected_revision !== session.revision) { responseStatus = 409; body = { code: 'session_revision_conflict', error: 'Reload this chat before retrying.' }; }
+      else {
+        if (typeof update.pinned === 'boolean') session.pinned = update.pinned;
+        if (typeof update.archived === 'boolean') session.archived = update.archived;
+        if (update.mark_read === true) session.last_read_at = session.updated_at;
+        session.revision += 1;
+        body = sessionPayload(session);
+      }
+    }
+    else if (/^\/v1\/systorch\/sessions\/[^/]+$/.test(url.pathname) && route.request().method() === 'DELETE') {
+      chatSessions.delete(decodeURIComponent(url.pathname.split('/')[4]));
+      responseStatus = 204;
+    }
     else if (url.pathname === '/v1/systorch/assets' && route.request().method() === 'POST') {
       const bytes = route.request().postDataBuffer();
       assert.ok(bytes?.length, 'synthetic image attachment must upload bytes');
@@ -71,26 +157,39 @@ async function main() {
       body = submittedTask;
     }
     else if (url.pathname === '/v1/systorch/decisions/decision-preview-multi-001' && route.request().method() === 'GET') body = submittedTask;
-    else if (url.pathname === '/v1/systemone' && route.request().method() === 'POST') {
+    else if (url.pathname === '/v1/systorch/systemone' && route.request().method() === 'POST') {
       const request = route.request().postDataJSON();
+      assert.deepEqual(request.question_order, Object.keys(request.questions), 'SysTorch API preserves the visible question order');
       systemOneRequests.push(request);
-      const answers = Object.fromEntries(Object.entries(request.questions).map(([id, question]) => {
-        const choiceIds = Object.keys(question.criteria);
-        return [id, { type: 'choice', choice: choiceIds[0], probabilities: Object.fromEntries(choiceIds.map((key, index) => [key, index === 0 ? 1 : 0])), confidence: 1 }];
-      }));
-      body = { model: request.model, answers, upstream_calls: 1, latency_ms: 12 };
+      const questionText = Object.values(request.questions).map(question => question.instructions).join('\\n');
+      if (questionText.includes('合成失败路由轨迹')) {
+        responseStatus = 503;
+        responseHeaders['x-systorch-request-id'] = 'jev-ui-synthetic-failure';
+        responseHeaders['x-jev-request-id'] = 'jev-ui-synthetic-failure';
+        body = {
+          error: 'Synthetic upstream failure', upstream: 'typesafe', retryable: true,
+          route_trace: { requested_model: request.model, outcome: 'failed', upstream_calls: 2, attempts: [] },
+        };
+      } else {
+        const answers = Object.fromEntries(Object.entries(request.questions).map(([id, question]) => {
+          const choiceIds = Object.keys(question.criteria);
+          return [id, { type: 'choice', choice: choiceIds[0], probabilities: Object.fromEntries(choiceIds.map((key, index) => [key, index === 0 ? 1 : 0])), confidence: 1 }];
+        }));
+        body = {
+          model: request.model, answers, upstream_calls: 1, latency_ms: 12, request_id: 'jev-ui-synthetic-success',
+          route_trace: { requested_model: request.model, selected_provider: 'typesafe', selected_model: 'jev-latest', outcome: 'success', upstream_calls: 1, request_id: 'jev-ui-synthetic-success', attempts: [{ attempt: 1, provider_id: 'typesafe', upstream_model: 'jev-latest', outcome: 'succeeded', latency_ms: 12 }] },
+        };
+      }
     }
-    else if (url.pathname === '/health') body = { status: 'ok', version: '0.11.0', brand: 'SysTorch', product: 'jev-switch', api_revision: 1 };
+    else if (url.pathname === '/health') body = { status: 'ok', version: '0.12.0', brand: 'SysTorch', product: 'jev-switch', api_revision: 1 };
     else {
       await route.fulfill({ status: 404, headers, contentType: 'application/json', body: JSON.stringify({ code: 'fixture_not_found', error: 'No synthetic fixture for this endpoint.' }) });
       return;
     }
-    await route.fulfill({ status: responseStatus, headers, contentType: 'application/json', body: JSON.stringify(body) });
+    await route.fulfill({ status: responseStatus, headers: responseHeaders, contentType: 'application/json', body: JSON.stringify(body) });
   });
 
   const pageErrors = [];
-  const apiResponses = [];
-  context.on('response', response => { if (response.url().includes('/v1/')) apiResponses.push(`${response.status()} ${new URL(response.url()).pathname}`); });
   page.on('pageerror', error => pageErrors.push(error.message));
   await page.goto(`${appUrl}/#/start`, { waitUntil: 'domcontentloaded' });
   await page.getByLabel('决策问题').waitFor({ state: 'visible' });
@@ -177,7 +276,27 @@ async function main() {
   await page.getByRole('heading', { name: '问题 A：先检查什么？' }).waitFor({ state: 'visible' });
   assert.equal(systemOneRequests.length, 1, 'queued questions must be sent in one provider request');
   assert.equal(Object.keys(systemOneRequests[0].questions).length, 2);
+  assert.deepEqual(systemOneRequests[0].question_order, Object.keys(systemOneRequests[0].questions));
   assert.equal(Object.values(systemOneRequests[0].questions)[0].type, 'choice');
+  await page.getByRole('button', { name: /路由轨迹/ }).last().click();
+  await page.locator('.decision-route-trace__attempt').filter({ hasText: 'typesafe' }).waitFor({ state: 'visible' });
+
+  const entrySelect = page.getByLabel('当前入口');
+  if (await entrySelect.inputValue() !== 'model:typesafe-ai/jev') {
+    const entryDetails = page.locator('.decision-chat-composer details').last();
+    if (!(await entryDetails.evaluate(element => element.open))) await entryDetails.locator('summary').click();
+    await entrySelect.selectOption('model:typesafe-ai/jev');
+  }
+  await page.getByLabel('决策问题').fill('合成失败路由轨迹：请显示失败与回退尝试。');
+  await page.getByLabel('候选方案 · 每行一个').fill('重试\n停止');
+  const failureResponse = page.waitForResponse(response => response.url().includes('/v1/systorch/systemone') && response.request().method() === 'POST');
+  await page.getByRole('button', { name: '提交决策' }).click();
+  const failedHttpResponse = await failureResponse;
+  assert.equal(failedHttpResponse.status(), 503);
+  await page.locator('.decision-response-message').filter({ hasText: 'http_503' }).locator('.decision-route-trace__toggle').click();
+  const failureMessage = page.locator('.decision-response-message').filter({ hasText: 'http_503' });
+  await failureMessage.locator('.decision-route-trace__attempt').filter({ hasText: 'vercel' }).waitFor({ state: 'visible' });
+  await page.locator('.decision-route-trace__attempt').filter({ hasText: 'HTTP 503' }).waitFor({ state: 'visible' });
   await page.getByRole('button', { name: /首屏图片输入体验/ }).waitFor({ state: 'visible' });
   await page.getByRole('button', { name: /首屏图片输入体验/ }).click();
   await page.getByText('现在适合推进吗？', { exact: true }).first().waitFor({ state: 'visible' });
@@ -194,7 +313,7 @@ async function main() {
     transcript: document.querySelector('[data-component="decision-session-message"]')?.textContent?.slice(0, 100) ?? null,
   }));
   assert(desktop.actionsBottom <= desktop.composerBottom && desktop.composerBottom <= desktop.height, 'desktop composer actions remain inside the composer and viewport');
-  await page.screenshot({ path: '.tmp/interactive-ui-20261029/start-desktop.png', animations: 'disabled' });
+  await page.screenshot({ path: screenshot('start-desktop.png'), animations: 'disabled' });
 
   const mobilePage = await context.newPage();
   await mobilePage.setViewportSize({ width: 390, height: 844 });
@@ -220,7 +339,7 @@ async function main() {
     open: document.querySelector('.decision-session-sidebar').classList.contains('is-open'),
     horizontalOverflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
   }));
-  await mobilePage.screenshot({ path: '.tmp/interactive-ui-20261029/start-mobile-drawer.png', animations: 'disabled' });
+  await mobilePage.screenshot({ path: screenshot('start-mobile-drawer.png'), animations: 'disabled' });
 
   const shortPage = await context.newPage();
   await shortPage.setViewportSize({ width: 360, height: 640 });
@@ -251,10 +370,10 @@ async function main() {
   assert.ok(shortLayout.composerBottom <= 640, 'short mobile composer remains inside the visible window');
   assert.ok(shortLayout.documentWidth <= shortLayout.viewportWidth, 'short mobile layout has no horizontal overflow');
   assert.ok(shortLayout.linkBottom <= shortLayout.composerTop, 'the newest reply action scrolls above the composer automatically');
-  await shortPage.screenshot({ path: '.tmp/interactive-ui-20261029/start-mobile-short-chat.png', animations: 'disabled' });
+  await shortPage.screenshot({ path: screenshot('start-mobile-short-chat.png'), animations: 'disabled' });
   await openDeskLink.click();
   await shortPage.getByRole('heading', { name: '决策台' }).waitFor({ state: 'visible' });
-  await shortPage.screenshot({ path: '.tmp/interactive-ui-20261029/start-mobile-short-window.png', animations: 'disabled' });
+  await shortPage.screenshot({ path: screenshot('start-mobile-short-window.png'), animations: 'disabled' });
 
   assert.equal(desktop.globalNavigation, 'none');
   assert.equal(desktop.sessionSidebar, 'grid');
@@ -269,7 +388,7 @@ async function main() {
   assert.equal(openDrawer.horizontalOverflow, false);
   assert.deepEqual(pageErrors, []);
 
-  console.log(JSON.stringify({ durableRequestCount: durableRequests.length, durableQuestionTypes: Object.values(durableRequests[0]?.questions ?? {}).map(question => question.type), answeredQuestionIds: Object.keys(answerRequests[0]?.observations ?? {}), uploadedAssetCount, systemOneRequestCount: systemOneRequests.length, desktop, mobile, openDrawer, shortLayout, pageErrors }, null, 2));
+  console.log(JSON.stringify({ durableRequestCount: durableRequests.length, durableQuestionTypes: Object.values(durableRequests[0]?.questions ?? {}).map(question => question.type), answeredQuestionIds: Object.keys(answerRequests[0]?.observations ?? {}), uploadedAssetCount, systemOneRequestCount: systemOneRequests.length, screenshotDirectory: outputDirectory, desktop, mobile, openDrawer, shortLayout, pageErrors }, null, 2));
 }
 
 main().catch(error => { console.error(error); process.exitCode = 1; }).finally(async () => { await browser?.close(); });

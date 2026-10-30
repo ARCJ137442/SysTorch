@@ -60,7 +60,7 @@ const STATUS_I18N_KEY = {
 /**
  * 双栏布局的核心面板 — 左侧 Input，右侧 Output
  * 极简风 — 顶部 tab 真双视图 Form / JSON（questionsJson 仍是唯一真值，
- * Form 视图由 QuestionFormEditor 双向同步写回），底部大黑色 CTA "Run Jev"
+ * Form 视图由 QuestionFormEditor 双向同步写回），底部主动作提交当前决策请求。
  */
 export function TestPanel({
   model,
@@ -144,7 +144,7 @@ export function TestPanel({
     }
   };
 
-  /* design/01 §8 快捷键：⌘/Ctrl+Enter = Run Jev（挂载期全局生效，
+  /* design/01 §8 快捷键：⌘/Ctrl+Enter = 提交决策请求（挂载期全局生效，
      含 textarea 焦点位 — 运行快捷键的标准位置；ref 取最新闭包防 stale） */
   const onRunRef = useRef(onRun);
   onRunRef.current = onRun;
@@ -331,7 +331,7 @@ export function TestPanel({
             fontSize: 'var(--text-sm)',
           }}
         >
-          {status === 'loading' ? t('tp.running') : 'Run Jev'}
+          {status === 'loading' ? t('tp.running') : t('tp.run')}
           {status !== 'loading' && <span aria-hidden>↗</span>}
         </button>
       </div>

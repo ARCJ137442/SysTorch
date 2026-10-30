@@ -6,9 +6,9 @@
 
 ---
 
-## 当前版本：SysTorch 0.11.0
+## 当前候选：SysTorch 0.12.0 预发布
 
-本文件保留历史 Docker/本地上游和运行时核验细节。新部署统一使用 SysTorch 镜像、systorch 容器名及 SYSTORCH_* 环境变量；JEV_* 与 JEV_SWITCH_* 只作为旧实例和脚本的兼容别名。公开 Windows/Android 预发布附件与升级边界见[发版手册](RELEASE.md)。
+本文件保留 Docker/本地上游、安装布局和历史运行时核验细节。新部署统一使用 SysTorch 显示名、systorch 容器名及 SYSTORCH_* 环境变量；旧数据库目录、服务组件、JEV_* 与 JEV_SWITCH_* 只作为升级兼容身份。当前公开 Windows/Android 预发布附件与升级边界见[发版手册](RELEASE.md)和[0.12.0 发布说明](releases/0.12.0.md)。本页带日期的进程、端口、文件名和截图只证明对应记录时点，不是当前发布包截图。
 
 SysTorch keeps Jev / System One as protocol names. Product UI, package, and deployment guidance use SysTorch. Legacy Android applicationId, Windows data directory, owner key, and historical environment names remain solely for in-place upgrade compatibility.
 ## 一、快速开始（单命令）
@@ -192,12 +192,12 @@ dist 路径由 `JEV_UI_DIST` 指定（镜像内 `/app/ui/dist`；本地默认 `u
 | 项 | 行为 |
 |---|---|
 | 主窗口 | 当前默认 900×560 逻辑像素，常规最小 760×480；首次显示前按当前显示器工作区、DPI 与标题栏调整并居中，小工作区会同步下调最小尺寸。先载壳内等待页；核对 `/health` 的服务身份、接口修订与版本后切入 `http://127.0.0.1:11435`，UI 由 daemon 同源托管。见[响应式验收](responsiveness-check-2026-09-24.md)。 |
-| Sidecar | 启动 spawn 打包进资源的 `jev-switch-daemon.exe`（= `rs` workspace 的 `jev-switch` bin，release 产物）；`JEV_SWITCH_CONFIG` 指向 `%APPDATA%\jev-switch\providers.toml`（**首启播种模板、已有不覆盖**，模板 = `src-tauri/src/default_providers.toml`，仅 `api_key_env` 示例值）；`JEV_UI_DIST` 指向打包的 `ui\dist`；**`JEV_SWITCH_MODE` 不设 = local** |
+| Sidecar | 启动 spawn 打包进资源的 `systorch-daemon.exe`；新安装默认配置为 `%USERPROFILE%\.systorch\providers.toml`，已有 `%USERPROFILE%\.jev-switch\providers.toml` 时继续读取原配置；新部署使用 `SYSTORCH_CONFIG`、`SYSTORCH_UI_DIST` 和 `SYSTORCH_MODE`，旧环境变量仅保留为兼容别名 |
 | 复用 | 若 11435 已有健康 daemon（手起/残留）→ 不重复 spawn，直接接入 |
 | 单实例 | `tauri-plugin-single-instance`：二次双击聚焦已有窗口 |
 | 托盘 | 左键显窗、右键菜单：显示主窗口 / 打开配置目录（explorer，自身单实例）/ 退出；**关窗 = 隐藏到托盘**，托盘退出才真退 |
 | 退出 | `RunEvent::Exit` 统一收尸：`taskkill /T`（请求级）→ 2s 兜底 `kill`（Windows 控制台无 SIGTERM，此即优雅终止上限） |
-| 图标 | `src-tauri/icons/icon.ico/.png` —— 黑底白 J 单色（System.Drawing 脚本生成 16–256 六档 ICO），无 emoji |
+| 图标 | `ui/src/brand/systorch.svg` 是火炬图形唯一母版；桌面、托盘、Windows 任务栏、Android launcher、最近任务和等待页从 SysTorch 资产派生，不使用旧 J 字标或 Tauri 默认模板图 |
 
 ### 9.2 构建（本机已验，Windows / x86_64-msvc）
 
@@ -206,12 +206,12 @@ dist 路径由 `JEV_UI_DIST` 指定（镜像内 `/app/ui/dist`；本地默认 `u
 .\scripts\build-windows-release.ps1
 
 # 也可指定便携目录；目标必须不存在
-.\scripts\build-windows-release.ps1 -PortableDestination "$env:TEMP\jev-switch-portable-build1"
+.\scripts\build-windows-release.ps1 -PortableDestination "$env:TEMP\systorch-portable-build1"
 ```
 
 前置：Rust（msvc）、Node、Tauri CLI（`cargo install tauri-cli`）、WebView2（NSIS 安装器自动引导下载）。脚本先构建 daemon 并更新 Tauri sidecar，再从同一组 daemon/UI 输入生成 MSI/NSIS 与文件夹 Portable；之后校验便携目录清单，构建嵌入相同 daemon 和完整 UI 的 Standalone EXE，并运行独立资源缓存测试。`src-tauri/binaries/*.exe`、`src-tauri/target/`、`src-tauri/gen/` 已 gitignore。
 
-产物（2026-09-23 实测）：
+历史 v0.1.0 产物快照（2026-09-23 实测；名称只证明该次构建）：
 
 | 产物 | 路径 | 大小 |
 |---|---|---|
@@ -219,21 +219,21 @@ dist 路径由 `JEV_UI_DIST` 指定（镜像内 `/app/ui/dist`；本地默认 `u
 | MSI 安装包 | `src-tauri/target/release/bundle/msi/jev-switch_0.1.0_x64_en-US.msi` | 4,927,488 B（≈4.7 MB） |
 | 历史便携布局（2026-09-23） | `src-tauri/target/release/`（`jev-switch.exe` + `jev-switch-daemon.exe` + `ui\dist\` 同目录） | — |
 
-安装布局（NSIS/MSI 一致，实测解包确认）：`$INSTDIR\` 平铺 `jev-switch.exe`、`jev-switch-daemon.exe`、`ui\dist\…`——壳的 sidecar/UI 路径解析器按此多候选探测（打包 + dev 双布局）。
+历史 v0.1.0 安装布局（NSIS/MSI 一致，实测解包确认）：`$INSTDIR\` 平铺 `jev-switch.exe`、`jev-switch-daemon.exe`、`ui\dist\…`。此为旧包取证，不是 SysTorch 0.12.0 文件名。
 
 2026-09-26 起，便携验收目录由 `scripts/build-windows-release.ps1` 从同次 MSI/NSIS 构建输入组装，具体路径与 SHA-256 写在每份 `build-manifest.json`；发布流水线另将目录压为 Windows x64 ZIP。最新执行与哈希见[总计划](design/ENDPOINT-GATEWAY-ALIGNMENT-PLAN.md)及[发版手册](RELEASE.md)。
 
 ### 9.3 实测证据（双击开箱门禁，2026-09-23）
 
-当前面向人的启动契约是：双击完整桌面壳（开始菜单快捷方式，或便携目录中的 `jev-switch.exe`），由壳在前台呈现 UI，并按同批资源身份检查/启动配套 daemon。用户不需要先手工启动 daemon，也不应把 daemon 当作日常入口。当前便携版仍是文件夹运行时；“双击一个文件”不等于“单文件 Standalone”。单文件版只有在资源嵌入/版本化释放、数据目录、升级、缓存损坏和安全验证全部通过后才能发布。
+当前面向人的启动契约是：双击 SysTorch Standalone EXE，或在文件夹式便携目录中双击 `systorch.exe`，由壳在前台呈现 UI 并检查/启动配套 daemon。用户不需要手工启动 daemon，也不应把 daemon 当作日常入口。GitHub Release 当前附带的单文件名为 `SysTorch-0.12.0-windows-x64.exe`；文件夹式 Portable 仍需保留其相邻 daemon 与 UI 资源。
 
 ### 9.3.1 单文件 Standalone EXE
 
-Standalone 是单独编译的 Tauri 应用：daemon 与 `ui/dist` 的每个文件在编译时嵌入 EXE，不依赖同目录资源，也不需要用户解压。启动时在 `%LOCALAPPDATA%\Jev-Switch\runtime\<version>\<sha256>` 校验已有缓存；缺失或字节不符时先释放到 staging，再切换到目标内容指纹目录。WebView UI URL 带包版本与内嵌 index 指纹，阻止 WebView2 跨版本复用旧索引页；单实例锁按 SemVer 兼容范围分组，0.5.0 不会被 0.4.x 托盘进程接管。daemon 仍由当前壳启动并在壳完全退出时回收。
+Standalone 是单独编译的 Tauri 应用：daemon 与 `ui/dist` 资源在编译时嵌入 EXE，不依赖同目录资源，也不需要用户解压。启动时校验当前包的缓存；缺失或字节不符时先释放到 staging，再切换到内容指纹目录。WebView UI URL 带包版本与内嵌 index 指纹，避免跨版本复用旧索引页。应用显示名为 SysTorch；Windows Tauri identifier、已有 WebView 存储和用户数据目录按迁移兼容约定保留。daemon 由当前壳启动并在壳完全退出时回收。
 
-配置、SQLite 与调用历史继续保存在 `%APPDATA%\jev-switch`，与可执行文件位置和资源缓存分开。独立版不从网络下载或执行 daemon；校验和释放失败时保留等待页错误，不回退要求用户手动启动 daemon。资源缓存不包含配置、密钥或数据库；清理运行缓存不会删除 AppData 用户数据。
+配置、SQLite 与调用历史保存在配置文件旁的 SysTorch 数据目录；若首次启动时检测到旧 `%USERPROFILE%\.jev-switch` 配置，则继续使用其旧目录和数据，以保留原有任务与凭据。独立版不从网络下载或执行 daemon；校验和释放失败时保留等待页错误。资源缓存不包含配置、密钥或数据库。
 
-构建入口仍是 `scripts/build-windows-release.ps1`。产物名为 `jev-switch-standalone-<version>-windows-x64.exe`；现有 `jev-switch-portable-<version>-windows-x64.zip` 仍需解压，不能称为单文件版。Standalone 已从 v0.2.0 起随 Release 发布；其历史冷启动/缓存证据按具体 hash 见 Release verification，不代表所有托盘、升级或多硬件生命周期边界均已验收。v0.4.0 CLI 独立产物构建说明见 [CLI.md](CLI.md)；本版本尚未经人工实测。
+本地 Tauri 打包入口为 `scripts/build-windows-release.ps1`，会生成安装器、目录式便携包与本地 `systorch-standalone-<version>-windows-x64.exe`。GitHub Release workflow 另将受版本与哈希校验的单文件 EXE 命名为 `SysTorch-<version>-windows-x64.exe`，并只公开该 EXE 和 Android arm64 APK；以[发版手册](RELEASE.md)为发布附件权威。Standalone 已从 v0.2.0 起随 Release 发布；历史冷启动/缓存证据按具体 hash 记录，不代表所有托盘、升级或多硬件生命周期边界均已验收。CLI 构建说明见 [CLI.md](CLI.md)；0.12.0 尚未经维护者人工实测。
 
 | 断言 | 证据 |
 |---|---|
@@ -394,13 +394,13 @@ curl http://127.0.0.1:11435/v1/admin/status
 **新增端点备案**（contracts/05 §1 端点表之外，同 §五 login 处理方式——契约文件不改，本节即备案）：
 `PUT /v1/admin/mode`、`PUT|GET /v1/admin/listen`、`PUT /v1/admin/password`、`GET /v1/admin/status`。错误体一律 §3 三键形状（listen 失败 = 400 解析 / 500 try-bind 失败 / 503 无 supervisor）。
 
-## 11. 上游 HTTP 451 与代理出口
+## 11. 历史故障记录：上游 HTTP 451 与代理出口（v0.10.2/v0.10.3）
 
 上游返回地区不可用时，先检查 daemon 的出口路径。浏览器使用系统代理不等于后台 Rust 客户端也使用代理，`CF-RAY` 机房位置也不代表客户端 IP 所在地区。先用提供商的模型目录探测验证网络与鉴权，不必重复发送付费模型请求。
 
 v0.10.2 没有编译 reqwest 的 Windows `system-proxy` feature。v0.10.3 源码恢复 Windows 系统代理读取，并让回环服务的调用、探测和 readiness 始终直连；构建与发行包验证状态见[0.10.3 核验](verification/v0.10.3-release-2026-10-12.md)。完整网络对照见[TypeSafe 系统代理调查](verification/typesafe-system-proxy-2026-10-12.md)。
 
-旧版可临时通过进程环境变量提供 HTTP 代理。在应用托盘中完整退出 Jev Switch，确认旧 daemon 已退出，再在同一 PowerShell 窗口中设置后启动 EXE：
+以下仅为旧版 v0.10.2 的临时排查方式。v0.10.3 起 Windows Rust 客户端已恢复系统代理读取；对更旧的测试包，可临时通过进程环境变量提供 HTTP 代理。在旧版应用托盘中完整退出应用并确认 daemon 已退出，再在同一 PowerShell 窗口中设置后启动旧 EXE：
 
 ```powershell
 # 端口请替换成自己的 HTTP/混合代理端口。
@@ -408,7 +408,7 @@ $env:HTTP_PROXY = 'http://127.0.0.1:7890'
 $env:HTTPS_PROXY = 'http://127.0.0.1:7890'
 $env:NO_PROXY = 'localhost,.localhost,127.0.0.0/8,::1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16'
 # 把占位符换成自己下载的 EXE 路径；这些设置只影响当前窗口及其新启动的子进程。
-& '<JEV_SWITCH_EXE>'
+& '<LEGACY_EXE_PATH>'
 ```
 
 重新打开仍在托盘的旧进程不会继承新变量。使用此方法前检查现有代理环境变量，按自己的网络策略保留原有绕过列表；不要把代理地址误填成提供商 API 地址或网关 API 地址。

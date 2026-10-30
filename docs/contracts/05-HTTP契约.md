@@ -9,7 +9,8 @@
 |---|---|---|
 | `GET` | `/health` | 存活 |
 | `GET` | `/v1/models` | 模型与能力 |
-| `POST` | `/v1/systemone` | Jev 决策 |
+| `POST` | `/v1/systorch/systemone` | canonical SysTorch 即时决策请求（TypeSafe core 的超集） |
+| `POST` | `/v1/systemone` | 旧 Jev/TypeSafe-compatible 即时决策请求，兼容入口 |
 | `GET` | `/v1/admin/providers` | 提供商列表（**密文密钥**） |
 | `PUT` | `/v1/admin/providers/{id}` | 写入单个提供商（含新密钥） |
 | `GET` | `/v1/admin/routes` | 模型路由 DAG |
@@ -33,7 +34,7 @@ Admin 仅绑 `127.0.0.1`；CORS 见 §5。
 
 ### `GET /v1/admin/events` 与 `GET /v1/events/my`
 
-这两个端点是 Agent 与人工控制台共享的历史查询基础。默认 `view=entry`，每条记录代表一次入口父请求；`route_trace.attempts` 包含实际 provider 尝试。使用 `view=provider` 并传 `provider_id` 时，服务端只返回该提供商曾参与的父请求，调用方再按 `route_trace.attempts` 回溯失败、重试、成功和耗时。返回仍是一条父记录，不复制入口日志。
+这两个端点是 Agent 与人工控制台共享的历史查询基础。默认 `view=entry`，每条记录代表一次入口父请求；`route_trace.attempts` 包含实际 provider 尝试。使用 `view=provider` 并传 `provider_id` 时，服务端只返回该提供商曾参与的父请求，调用方再按 `route_trace.attempts` 回溯失败、重试、成功和耗时。传 `request_id` 可精确取回单个父请求的轨迹，供会话失败回复按需展开。返回仍是一条父记录，不复制入口日志。
 
 支持的查询参数：
 
@@ -64,7 +65,7 @@ Authorization: Bearer <admin-token>
 {
   "brand": "SysTorch",
   "status": "ok",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "product": "jev-switch",
   "api_revision": 1,
   "build_revision": null
@@ -98,6 +99,30 @@ Authorization: Bearer <admin-token>
 ### `POST /v1/systemone`
 
 请求/响应 = 契约 `01-协议契约` 的 `JevRequest` / `JevResponse`。
+
+### `POST /v1/systorch/systemone`
+
+这是新客户端与「开始」工作面的 canonical SysTorch 即时调用接口。Rust 生成的
+`SysTorchRequest` 保留同一 `model/state/questions` 核心，并接受可选 `assets`、
+`extensions` 与 SysTorch 展示元数据：
+
+```json
+{
+  "model": "jev-quality",
+  "state": { "context": "共享背景" },
+  "questions": {
+    "publish": { "type": "choice", "instructions": "是否发布？", "criteria": { "yes": "发布", "no": "暂缓" } },
+    "risk": { "type": "score", "instructions": "风险等级？", "criteria": ["低", "中", "高"] }
+  },
+  "question_order": ["risk", "publish"]
+}
+```
+
+`question_order` 若提供，必须是 `questions` 中所有 ID 的完整、无重复排列；否则返回本地 `400`，不发送上游。它只控制 SysTorch 界面的题目顺序，答案仍按 question ID 返回。daemon 在 provider adapter 边界消费该字段，因此 TypeSafe 投影不会把展示元数据发给模型。`assets` 按契约 09 转换；不支持且不能等价投影的格式由能力路由跳过或返回格式错误，草稿由调用方保留。
+
+`/v1/systorch/systemone` 与旧 `/v1/systemone` 使用相同调用 Token 鉴权、DAG、provider attempts、调用历史和 `JevResponse` 答案协议。canonical 路径返回 `x-systorch-request-id`，并同时保留 `x-jev-request-id` 作为兼容 header；两者均对允许的 WebView origin 暴露。`/v1` 调用响应统一带 `Cache-Control: no-store`。旧 `/v1/systemone` 保持原有 Jev/TypeSafe-compatible wire shape，Playground 等旧客户端可继续使用。
+
+canonical SysTorch 请求在终止失败时还会在统一错误体中返回可选 `route_trace`，以便调用方即时呈现真实尝试。错误后的历史查询仍以已返回的 request ID 为准；会话持久化只保存 request ID 和失败摘要，不复制另一份轨迹。旧 `/v1/systemone` 错误体不增加该字段，保持兼容。
 
 ### `GET /v1/admin/providers`
 
@@ -246,6 +271,8 @@ daemon 将 provider 的完整 `POST /v1/systemone` 地址解析为同 host/base 
 ```json
 { "error": "…", "upstream": "vercel", "retryable": true }
 ```
+
+canonical `/v1/systorch/systemone` 的同一错误体可额外包含安全的 `route_trace`；兼容 `/v1/systemone` 不返回该扩展。轨迹包括实际上游尝试、状态、耗时与重试决策，不包含请求正文、答案、密钥或原始上游响应。
 
 | 情况 | HTTP |
 |---|---|

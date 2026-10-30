@@ -1,10 +1,10 @@
 # SysTorch CLI
 
-**状态：** v0.4.0 CLI Phase 1（尚未经人工实测）<br>
+**状态：** CLI Phase 1 已在 v0.6.0 发布；0.12.0 Release CI 会编译 CLI，但公开附件仍仅为 Windows EXE 和 Android APK。CLI 当前版本未单独进行人工验收。<br>
 **作者：** GPT-6 Luna xhigh（OpenAI Codex）<br>
 **AI 披露：** 本文由 AI 协助整理；命令边界、鉴权和发布范围以项目维护者确认的 HTTP 契约为准。
 
-SysTorch CLI 是 daemon HTTP API 的轻量客户端，适合 Termux、SSH、脚本和没有浏览器的调试环境。它不复制路由内核、SQLite 或 provider key 管理；Web 控制台和 Tauri 仍是完整交互主战场。TUI 尚未包含在本阶段。源码保留 Jev Switch CLI 命令别名，旧脚本仍使用同一命令解析器；历史发行附件保持其原名。
+SysTorch CLI 是 daemon HTTP API 的轻量客户端，适合 Termux、SSH、脚本和没有浏览器的调试环境。它不复制路由内核、SQLite 或 provider key 管理；Web 控制台和 Tauri 仍是完整交互主战场。TUI 尚未包含在本阶段。源码保留 `jev-switch-cli` 旧命令别名供兼容，旧脚本仍使用同一命令解析器；历史发行附件保持其原名。
 
 ## 安装
 

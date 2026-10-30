@@ -1,12 +1,12 @@
 # SysTorch 资产与多模态契约（当前实现子集）
 
-> 状态：2026-10-29 本地工作树实现中；本文件只冻结已实现的资产传输、TypeSafe 图片投影与持久多题请求边界，不代表发行版能力或所有音视频 adapter 已就绪。持久人工请求已接受 TypeSafe-compatible `model/state/questions` 核心；即时模型路径的统一 SysTorch 超集入口仍在迭代。
+> 状态：SysTorch canonical 即时请求入口 `POST /v1/systorch/systemone` 已实现；旧 `/v1/systemone` 保留为 Jev/TypeSafe-compatible 兼容入口。本文件只冻结当前已实现的资产传输、TypeSafe 图片投影与持久多题请求边界，不代表所有音视频 adapter 或 Android 真机路径均已就绪。
 
 ## 1. 设计原则
 
 - SysTorch 维护自己的多模态资产表；TypeSafe `model/state/questions/assets` 是兼容投影。图片、音频、视频、文件选择属于输入事实，不能由当前入口提前拦截或因转换失败而静默丢失。
 - 资产以稳定引用键关联到 `state` 或某题的 `instructions`。共享背景和单题范围因此可分别呈现；引用键必须作为完整字符串出现，不把“包含同一子串”当成已引用。
-- 即时 `/v1/systemone` API 可用 `data_base64` 发送小文件，或用 `asset_id` 引用上传资产。两个来源字段必须且只能出现一个。ID 是本机引用，永远不是 URL 或路径。持久人工任务与可恢复的「开始」会话一律先上传，以便加密 payload 只存 descriptor 与可授权引用，不把 bytes/base64 塞入会话 JSON。
+- canonical 即时 SysTorch `/v1/systorch/systemone` 保留 TypeSafe-compatible `model/state/questions` 核心，并可增加 `question_order`、`assets` 与 `extensions`。小文件可用 `data_base64`，大文件用加密上传后的 `asset_id`；同一 descriptor 两者必须且只能出现一个。ID 是本机引用，永远不是 URL 或路径。TypeSafe adapter 消费 `question_order` 这类只用于呈现的 SysTorch 元数据，再按能力投影 core 和媒体；持久任务与可恢复聊天一律先上传，不把 bytes/base64 塞入加密会话 JSON。
 - Adapter 按实际声明的媒体能力筛选路由候选。无能力的候选不实发、不计失败或辉光；全部候选不兼容时返回可读格式错误并保留调用方原始草稿。
 - 不可等价投影时明确报错，不能删字段、重编码成猜测格式或拆成多个上游请求。
 
@@ -40,7 +40,7 @@
 }
 ```
 
-输入中的引用键放在 SysTorch 命名空间下，原有 state/instructions 内容保持原值：
+输入中的引用键放在 SysTorch 命名空间下，原有 state/instructions 内容保持原值；canonical SysTorch 即时请求可额外携带 `question_order`，但它不改变模型问题与答案的 ID 映射：
 
 ```json
 {
@@ -61,7 +61,7 @@
 }
 ```
 
-持久人工 `/v1/systorch/decisions` 接受 canonical `model/state/questions` 加任务字段，媒体引用与题型 schema 在同一加密任务中保存；旧 M1 单题/Choice body 兼容读取、提交和幂等重试。普通模型对话经 `/v1/systorch/sessions/{id}/messages` 原子追加，request 保存同形的 Jev request 与 `question_order`，response 保存完整 JevResponse；媒体与会话在同一 SQLite 事务关联。具体 CAS、权限和保留规则见[契约 10](10-SysTorch开始会话契约.md)。直接即时 Jev `/v1/systemone` 使用 Jev `model/state/questions` 加可选 `assets` 与 `extensions`。TypeSafe adapter 的 `request_payload` 把持久投影保留的 Jev 子集转成上游协议，并从官方路径剔除不兼容扩展。
+持久人工 `/v1/systorch/decisions` 接受 canonical `model/state/questions` 加任务字段，媒体引用与题型 schema 在同一加密任务中保存；旧 M1 单题/Choice body 兼容读取、提交和幂等重试。普通模型对话经 `/v1/systorch/sessions/{id}/messages` 原子追加，request 保存 TypeSafe-compatible Jev core 与 `question_order`，response 保存完整 JevResponse；媒体与会话在同一 SQLite 事务关联。具体 CAS、权限和保留规则见[契约 10](10-SysTorch开始会话契约.md)。canonical `/v1/systorch/systemone` 将 SysTorchRequest 无损投影到内部 Jev core；旧 `/v1/systemone` wire shape 保持可用。TypeSafe adapter 的 `request_payload` 再把媒体 asset ID 转为官方格式，并从官方路径剔除展示顺序与不兼容扩展。
 
 ## 3. 大文件上传与授权读取
 

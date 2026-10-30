@@ -4,7 +4,7 @@
 //!   **非 loopback peer → 403**（`local mode: loopback only`，三键错误体 ——
 //!   显式 bind=0.0.0.0 场景的应用层兜底；非显式默认绑 127.0.0.1 内核级已挡）。
 //! - **cloud**：
-//!   - `/v1/systemone`、`/v1/models` → `Authorization: Bearer <调用 token>`。
+//!   - `/v1/systemone`、`/v1/systorch/systemone`、`/v1/models` → `Authorization: Bearer <调用 token>`。
 //!     旧配置 `auth_tokens` / env `JEV_AUTH_TOKENS` 首次导入为哈希存储的只读托管 Token；
 //!     后续角色、启停与撤销以 SQLite Token 清单为准。缺失/错值 → **401** 统一错误体
 //!     `{error, upstream:null, retryable:false}`（经 redact，contracts/05 §3 形状）。
@@ -271,7 +271,7 @@ pub(crate) fn has_valid_session(state: &AppState, token: Option<&str>) -> bool {
 中间件（local 直通 + peer 兜底 / cloud 校验 —— 每请求读锁取 mode）
 ══════════════════════════════════════════════════════════════════ */
 
-/// `/v1/systemone`、`/v1/models` 的调用 token 门。
+/// `/v1/systemone`、`/v1/systorch/systemone`、`/v1/models` 的调用 token 门。
 pub async fn require_call_token(
     State(state): State<AppState>,
     mut req: Request,
@@ -617,6 +617,23 @@ enabled = true
         .to_string();
         let (s, b) = send(app.clone(), "POST", "/v1/systemone", Some(body), None).await;
         assert_eq!(s, 404, "local systemone 零鉴权干扰（404 而非 401）: {b}");
+        let (s, b) = send(
+            app.clone(),
+            "POST",
+            "/v1/systorch/systemone",
+            Some(
+                serde_json::json!({
+                    "model": "ghost-model", "state": "t",
+                    "questions": {"q": {"type": "noul", "instructions": "x",
+                        "criteria": {"true": "y", "false": "n"}}},
+                    "question_order": ["q"]
+                })
+                .to_string(),
+            ),
+            None,
+        )
+        .await;
+        assert_eq!(s, 404, "local SysTorch API 零鉴权干扰（404 而非 401）: {b}");
         // health 照旧
         let (s, _) = send(app, "GET", "/health", None, None).await;
         assert_eq!(s, 200);
@@ -654,11 +671,39 @@ enabled = true
                 "criteria": {"true": "y", "false": "n"}}}
         })
         .to_string();
-        let (s, b) = send(app.clone(), "POST", "/v1/systemone", Some(body), None).await;
+        let (s, b) = send(
+            app.clone(),
+            "POST",
+            "/v1/systemone",
+            Some(body.clone()),
+            None,
+        )
+        .await;
         assert_eq!(s, 401, "cloud systemone 无 token 必须 401: {b}");
+        let (s, b) = send(
+            app.clone(),
+            "POST",
+            "/v1/systorch/systemone",
+            Some(body.clone()),
+            None,
+        )
+        .await;
+        assert_eq!(s, 401, "cloud SysTorch API 无 token 必须 401: {b}");
         // 正确 token → 200
         let (s, b) = send(app.clone(), "GET", "/v1/models", None, Some(FAKE_TOK)).await;
         assert_eq!(s, 200, "正确调用 token → 200: {b}");
+        let (s, b) = send(
+            app.clone(),
+            "POST",
+            "/v1/systorch/systemone",
+            Some(body),
+            Some(FAKE_TOK),
+        )
+        .await;
+        assert_eq!(
+            s, 404,
+            "正确调用 token 应通过 SysTorch API 鉴权并到达路由: {b}"
+        );
         // health 放行（无 token）
         let (s, b) = send(app, "GET", "/health", None, None).await;
         assert_eq!(s, 200, "health 探活放行: {b}");

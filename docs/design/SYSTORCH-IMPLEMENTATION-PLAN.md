@@ -1,8 +1,8 @@
 # SysTorch「开始」与决策工作台实施计划
 
-> 状态：2026-10-30。M1 持久人工作答、普通决策会话、多题消息与资产能力已进入当前源码；当前准备发布 0.11.0 预发布版。本文是设计与实现记录，不替代 CHANGELOG 或候选核验。当前提交、推送和发布授权以维护者本轮明确指令为准；继续留在现有工作树。
+> 状态：2026-10-30。M1 持久人工作答、普通决策会话、多题消息与资产能力已进入当前源码；当前准备发布 0.12.0 预发布版，加入 canonical SysTorch 即时请求入口与可追溯路由轨迹。本文是设计与实现记录，不替代 CHANGELOG 或候选核验；本轮继续在现有工作树推进。
 >
-> 版本边界：本文 S5 的 .3 EXE/APK 与 Android AVD 记录是 2026-10-30 的 M1 本地预览证据，不是 0.11.0 Release 资产。当前 Release 的版本身份和 CI 结果只记录在 0.11.0 核验文档。
+> 版本边界：S5 的 `.3` EXE/APK 和 AVD 记录、以及 0.11.0 Release 证据均只属于其标记版本；均不能证明 0.12.0 包或真机已验收。当前 Release 身份和 CI 结果只记录在 0.12.0 核验文档。
 
 ## 1. 目标与范围
 
@@ -47,12 +47,12 @@
 |---|---|---|
 | 标准聊天式开始页与三角色 shell | 已有首轮 React 外壳、空态、消息流与响应式入口 | 完整视觉回归、键鼠/触屏交互和七页/既有 shell 回归 |
 | 会话索引与会话抽屉 | 人工任务与普通模型会话共用抽屉；会话正文在 daemon AEAD 密文保存，列表只返回授权的解密摘要；聊天置顶/归档/未读/删除写入服务端，任务视图偏好保留在本地索引 | 普通消息复制/变体、归档设置页与无障碍继续打磨；会话正文不进入浏览器持久存储 |
-| 调用方即时请求 | `/v1/systemone` 仍是推理入口；成功回复、失败结果、问题序与调用 trace 现在用独立 `/v1/systorch/sessions` 原子追加到加密聊天，不与 call_logs 或人工任务混表 | Agent 创建/继续普通会话的公开示例与服务端查询策略可继续扩展；不改变上游格式和路由调用语义 |
+| 调用方即时请求 | canonical `/v1/systorch/systemone` 使用 Rust 生成的 SysTorchRequest，保留 TypeSafe core 并携带可校验的 `question_order`；`/v1/systemone` 保留旧 Jev/TypeSafe-compatible wire。成功回复与失败摘要、题序和 request ID 原子追加到加密会话；provider attempts 留在既有 call history，以 request ID 按需读取 | 补充公开 Agent 示例与服务端查询策略；继续验证 request/response/attempt 的关联，不改变 provider adapter 与 DAG 路由语义 |
 | 决策方持久任务 | 已支持加密任务列表、单题/多题、四种题型的作答与拒答/附条件观察；兼容 canonical `model/state/questions` 和旧 M1 envelope | 完成旧密文任务读取、版本并发和权限/失败边界的 Windows 真包复测；最终 API/Agent 描述需继续收口 |
 | 多问题与问题类型 | 一条消息可一次提交 Noul/Choice/Score/Box 混合问题；问题 ID、队列顺序和答案映射保留，答案原子批量保存并投影为 Jev `answers` | 完成稳定请求写入契约、全部题型 UI/API 多轮回归；Box 框选当前为归一化坐标输入，后续可优化图片上的直接框选 |
 | 图片、音频、视频 | SysTorch 资产描述符、加密上传/任务绑定、共享/单题引用、React 文件/粘贴/相机入口、TypeSafe 图片投影和 Box 图片关联已落地 | 官方 TypeSafe 只投影 PNG/JPEG image；本地音视频只对显式兼容 endpoint 透传；Android 原生 file chooser/camera 和更多 adapter 实测待验 |
 | route glow / Dagre / provider lifecycle | 既有生产功能保留 | 本轮回归证明无 UI 路由切换重复辉光、配置/生命周期能力未退化 |
-| Windows/Android 包 | `.3` 已从当前工作树构建；Windows native EXE smoke 覆盖人工作答、两轮普通模型聊天恢复，Android APK 通过同签名覆盖安装，在 `Medium_Phone_API_35` AVD `/health` 返回 build `.3`、首页 backend ok | 实体 Android 设备、相机/相册/权限拒绝与后台生命周期仍待人工真机验收；Windows EXE 未做 Authenticode 签名 |
+| Windows/Android 包 | 0.11.0 Windows Standalone 与稳定签名 arm64 APK 已发布；当前工作树的 canonical SysTorch API 与 Windows daemon HTTP/SQLite + Chromium 合成 E2E 曾通过 28 项检查 | 0.12.0 尚未由当前源码重新打包；实体 Android、相机/相册/权限拒绝和后台生命周期也无 0.12.0 设备证据，不能把旧包或旧 AVD 记录外推到新版本 |
 
 ## 4. 分阶段推进
 
@@ -82,6 +82,7 @@
 ### S2 · SysTorch 多题消息协议与存储
 
 - [x] 持久任务接受 TypeSafe-compatible `model/state/questions` 核心与 SysTorch `entry/idempotency_key/ttl_seconds/question_order/assets/extensions` 加法字段；旧 `question/context/choices` 仍作为受校验的兼容输入。
+- [x] 即时调用新增 canonical SysTorchRequest `POST /v1/systorch/systemone`；question_order 必须是 question IDs 的完整无重复排列，provider adapter 只收到 TypeSafe-compatible core；旧 `/v1/systemone` 保持兼容。
 - [x] 一任务多稳定 question ID；UI 一次提交整个问题集，回答用 `observations` 原子批量写入，任务完整性由全部题目都有观察来判断。
 - [x] 复用现有 SQLite 事务与加密任务载荷，未新增迁移表；旧 M1 Task 缺少 `questions/order/observations` 时安全默认值可读。
 - [x] 幂等键基于规范化 TypeSafe 子集与任务字段；会读取旧加密任务以识别跨旧 envelope/新 canonical body 的同语义重试。
@@ -103,8 +104,8 @@
 
 ### S4 · 消息聚合、路由追踪与桌面/移动打磨
 
-- [ ] 成功的每个决策作为主回复；失败分支附在相关回复下，按需展开。每个答案通过 question ID 回链到问题。
-- [ ] 开始页展示当前入口和本次路径的轻量注解；详情可以追到 route graph、provider attempts、状态码和调用记录。
+- [x] 成功决策保留为主回复；回复下按需展开结构化 provider attempts，答案继续通过 question ID 回链到问题。
+- [x] canonical 失败回复保留请求 ID；展开时按 caller/admin 权限从现有调用历史读取 route trace。会话失败消息结构未改变，仍可由旧客户端读取；响应原始元数据与 route trace 分开展示。
 - [ ] 一条父请求产生多条上游 attempt 时，历史与统计分别遵循入口聚合、提供商平铺语义。
 - [ ] 恢复/打开聊天不重播旧辉光；仅真实新 route event 驱动视觉反馈。保留 Dagre、长边避让和 pointer interaction。
 - [ ] 键盘、鼠标、触屏、多行输入、IME、长按上下文、窗口宽窄、移动端状态栏与输入法顶起均覆盖；避免横向滚动条和底部遮挡。
@@ -131,6 +132,6 @@
 
 阶段只有在代码、自动测试、预览或设备证据和文档四者一致时才可标记完成。每个结果必须写清 commit/build identity（本轮未提交时写工作树状态）、平台/视口、数据是否合成、实际/模拟 provider、通过项、未覆盖项。自动测试不能替代 Android 真机记录；预览页面不能被称为 production UI。
 
-当前状态：S1 的标准聊天外壳、多题队列、决策台和普通模型聊天持久化已实现；request/response/failure 为独立加密会话消息，附件通过同一 SQLite 写事务绑定父会话，UI 可以重开和继续会话。S2 实现 canonical `model/state/questions` 持久任务、M1 旧格式兼容、混合 Noul/Choice/Score/Box 和严格映射；workspace 默认/`ts-rs`、UI、Clippy、Windows native isolated E2E、Edge/Playwright 多视口和 Android AVD 冒烟均已通过。S3 加密资产存储、会话/任务附件读取授权、TypeSafe 图片/Box wire projection 和显式 local multimodal forwarding 已实现；隔离 TypeSafe 官方路径已有一次真实合成 PNG 请求成功证据。音频/视频没有官方 TypeSafe 原生投影；实体 Android 的文件/相机/权限路径仍无设备证据。真实上游请求、桌面/Android 包 smoke 和浏览器合成验证分开记录；浏览器合成回归拦截全部 `/v1/*`。
+当前状态：S1 的标准聊天外壳、多题队列、决策台和普通模型聊天持久化已实现；request/response/failure 为独立加密会话消息，附件通过同一 SQLite 写事务绑定父会话，UI 可以重开和继续会话。canonical SysTorchRequest `/v1/systorch/systemone` 已与旧 `/v1/systemone` 分离；题序精确校验、同一 v1 Call-token 鉴权、no-store、双 request-ID header 与完整 TypeSafe core projection 已有 daemon 单测/HTTP 集成/Playwright 合成覆盖。Windows daemon 当前工作树端到端回归覆盖实际进程、SQLite 重启、四题答案、媒体授权和桌面/触屏浏览器，28 项通过、`realModelCalls=0`。S2 实现 canonical `model/state/questions` 持久任务、M1 旧格式兼容、混合 Noul/Choice/Score/Box 和严格映射；workspace 默认/`ts-rs`、UI、Clippy 与构建通过。S3 加密资产存储、会话/任务附件读取授权、TypeSafe 图片/Box wire projection 和显式 local multimodal forwarding 已实现；隔离 TypeSafe 官方路径已有一次真实合成 PNG 请求成功证据。音频/视频没有官方 TypeSafe 原生投影；实体 Android 的文件/相机/权限路径仍无当前源码设备证据。真实上游请求、Windows daemon E2E、Windows/Android 包 smoke 和浏览器合成验证分开记录；浏览器合成回归拦截全部 `/v1/*`。当前证据见[请求超集核验](../verification/systorch-request-superset-2026-10-30.md)。
 
 生产页面合成回归：运行本地 Vite（仅绑定 `127.0.0.1`），再执行 `node scripts/verify-systorch-start-ui.cjs http://127.0.0.1:5175`。Playwright 将拦截所有 `/v1/*` 并使用合成 fixture，验证单条持久多题请求、批量回答、未读点、桌面/390px 触屏抽屉和无横向溢出；它不连接真实 daemon、模型或上游。Playwright 不作为 npm 依赖，需由开发环境提供模块解析路径。
