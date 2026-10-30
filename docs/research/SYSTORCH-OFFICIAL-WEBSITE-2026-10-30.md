@@ -4,20 +4,20 @@
 
 ## 页面任务
 
-- **受众**：接入 Jev / System One 做判断的开发者、Agent / Harness 作者、决策工作流操作者，以及想从 UI 直接试用的人。
-- **定位**：面向人、模型与 Agent 的结构化决策运行时；把 typed decision 从调用、路由与必要的人工作答一路带回原调用方。
+- **受众**：接入结构化决策服务的开发者、Agent / Harness 作者、决策工作流操作者，以及想从 UI 直接试用的人。
+- **定位**：面向人、模型与 Agent 的结构化决策运行时，不把产品品牌绑定到某一模型或供应商；把 typed decision 从调用、路由与必要的人工作答一路带回原调用方。System One-compatible 是当前协议兼容边界，不是产品品牌。
 - **用户承诺**：提交情境与明确问题；看得到请求走过的路径；若任务需要人判断，任务可以持久等待，并把类型明确的结果交回原调用方。
 - **主要行动**：了解工作流、查看产品界面预览、下载当前发行版或打开文档。
 - **信任摩擦**：预发布未经维护者真机验收；Windows EXE 未作 Authenticode 签名；上游题型与媒体能力不同；合成预览不证明真实模型质量。
 
 ## 生态位判断
 
-SysTorch 专注 Jev / System One typed decisions，不扩成通用 LLM 聊天入口或模型推理 runtime。最重要的对象不是通用 prompt 或模型目录，而是一条从调用方发出、可经 DAG 路由、可追查 provider attempts、必要时可持久交给人，再回到同一调用方的决策请求。
+SysTorch 的品牌定位是结构化决策运行时，不绑定 Jev 或其他单一模型品牌，也不扩成通用 LLM 聊天入口或模型推理 runtime。当前 API 使用 System One-compatible 的 typed request/answer 形状作为互操作协议。最重要的对象不是通用 prompt 或模型目录，而是一条从调用方发出、可经 DAG 路由、可追查 provider attempts、必要时可持久交给人，再回到同一调用方的决策请求。
 
 竞品研究确认了明显的能力交叠，因此官网**不**宣称 SysTorch 独占 Jev/System One 路由，也不宣称竞品缺少某一功能：
 
 - Magpie 是面向 Agent 的通用模型网关，支持多 provider、路由组，也支持 System One 决策模型。SysTorch 的表达重点是把 typed request、尝试轨迹和持久的人工作答作为统一工作流。
-- Bud Decision Studio 面向本地 Jev-like 决策模型，公开材料覆盖本地运行、评估、模板、训练、服务和 API 集成。SysTorch 不重新实现权重与推理引擎，而连接兼容服务并管理请求生命周期。
+- Bud Decision Studio 面向本地决策模型，公开材料覆盖本地运行、评估、模板、训练、服务和 API 集成。SysTorch 不重新实现权重与推理引擎，而连接兼容服务并管理请求生命周期。
 - System One 官方项目提供 Agent SDK 与托管决策 API。SysTorch 位于运行工作层：连接决策服务、协调路径、呈现真实尝试，并让人工回答可返回调用方。
 
 官网用“可以互补的不同工作层”说明边界，不对竞品打分或作未验证的优劣断言；不把“其他工具不会做”当产品卖点。
@@ -31,6 +31,7 @@ SysTorch 专注 Jev / System One typed decisions，不扩成通用 LLM 聊天入
 - **布局**：宽屏将产品叙述与请求轨迹并列；窄屏重排为标题与行动在前、轨迹示意在后，不隐藏下载、导航或安全说明。
 - **交互**：中英文切换、明暗主题、窄屏导航与代码复制都支持键盘。唯一签名动效是路由路径轻微发光，`prefers-reduced-motion` 下呈现静态完整结果。
 - **发行信息**：从 Pages 工作流生成的 `site/releases/latest.json` 读取当前 tag、预发布状态和真实附件；元数据不可用时回退到 GitHub Releases，不编造版本或文件名。
+- **品牌与协议分层**：首屏和分享图只表达 SysTorch 的结构化决策运行层，不把 Jev 或单一模型名作为产品定位。具体兼容协议、adapter 与示例模型 ID 放在技术区，并标明模型 ID 由用户配置。
 
 ## 页面顺序
 
@@ -38,7 +39,7 @@ SysTorch 专注 Jev / System One typed decisions，不扩成通用 LLM 聊天入
 2. “typed decision，而非通用续写”说明，展示 state、问题、类型化结果。
 3. 调用 → DAG 协调 → provider attempts → typed answer 的路径。
 4. 人工作答：提交、离开、人在决策台回答、原调用方取回。
-5. 生态定位：模型工作台、通用 Agent 网关、托管 API 与 SysTorch 可并存；不同工具可以覆盖重叠能力。
+5. 生态定位：以 Bud Decision Studio、本地模型工作台；Magpie、通用 Agent 网关；System One、决策 API / SDK 为相邻工作层实例，说明能力可重叠、可组合，不把产品绑定某一模型品牌。
 6. 当前产品界面预览及截图证据边界。
 7. 当前发行版、兼容限制、文档与 GitHub。
 

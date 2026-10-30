@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark light">
-  <meta name="description" content="SysTorch 面向人、模型与 Agent 处理结构化决策：通过可检查的 DAG 路由 Jev / System One 请求，必要时持久交给人作答，再把结果交还原调用方。">
+  <meta name="description" content="SysTorch 是面向人、模型与 Agent 的结构化决策运行时。它连接兼容的决策服务，通过可检查的 DAG 协调每次尝试；需要人判断时持久保存任务，并把类型明确的答案交回原调用方。">
   <meta name="theme-color" content="#0d1517">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="SysTorch">
@@ -77,14 +77,14 @@
   <main id="main">
     <section id="top" class="hero page-shell">
       <div class="hero-copy">
-        <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span><span data-i18n="hero.eyebrow">为 System One 决策而造</span></p>
+        <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span><span data-i18n="hero.eyebrow">人、模型与 Agent 的结构化决策运行时</span></p>
         <h1 data-i18n-html="hero.title">把眼前的问题，<br>变成下一步。</h1>
         <p class="hero-lede" data-i18n="hero.lede">SysTorch 把结构化判断送入可检查的路由，在本地或托管决策服务间协调；需要时交给人作答，再把类型明确的结果交还原调用方。</p>
         <div class="hero-actions">
           <a class="button button-primary" href="#workflow" data-i18n="hero.primary">看看一次决策如何流转</a>
           <a id="hero-download" class="button button-secondary" href="https://github.com/ARCJ137442/SysTorch/releases" data-i18n="hero.secondary">查看当前发行版</a>
         </div>
-        <p class="hero-boundary"><span data-i18n="hero.focus">面向 Jev / System One typed decisions</span><span class="boundary-dot" aria-hidden="true"></span><span data-i18n="hero.notGateway">不是通用聊天模型网关</span></p>
+        <p class="hero-boundary"><span data-i18n="hero.focus">连接兼容的决策服务</span><span class="boundary-dot" aria-hidden="true"></span><span data-i18n="hero.notGateway">不绑定单一模型厂牌</span></p>
       </div>
 
       <div class="hero-visual">
@@ -188,7 +188,7 @@
         </article>
       </div>
       <div class="workflow-promise"><span class="promise-line" aria-hidden="true"></span><p data-i18n="workflow.promise">模型可以判断，应用保留控制；结果不会替应用执行动作或授予权限。</p></div>
-      <p class="provider-note" data-i18n="workflow.providers">当前适配器：TypeSafe System One、Laya、Vercel、OpenRouter（上游转换）。每项能力仍取决于目标服务与模型。</p>
+      <p class="provider-note" data-i18n="workflow.providers">当前适配器：TypeSafe System One、Laya、Vercel、OpenRouter（上游转换）。System One-compatible 指请求协议，不是指定模型品牌；model ID 按你的配置选择。</p>
     </section>
 
     <section id="human" class="human-section section-rule">
@@ -211,16 +211,16 @@
     <section id="position" class="position-section page-shell section-rule">
       <div class="section-intro section-intro-wide">
         <p class="eyebrow" data-i18n="position.eyebrow">放在生态里看</p>
-        <h2 data-i18n="position.title">专注决策运行层，不重新造一个模型工作台。</h2>
-        <p data-i18n="position.lede">本地模型工作台、通用 Agent 网关、托管决策 API 都可以与 SysTorch 配合。SysTorch 的重点，是把 System One 请求、路由证据和人工作答连成可操作的生命周期。</p>
+        <h2 data-i18n="position.title">不重造模型，而是把决策完整地运行起来。</h2>
+        <p data-i18n="position.lede">SysTorch 不训练或托管模型，而是把结构化问题、DAG 路由、每次上游尝试、持久人工作答与原调用方取回连成一条链。它可以与本地决策模型工作台、通用 Agent 网关和托管决策 API 配合。</p>
       </div>
       <div class="position-table" role="table" aria-label="SysTorch 在生态中的定位" data-i18n-aria="position.tableLabel">
-        <div class="position-row position-head" role="row"><span role="columnheader" data-i18n="position.col1">当你的主要任务是…</span><span role="columnheader" data-i18n="position.col2">常见的工作层</span><span role="columnheader" data-i18n="position.col3">SysTorch 的角色</span></div>
-        <div class="position-row" role="row"><span role="cell" data-i18n="position.row1a">运行或训练一个本地模型</span><span role="cell" data-i18n="position.row1b">模型下载、推理引擎、评估与训练</span><span role="cell" data-i18n="position.row1c">连接已有的 System One 兼容服务；不内置权重或推理引擎</span></div>
-        <div class="position-row" role="row"><span role="cell" data-i18n="position.row2a">为多个 Agent 路由通用聊天模型</span><span role="cell" data-i18n="position.row2b">兼容多种聊天 API、账号与模型供应商</span><span role="cell" data-i18n="position.row2c">把核心入口留给 typed decisions，不扩成通用聊天网关</span></div>
-        <div class="position-row position-row-focus" role="row"><span role="cell" data-i18n="position.row3a">把一个判断交给模型或人，再返回给调用方</span><span role="cell" data-i18n="position.row3b">这条工作流可能跨越决策 API、路由配置与人工作业队列</span><span role="cell" data-i18n="position.row3c">SysTorch 的中心：typed decision + DAG + human handoff</span></div>
+        <div class="position-row position-head" role="row"><span role="columnheader" data-i18n="position.col1">常见需求</span><span role="columnheader" data-i18n="position.col2">相邻工作层与代表项目</span><span role="columnheader" data-i18n="position.col3">SysTorch 的工作</span></div>
+        <div class="position-row" role="row"><span role="cell" data-i18n="position.row1a">运行、调试或训练本地决策模型</span><span role="cell"><a href="https://github.com/BudEcosystem/Bud-Decision-Studio" target="_blank" rel="noopener noreferrer" data-i18n="position.row1b">本地模型工作台 · Bud Decision Studio</a></span><span role="cell" data-i18n="position.row1c">连接已有的兼容决策服务；不内置权重或推理引擎</span></div>
+        <div class="position-row" role="row"><span role="cell" data-i18n="position.row2a">管理多个 Agent 的模型调用</span><span role="cell"><a href="https://github.com/yetone/magpie" target="_blank" rel="noopener noreferrer" data-i18n="position.row2b">Agent 网关 · Magpie</a></span><span role="cell" data-i18n="position.row2c">把结构化请求、DAG、上游尝试和人工作答连成同一条决策流程</span></div>
+        <div class="position-row position-row-focus" role="row"><span role="cell" data-i18n="position.row3a">让结构化判断返回应用或原调用方</span><span role="cell"><a href="https://system-one.dev/en/about" target="_blank" rel="noopener noreferrer" data-i18n="position.row3b">决策 API 与 SDK · System One</a></span><span role="cell" data-i18n="position.row3c">SysTorch 聚合请求、路由轨迹、可选人工作答与结果取回</span></div>
       </div>
-      <p class="position-footnote" data-i18n="position.note">System One 路由并非 SysTorch 独有能力；差异来自产品把哪一种工作流放在中心，而不是宣称邻近工具没有重叠功能。</p>
+      <p class="position-footnote" data-i18n="position.note">这些工作层的能力会交叠，也可以组合。SysTorch 不宣称独占路由；它把决策请求、路由证据与人工作答放在同一条可追踪的生命周期里。</p>
     </section>
 
     <section id="product" class="product-section page-shell section-rule">
@@ -239,7 +239,7 @@
           <figcaption><span class="shot-index">02</span><span><strong data-i18n="product.mobile">开始 · 触屏</strong><small data-i18n="product.mobileText">窄屏会话列表与输入布局</small></span></figcaption>
         </figure>
       </div>
-      <p class="gallery-disclaimer" data-i18n="product.disclaimer">界面截图来自本地浏览器与合成数据，不是 Release 二进制的真机截图，也不代表上游模型输出或人工验收。</p>
+      <p class="gallery-disclaimer" data-i18n="product.disclaimer">界面截图来自本地浏览器与合成数据；不是 Release 二进制真机截图、实时模型输出或人工验收。图中的 provider / model 名称只是配置示例，不代表 SysTorch 绑定该模型或服务。</p>
     </section>
 
     <section id="developers" class="developer-section section-rule">
@@ -253,7 +253,7 @@
         <div class="api-example">
           <div class="code-topline"><span>POST /v1/systorch/systemone</span><button id="copy-request" class="copy-button" type="button" data-i18n="developer.copy">复制示例</button></div>
           <pre><code id="request-example">{
-  "model": "typesafe-ai/jev",
+  "model": "decision-profile",
   "state": { "ticket": "refund requested" },
   "question_order": ["route"],
   "questions": {
@@ -268,7 +268,7 @@
     }
   }
 }</code></pre>
-          <p id="copy-status" class="copy-status" aria-live="polite" data-i18n="developer.sample">Synthetic request example · no API key included</p>
+          <p id="copy-status" class="copy-status" aria-live="polite" data-i18n="developer.sample">请求模板 · 将 model 替换为配置中可用的 model ID · 不含 API key</p>
         </div>
       </div>
     </section>
@@ -316,7 +316,7 @@
         <a href="https://github.com/ARCJ137442/SysTorch/blob/main/docs/README.md" data-i18n="footer.docs">文档</a>
         <a href="https://github.com/ARCJ137442/SysTorch/releases" data-i18n="footer.releases">发行版</a>
       </div>
-      <small>© <span id="year"></span> SysTorch · <span data-i18n="footer.scope">Jev / System One decision runtime</span></small>
+      <small>© <span id="year"></span> SysTorch · <span data-i18n="footer.scope">结构化决策运行时</span></small>
     </div>
   </footer>
 
@@ -326,11 +326,11 @@
         skip: '跳到主要内容',
         'language.label': '切换到英文',
         'nav.label': '主导航', 'release.label': '当前 SysTorch 发行版', 'decision.codeLabel': '合成结构化决策请求示例', 'position.tableLabel': 'SysTorch 在生态中的定位',
-        description: 'SysTorch 面向人、模型与 Agent 处理结构化决策：通过可检查的 DAG 路由 Jev / System One 请求，必要时持久交给人作答，再把结果交还原调用方。',
+        description: 'SysTorch 是面向人、模型与 Agent 的结构化决策运行时。它连接兼容的决策服务，通过可检查的 DAG 协调每次尝试；需要人判断时持久保存任务，并把类型明确的答案交回原调用方。',
         'nav.decision': '决策请求', 'nav.workflow': '运行路径', 'nav.human': '人工作答', 'nav.position': '产品定位', 'nav.download': '下载', 'nav.open': '打开导航菜单', 'nav.close': '关闭导航菜单',
-        'hero.eyebrow': '为 System One 决策而造', 'hero.title': '把眼前的问题，<br>变成下一步。',
+        'hero.eyebrow': '人、模型与 Agent 的结构化决策运行时', 'hero.title': '把眼前的问题，<br>变成下一步。',
         'hero.lede': 'SysTorch 把结构化判断送入可检查的路由，在本地或托管决策服务间协调；需要时交给人作答，再把类型明确的结果交还原调用方。',
-        'hero.primary': '看看一次决策如何流转', 'hero.secondary': '查看当前发行版', 'hero.focus': '面向 Jev / System One typed decisions', 'hero.notGateway': '不是通用聊天模型网关',
+        'hero.primary': '看看一次决策如何流转', 'hero.secondary': '查看当前发行版', 'hero.focus': '连接兼容的决策服务', 'hero.notGateway': '不绑定单一模型厂牌',
         'trace.kicker': '一次结构化决策', 'trace.title': '请求有来路，答案有去向。', 'trace.synthetic': '合成示意',
         'trace.alt': '示意图：调用方发送一个 Choice 问题；第一个上游返回限流错误，路由继续尝试第二个上游，成功得到类型化答案并交还调用方。',
         'trace.caller': '调用方 · App / Agent', 'trace.question': '这条工单应该进入哪个队列？', 'trace.entry': 'SysTorch entry', 'trace.policy': 'DAG · ordered fallback',
@@ -338,30 +338,30 @@
         'decision.eyebrow': '先看清它处理什么', 'decision.title': '不是续写一段话，而是回答一个明确的问题。', 'decision.lede': '请求携带情境与问题定义；决策服务返回可供软件检查和分支处理的类型化结果。', 'decision.requestLabel': '请求结构',
         'decision.noul': '是 / 否判断', 'decision.choice': '固定选项', 'decision.score': '有序等级', 'decision.box': '区域定位', 'decision.note': '图片、音频、视频和文件可按 SysTorch assets 契约登记；目标服务的实际支持可能不同。无法无损转换时明确报错，不静默改写格式。',
         'workflow.eyebrow': '一个决策，完整的一段路', 'workflow.title': '从调用入口到最终答案，过程留在同一条线上。', 'workflow.lede': '一个父请求可以包含多个上游尝试。成功回复作为主要结果；失败与重试成为它的可追踪来路。',
-        'workflow.step1': '提交结构化问题', 'workflow.step1Text': '人、软件或 Agent 通过同一份契约提交情境与有序问题。', 'workflow.step2': '沿 DAG 协调服务', 'workflow.step2Text': '图组织入口、复用节点和提供商；真实调用让路径与连线辉光相呼应。', 'workflow.step3': '返回类型化结果', 'workflow.step3Text': '调用方收到 schema 可检查的答案，也能按需查看请求 ID、尝试顺序和最终赢家。', 'workflow.promise': '模型可以判断，应用保留控制；结果不会替应用执行动作或授予权限。', 'workflow.providers': '当前适配器：TypeSafe System One、Laya、Vercel、OpenRouter（上游转换）。每项能力仍取决于目标服务与模型。',
+        'workflow.step1': '提交结构化问题', 'workflow.step1Text': '人、软件或 Agent 通过同一份契约提交情境与有序问题。', 'workflow.step2': '沿 DAG 协调服务', 'workflow.step2Text': '图组织入口、复用节点和提供商；真实调用让路径与连线辉光相呼应。', 'workflow.step3': '返回类型化结果', 'workflow.step3Text': '调用方收到 schema 可检查的答案，也能按需查看请求 ID、尝试顺序和最终赢家。', 'workflow.promise': '模型可以判断，应用保留控制；结果不会替应用执行动作或授予权限。', 'workflow.providers': '当前适配器：TypeSafe System One、Laya、Vercel、OpenRouter（上游转换）。System One-compatible 指请求协议，不是指定模型品牌；model ID 按你的配置选择。',
         'human.eyebrow': '需要人的时候，答案仍有归处', 'human.title': '调用方可以离开。<br>这项判断仍会回来。', 'human.lede': '当任务明确需要人做决定，SysTorch 可把它保存为持久任务。人在决策台作答后，调用方可用原身份取回结构化结果。', 'human.guide': '查看提交—作答—取回指南',
         'human.step1': '调用方提交', 'human.step1Text': '一条任务与稳定的题目 ID', 'human.sent': '已保存', 'human.step2': '任务等待人回答', 'human.step2Text': '调用程序可以结束，任务继续持久存在', 'human.pending': '待作答', 'human.step3': '人在决策台作答', 'human.step3Text': '系统按题型验证答案并保存', 'human.answered': '已回答', 'human.step4': '原调用方取回', 'human.step4Text': '同一个任务身份与问题 ID', 'human.returned': '已返回',
-        'position.eyebrow': '放在生态里看', 'position.title': '专注决策运行层，不重新造一个模型工作台。', 'position.lede': '本地模型工作台、通用 Agent 网关、托管决策 API 都可以与 SysTorch 配合。SysTorch 的重点，是把 System One 请求、路由证据和人工作答连成可操作的生命周期。',
-        'position.col1': '当你的主要任务是…', 'position.col2': '常见的工作层', 'position.col3': 'SysTorch 的角色',
-        'position.row1a': '运行或训练本地模型', 'position.row1b': '模型下载、推理引擎、评估与训练', 'position.row1c': '连接已有的 System One 兼容服务；不内置权重或推理引擎',
-        'position.row2a': '为多个 Agent 路由通用聊天模型', 'position.row2b': '兼容多种聊天 API、账号与模型供应商', 'position.row2c': '把核心入口留给 typed decisions，不扩成通用聊天网关',
-        'position.row3a': '把一个判断交给模型或人，再返回给调用方', 'position.row3b': '这条工作流可能跨越决策 API、路由配置与人工作业队列', 'position.row3c': 'SysTorch 的中心：typed decision + DAG + human handoff',
-        'position.note': 'System One 路由并非 SysTorch 独有能力；差异来自产品把哪一种工作流放在中心，而不是宣称邻近工具没有重叠功能。',
-        'product.eyebrow': '一套运行时，多个工作面', 'product.title': '直接开始，也能逐步深入控制。', 'product.lede': '「开始」给人快速发起决策；专业控制台编辑 DAG、追踪历史并管理服务；标记为可控且经用户授权的本地 provider 可以运行登记的启停命令，推理引擎仍由外部服务提供。', 'product.start': '开始 · 桌面', 'product.startText': '结构化问题、会话和按需展开的路由依据', 'product.mobile': '开始 · 触屏', 'product.mobileText': '窄屏会话列表与输入布局', 'product.disclaimer': '界面截图来自本地浏览器与合成数据，不是 Release 二进制的真机截图，也不代表上游模型输出或人工验收。',
+        'position.eyebrow': '放在生态里看', 'position.title': '不重造模型，而是把决策完整地运行起来。', 'position.lede': 'SysTorch 不训练或托管模型，而是把结构化问题、DAG 路由、每次上游尝试、持久人工作答与原调用方取回连成一条链。它可以与本地决策模型工作台、通用 Agent 网关和托管决策 API 配合。',
+        'position.col1': '常见需求', 'position.col2': '相邻工作层与代表项目', 'position.col3': 'SysTorch 的工作',
+        'position.row1a': '运行、调试或训练本地决策模型', 'position.row1b': '本地模型工作台 · Bud Decision Studio', 'position.row1c': '连接已有的兼容决策服务；不内置权重或推理引擎',
+        'position.row2a': '管理多个 Agent 的模型调用', 'position.row2b': 'Agent 网关 · Magpie', 'position.row2c': '把结构化请求、DAG、上游尝试和人工作答连成同一条决策流程',
+        'position.row3a': '让结构化判断返回应用或原调用方', 'position.row3b': '决策 API 与 SDK · System One', 'position.row3c': 'SysTorch 聚合请求、路由轨迹、可选人工作答与结果取回',
+        'position.note': '这些工作层的能力会交叠，也可以组合。SysTorch 不宣称独占路由；它把决策请求、路由证据与人工作答放在同一条可追踪的生命周期里。',
+        'product.eyebrow': '一套运行时，多个工作面', 'product.title': '直接开始，也能逐步深入控制。', 'product.lede': '「开始」给人快速发起决策；专业控制台编辑 DAG、追踪历史并管理服务；标记为可控且经用户授权的本地 provider 可以运行登记的启停命令，推理引擎仍由外部服务提供。', 'product.start': '开始 · 桌面', 'product.startText': '结构化问题、会话和按需展开的路由依据', 'product.mobile': '开始 · 触屏', 'product.mobileText': '窄屏会话列表与输入布局', 'product.disclaimer': '界面截图来自本地浏览器与合成数据；不是 Release 二进制真机截图、实时模型输出或人工验收。图中的 provider / model 名称只是配置示例，不代表 SysTorch 绑定该模型或服务。',
         'product.desktopAlt': 'SysTorch 0.12.0 开始页桌面预览，使用合成决策会话', 'product.mobileAlt': 'SysTorch 0.12.0 开始页触屏预览，使用合成会话列表',
-        'developer.eyebrow': '同一份决策契约', 'developer.title': '人可以点选，Agent 也能调用。', 'developer.lede': '使用者、应用和 Harness 都通过 SysTorch API 提交 typed questions。请求顺序、入口身份和错误 ID 可核对；持久人工作答使用独立的权限与任务接口。', 'developer.contract': '阅读 HTTP 契约', 'developer.copy': '复制示例', 'developer.copied': '已复制', 'developer.copyFailed': '请手动选择代码复制', 'developer.sample': '合成请求示例 · 不含 API key',
+        'developer.eyebrow': '同一份决策契约', 'developer.title': '人可以点选，Agent 也能调用。', 'developer.lede': '使用者、应用和 Harness 都通过 SysTorch API 提交 typed questions。请求顺序、入口身份和错误 ID 可核对；持久人工作答使用独立的权限与任务接口。', 'developer.contract': '阅读 HTTP 契约', 'developer.copy': '复制示例', 'developer.copied': '已复制', 'developer.copyFailed': '请手动选择代码复制', 'developer.sample': '请求模板 · 将 model 替换为配置中可用的 model ID · 不含 API key',
         'download.eyebrow': '当前发行版', 'download.title': '先完成一次判断，再决定它如何融入你的工作。', 'download.lede': '下载对应平台的当前版本，或先从 README 与外部调用指南了解它的工作方式。', 'download.loading': '正在读取 GitHub Release', 'download.caution': '请查看发行页中的验收范围与已知限制。', 'download.all': '查看所有版本', 'download.windows': 'Standalone · x64', 'download.windowsAction': '下载 EXE', 'download.android': 'arm64 · 稳定签名', 'download.androidAction': '下载 APK', 'download.limits': 'Windows EXE 未作 Authenticode 签名；Android 保留稳定签名和安装身份以支持覆盖升级。具体限制以对应版本发行说明为准。', 'download.release': '打开 GitHub 发行页', 'download.readme': '阅读快速开始',
-        'footer.slogan': '把眼前的问题，变成下一步。', 'footer.docs': '文档', 'footer.releases': '发行版', 'footer.scope': 'Jev / System One 决策运行时'
+        'footer.slogan': '把眼前的问题，变成下一步。', 'footer.docs': '文档', 'footer.releases': '发行版', 'footer.scope': '结构化决策运行时'
       },
       en: {
         skip: 'Skip to content',
         'language.label': 'Switch to Chinese',
         'nav.label': 'Main navigation', 'release.label': 'Current SysTorch release', 'decision.codeLabel': 'Synthetic structured decision request example', 'position.tableLabel': 'SysTorch position in the ecosystem',
-        description: 'SysTorch is a structured decision runtime for people, models, and agents. Route typed System One decisions, inspect each attempt, and return durable human answers to the original caller.',
+        description: 'SysTorch is a structured decision runtime for people, models, and agents. Connect compatible decision services, inspect DAG-routed attempts, persist human judgment when needed, and return typed answers to the original caller.',
         'nav.decision': 'Decision contract', 'nav.workflow': 'How it flows', 'nav.human': 'Human answers', 'nav.position': 'Where it fits', 'nav.download': 'Download', 'nav.open': 'Open navigation', 'nav.close': 'Close navigation',
-        'hero.eyebrow': 'BUILT FOR SYSTEM ONE DECISIONS', 'hero.title': 'Turn questions<br>into next steps.',
+        'hero.eyebrow': 'STRUCTURED DECISIONS FOR PEOPLE, MODELS & AGENTS', 'hero.title': 'Turn questions<br>into next steps.',
         'hero.lede': 'SysTorch routes structured decisions across local and hosted services you can inspect. When a task needs a person\'s judgment, it can wait and return a typed answer to the original caller.',
-        'hero.primary': 'See how a decision flows', 'hero.secondary': 'View the current release', 'hero.focus': 'Focused on Jev / System One typed decisions', 'hero.notGateway': 'Not a general chat-model gateway',
+        'hero.primary': 'See how a decision flows', 'hero.secondary': 'View the current release', 'hero.focus': 'Connect compatible decision services', 'hero.notGateway': 'Not tied to one model brand',
         'trace.kicker': 'ONE STRUCTURED DECISION', 'trace.title': 'Requests have a path. Answers have a destination.', 'trace.synthetic': 'SYNTHETIC EXAMPLE',
         'trace.alt': 'Illustration: a caller sends a Choice question; the first upstream is rate limited, routing tries a second provider, receives a typed answer, and returns it to the caller.',
         'trace.caller': 'CALLER · APP / AGENT', 'trace.question': 'Which queue should handle this ticket?', 'trace.entry': 'SysTorch entry', 'trace.policy': 'DAG · ordered fallback',
@@ -369,20 +369,20 @@
         'decision.eyebrow': 'FIRST, THE OBJECT IT HANDLES', 'decision.title': 'Not another paragraph. A question with a defined answer.', 'decision.lede': 'A request carries its situation and question definitions; a decision service returns typed results that software can inspect and act on.', 'decision.requestLabel': 'REQUEST SHAPE',
         'decision.noul': 'yes / no judgment', 'decision.choice': 'fixed options', 'decision.score': 'ordered scale', 'decision.box': 'region location', 'decision.note': 'Images, audio, video, and files can be registered as SysTorch assets; actual support depends on the target service. If a lossless conversion is unavailable, SysTorch reports a format error instead of silently changing the request.',
         'workflow.eyebrow': 'ONE DECISION, ONE CONNECTED STORY', 'workflow.title': 'From caller to final answer, the path stays together.', 'workflow.lede': 'One parent request can contain multiple upstream attempts. The successful decision stays primary; failures and retries remain traceable context.',
-        'workflow.step1': 'Submit structured questions', 'workflow.step1Text': 'A person, application, or agent sends a situation and ordered questions under one contract.', 'workflow.step2': 'Coordinate through a DAG', 'workflow.step2Text': 'The graph connects entries, reusable nodes, and providers; route glow reflects real request and response events.', 'workflow.step3': 'Return a typed result', 'workflow.step3Text': 'The caller receives a schema-checkable answer and can inspect the request ID, attempts, and selected provider when needed.', 'workflow.promise': 'Models inform decisions. Applications keep control; a result does not execute an action or grant permission.', 'workflow.providers': 'Current adapters: TypeSafe System One, Laya, Vercel, and OpenRouter as an upstream translator. Capabilities still depend on each service and model.',
+        'workflow.step1': 'Submit structured questions', 'workflow.step1Text': 'A person, application, or agent sends a situation and ordered questions under one contract.', 'workflow.step2': 'Coordinate through a DAG', 'workflow.step2Text': 'The graph connects entries, reusable nodes, and providers; route glow reflects real request and response events.', 'workflow.step3': 'Return a typed result', 'workflow.step3Text': 'The caller receives a schema-checkable answer and can inspect the request ID, attempts, and selected provider when needed.', 'workflow.promise': 'Models inform decisions. Applications keep control; a result does not execute an action or grant permission.', 'workflow.providers': 'Current adapters: TypeSafe System One, Laya, Vercel, and OpenRouter as an upstream translator. System One-compatible describes the request protocol, not a required model brand; model IDs come from your configuration.',
         'human.eyebrow': 'WHEN A PERSON NEEDS TO DECIDE', 'human.title': 'The caller can leave.<br>The decision can still return.', 'human.lede': 'When a task needs human judgment, SysTorch can persist it. A person answers in the Decision Desk; the original caller retrieves the structured result under the same identity.', 'human.guide': 'Read the submit—answer—retrieve guide',
         'human.step1': 'Caller submits', 'human.step1Text': 'One task with stable question IDs', 'human.sent': 'SAVED', 'human.step2': 'Task waits for a person', 'human.step2Text': 'The calling program can exit while the task persists', 'human.pending': 'WAITING', 'human.step3': 'Person answers in the Decision Desk', 'human.step3Text': 'The system validates and saves by question type', 'human.answered': 'ANSWERED', 'human.step4': 'Original caller retrieves', 'human.step4Text': 'The same task identity and question IDs', 'human.returned': 'RETURNED',
-        'position.eyebrow': 'A PLACE IN THE ECOSYSTEM', 'position.title': 'Focused on the decision runtime, not another model workbench.', 'position.lede': 'Local model studios, broad agent gateways, and hosted decision APIs can work alongside SysTorch. Its focus is connecting System One requests, route evidence, and human answers into an operable lifecycle.',
-        'position.col1': 'If your main task is…', 'position.col2': 'Common neighboring layer', 'position.col3': 'SysTorch’s role',
-        'position.row1a': 'Run or train a local model', 'position.row1b': 'Model downloads, inference engines, evaluation, and training', 'position.row1c': 'Connect existing System One compatible services; no weights or inference engine included',
-        'position.row2a': 'Route general chat models for agents', 'position.row2b': 'Multiple chat APIs, accounts, and model providers', 'position.row2c': 'Keep the core entrance on typed decisions, not a general chat gateway',
-        'position.row3a': 'Send a judgment to a model or person, then return it', 'position.row3b': 'This workflow may span a decision API, routing configuration, and a human work queue', 'position.row3c': 'SysTorch’s center: typed decisions + DAG + human handoff',
-        'position.note': 'System One routing is not unique to SysTorch. The difference is which workflow a product puts at its center—not a claim that neighboring tools have no overlap.',
-        'product.eyebrow': 'ONE RUNTIME, MULTIPLE WORKSPACES', 'product.title': 'Start with a decision. Go deeper when you need control.', 'product.lede': 'Start helps a person initiate a decision. The console edits the DAG, follows history, and manages services. A local provider marked controllable and authorized by its user can run registered lifecycle commands; inference engines remain external.', 'product.start': 'Start · desktop', 'product.startText': 'Structured questions, sessions, and on-demand route evidence', 'product.mobile': 'Start · touch', 'product.mobileText': 'Narrow session list and composer layout', 'product.disclaimer': 'Screenshots are local browser previews with synthetic data—not screenshots from the Release binaries, real upstream outputs, or hands-on acceptance.',
+        'position.eyebrow': 'A PLACE IN THE ECOSYSTEM', 'position.title': 'We do not rebuild models. We run the decision lifecycle.', 'position.lede': 'SysTorch does not train or host models. It connects structured questions, DAG routing, upstream attempts, durable human answers, and retrieval by the original caller into one workflow. It can work alongside local decision-model studios, general agent gateways, and hosted decision APIs.',
+        'position.col1': 'Common need', 'position.col2': 'Neighboring layer and example', 'position.col3': 'SysTorch’s work',
+        'position.row1a': 'Run, debug, or train a local decision model', 'position.row1b': 'Local model studio · Bud Decision Studio', 'position.row1c': 'Connect an existing compatible decision service; weights and inference engines remain external',
+        'position.row2a': 'Manage model calls for multiple agents', 'position.row2b': 'Agent gateway · Magpie', 'position.row2c': 'Keep the structured request, DAG, upstream attempts, and human handoff in one decision flow',
+        'position.row3a': 'Return a structured judgment to an app or its caller', 'position.row3b': 'Decision API and SDK · System One', 'position.row3c': 'SysTorch connects the request, route trace, optional human answer, and result retrieval',
+        'position.note': 'Capabilities across these layers can overlap and can be combined. SysTorch does not claim exclusive routing; its focus is one traceable lifecycle from decision request through route evidence and human judgment.',
+        'product.eyebrow': 'ONE RUNTIME, MULTIPLE WORKSPACES', 'product.title': 'Start with a decision. Go deeper when you need control.', 'product.lede': 'Start helps a person initiate a decision. The console edits the DAG, follows history, and manages services. A local provider marked controllable and authorized by its user can run registered lifecycle commands; inference engines remain external.', 'product.start': 'Start · desktop', 'product.startText': 'Structured questions, sessions, and on-demand route evidence', 'product.mobile': 'Start · touch', 'product.mobileText': 'Narrow session list and composer layout', 'product.disclaimer': 'Screenshots are local browser previews with synthetic data—not Release-device screenshots, live model outputs, or hands-on acceptance. Provider and model names shown are configuration examples, not a SysTorch model or service requirement.',
         'product.desktopAlt': 'SysTorch 0.12.0 Start desktop preview with a synthetic decision session', 'product.mobileAlt': 'SysTorch 0.12.0 Start touch preview showing synthetic sessions',
-        'developer.eyebrow': 'ONE DECISION CONTRACT', 'developer.title': 'People can choose. Agents can call.', 'developer.lede': 'People, applications, and harnesses submit typed questions through the SysTorch API. Question order, caller identity, and error IDs are inspectable; durable human answers use a separate permissioned task interface.', 'developer.contract': 'Read the HTTP contract', 'developer.copy': 'Copy example', 'developer.copied': 'Copied', 'developer.copyFailed': 'Select the code to copy it', 'developer.sample': 'Synthetic request example · no API key included',
+        'developer.eyebrow': 'ONE DECISION CONTRACT', 'developer.title': 'People can choose. Agents can call.', 'developer.lede': 'People, applications, and harnesses submit typed questions through the SysTorch API. Question order, caller identity, and error IDs are inspectable; durable human answers use a separate permissioned task interface.', 'developer.contract': 'Read the HTTP contract', 'developer.copy': 'Copy example', 'developer.copied': 'Copied', 'developer.copyFailed': 'Select the code to copy it', 'developer.sample': 'Request template · replace model with an available configured model ID · no API key included',
         'download.eyebrow': 'CURRENT RELEASE', 'download.title': 'Complete one decision, then see where it fits your work.', 'download.lede': 'Download the current version for your platform, or read the README and external-caller guide first.', 'download.loading': 'Loading the GitHub release', 'download.caution': 'Check the release page for its acceptance scope and known limits.', 'download.all': 'Browse all versions', 'download.windows': 'Standalone · x64', 'download.windowsAction': 'Download EXE', 'download.android': 'arm64 · stable signature', 'download.androidAction': 'Download APK', 'download.limits': 'The Windows EXE is not Authenticode-signed. Android keeps its stable signature and installed identity for in-place upgrades. See each release for exact limits.', 'download.release': 'Open GitHub release', 'download.readme': 'Read the quick start',
-        'footer.slogan': 'Turn questions into next steps.', 'footer.docs': 'Documentation', 'footer.releases': 'Releases', 'footer.scope': 'Jev / System One decision runtime'
+        'footer.slogan': 'Turn questions into next steps.', 'footer.docs': 'Documentation', 'footer.releases': 'Releases', 'footer.scope': 'Structured decision runtime'
       }
     };
     let language = document.documentElement.lang === 'en' ? 'en' : 'zh';

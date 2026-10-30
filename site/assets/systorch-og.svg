@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
   <title id="title">SysTorch — Turn questions into next steps</title>
-  <desc id="desc">A structured decision runtime for people, models, and agents. An inspectable route connects a caller to typed answers and human judgment.</desc>
+  <desc id="desc">A structured decision runtime for people, models, and agents. Connect compatible decision services, inspect routes, and return typed answers with optional human judgment.</desc>
   <defs>
     <pattern id="grid" width="34" height="34" patternUnits="userSpaceOnUse">
       <path d="M34 0H0V34" fill="none" stroke="#30474b" stroke-opacity=".32" stroke-width="1"/>
@@ -23,7 +23,7 @@
   <text x="68" y="315" fill="#eaf4f5" font-size="60" font-weight="700" letter-spacing="-2.4" font-family="Bahnschrift,Segoe UI,Arial,sans-serif">Turn questions into</text>
   <text x="68" y="382" fill="#eaf4f5" font-size="60" font-weight="700" letter-spacing="-2.4" font-family="Bahnschrift,Segoe UI,Arial,sans-serif">next steps.</text>
   <text x="72" y="451" fill="#9cb2b7" font-size="20" font-family="Segoe UI,Microsoft YaHei UI,sans-serif">把眼前的问题，变成下一步。</text>
-  <text x="72" y="545" fill="#9cb2b7" font-size="16" font-family="Segoe UI,Microsoft YaHei UI,sans-serif">Jev / System One · typed decisions · inspectable routes · human answers</text>
+  <text x="72" y="545" fill="#9cb2b7" font-size="16" font-family="Segoe UI,Microsoft YaHei UI,sans-serif">Compatible services · typed decisions · inspectable routes · human answers</text>
 
   <rect x="789" y="165" width="337" height="356" rx="21" fill="url(#panel)" stroke="#3d5d62" stroke-width="1.5"/>
   <text x="818" y="199" fill="#9cb2b7" font-size="11" letter-spacing="2" font-family="Cascadia Code,Consolas,monospace">ONE REQUEST · MULTIPLE ATTEMPTS</text>

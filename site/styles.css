@@ -211,6 +211,8 @@ h1, h2, h3, p { margin-top: 0; }
 .position-section { padding-bottom: 110px; }
 .position-table { margin-top: 37px; border-top: 1px solid var(--line-strong); }
 .position-row { display: grid; grid-template-columns: minmax(0, .85fr) minmax(0, 1fr) minmax(0, 1.1fr); gap: 24px; padding: 17px 13px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; line-height: 1.7; }
+.position-row a { display: inline-flex; min-height: 44px; align-items: center; color: var(--accent); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent); text-underline-offset: 3px; }
+.position-row a:hover { text-decoration-color: currentColor; }
 .position-head { color: var(--faint); font: 10px var(--mono-font); letter-spacing: .04em; }
 .position-row-focus { color: var(--ink); background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 7%, transparent), transparent 76%); }
 .position-row-focus span:last-child { color: var(--accent); font-weight: 650; }
