@@ -9,9 +9,9 @@ SysTorch is a structured decision runtime for people, models, and agents. It kee
 
 ## 当前预发布 / Current pre-release
 
-0.12.0 是当前 SysTorch 预发布版本，收口 canonical SysTorch API、结构化路由轨迹与「开始／决策台」对调用历史的呈现，提供 Windows Standalone EXE 和稳定签名 Android arm64 APK。发布状态、准确附件、兼容边界和未完成人工验收见 [0.12.0 发布说明](releases/0.12.0.md) 与 [候选核验](verification/v0.12.0-pre-release-2026-10-30.md)。自动测试、CI 构建与设备人工验收是不同证据，不互相替代。
+0.12.0 是当前 SysTorch 预发布版本，收口 canonical SysTorch API、结构化路由轨迹与「开始／决策台」对调用历史的呈现，提供 Windows Standalone EXE 和稳定签名 Android arm64 APK。发布状态、准确附件、兼容边界和未完成人工验收见 [0.12.0 发布说明](releases/0.12.0.md) 与 [发布核验记录](verification/v0.12.0-pre-release-2026-10-30.md)。自动测试、CI 构建与设备人工验收是不同证据，不互相替代。
 
-Version 0.12.0 is the current SysTorch pre-release. It consolidates the canonical SysTorch API, structured route traces, and call-history disclosure in Start / Decision Desk. It provides a Windows Standalone EXE and a stable-signed Android arm64 APK. See the [0.12.0 release notes](releases/0.12.0.md) and [candidate verification](verification/v0.12.0-pre-release-2026-10-30.md) for exact assets, compatibility, and remaining hands-on checks. Automated tests, CI builds, and device acceptance are separate evidence.
+Version 0.12.0 is the current SysTorch pre-release. It consolidates the canonical SysTorch API, structured route traces, and call-history disclosure in Start / Decision Desk. It provides a Windows Standalone EXE and a stable-signed Android arm64 APK. See the [0.12.0 release notes](releases/0.12.0.md) and [release verification](verification/v0.12.0-pre-release-2026-10-30.md) for exact assets, compatibility, and remaining hands-on checks. Automated tests, CI builds, and device acceptance are separate evidence.
 
 ## 从这里开始 / Start here
 

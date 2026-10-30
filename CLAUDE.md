@@ -17,7 +17,7 @@ SysTorch 是面向人、模型与 Agent 的结构化决策运行时。产品显�
 
 ## 当前交付状态
 
-0.12.0 是 SysTorch canonical API、开始页路由轨迹呈现与双端预发布候选；以 docs/verification/v0.12.0-pre-release-2026-10-30.md 中的证据为准。只有实际 Release workflow 完成后才能说 CI 与发布附件成功。该版本未经维护者人工实测；自动测试、CI 构建、模拟器核验和真机验收必须分别陈述。
+0.12.0 是已发布的 SysTorch 预发布版，main CI、Release workflow、两个附件、APK 稳定签名与 Pages 均已通过；以 docs/verification/v0.12.0-pre-release-2026-10-30.md 中的证据为准。该版本未经维护者人工实测；自动测试、CI 构建、模拟器核验和真机验收必须分别陈述。
 
 GitHub Release 预期只公开 Windows x64 Standalone EXE 与稳定签名 Android arm64 APK。Windows 当前没有 Authenticode 证书。Android applicationId 与稳定密钥保留以支持原位覆盖升级。
 
