@@ -403,6 +403,10 @@ jobs:
       contents: write
       actions: write
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
       - uses: actions/download-artifact@v4
         with:
           name: systorch-windows-${{ needs.meta.outputs.version }}
