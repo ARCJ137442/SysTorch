@@ -1,33 +1,31 @@
-# GitHub Pages 官方首页计划
+# GitHub Pages 官网部署与维护
 
-**作者**：GPT-6 Luna xhigh（OpenAI Codex）  
-**AI 披露**：本文由 AI 协助整理。
+**当前状态（2026-10-30）**：SysTorch 官方网站部署在 <https://arcj137442.github.io/SysTorch/>，由本仓库 `site/` 维护。GitHub Pages workflow 使用官方 `actions/configure-pages`、`upload-pages-artifact` 和 `deploy-pages`；Release 发布后读取 GitHub Release JSON，更新当前版本与附件链接。本轮定位、内容结构和视觉说明见[官网设计说明](../research/SYSTORCH-OFFICIAL-WEBSITE-2026-10-30.md)。
 
-**当前状态（2026-09-30）**：纯静态首页与 Pages workflow 已于 v0.2.0 时部署，桌面 DOM 内容已核验。v0.4.0 发布后，本地工作树中的站点文案已同步当前版本、CLI 入口和“尚未经人工实测”边界；Pages 部署和移动端正式截图仍待后续发布窗口核验。
+## 现有部署合同
 
-**目标**：建立一个无需自有域名、与当前 Release 和 README 一致的静态首页，让新用户先看到产品定位、真实界面和限制。
+- 只维护 `site/` 下的静态页面和本地素材；不复制 React 控制台、daemon 或任何本机配置。
+- 使用仓库项目 Pages `/SysTorch/`，不覆盖 `ARCJ137442.github.io` 个人主页中的其他站点。
+- `.github/workflows/pages.yml` 在 `site/**` 变更、Pages workflow 变更、Release published 与手动 dispatch 时部署。
+- 构建时从 GitHub Releases 获取当前发行元数据到 `site/releases/latest.json`；`site/index.html` 只读取安全展示字段与公开附件 URL，不解析 Release 正文为 HTML。
+- Release 资产名必须精确匹配当前工作流文件；找不到平台附件时回退到 Release 页面。
+- 官网可以解释当前 capability、产品边界与下载路径；详细契约以 README 和 `docs/contracts` 为准，发布限制以对应 Release 与核验记录为准。
 
-## 现有入口
+## 官网内容原则
 
-- 根 `README.md`：定位、截图、下载和文档入口。
-- `docs/screenshots.md` 与 `docs/images/`：已筛选的公开界面素材。
-- `.github/workflows/`：目前只有 CI/Release，需要新增 Pages workflow。
+- 以“把眼前的问题，变成下一步。”为品牌口号；品牌名 SysTorch 与 Jev / System One 协议身份分离。
+- 说明 SysTorch 面向 typed System One decisions：结构化问题、可检查的 DAG 路由、provider attempts、持久人工作答与原调用方取回。
+- 诚实承认 Magpie、Bud Decision Studio 和 System One 服务已有相邻或重叠能力；强调 SysTorch 的工作流中心，不宣称独占路由、独家技术或未经实测的优劣。
+- 截图若使用自动化 fixture 或合成请求，必须标为界面预览，不可称为 Release 二进制截图、实时流量或人工验收。
+- 不发布未经来源支持的客户、数据、性能、准确率、遥测、下载量或市场份额承诺。
+- 中英文文案需成对维护；导航、主题、页面元信息、截图替代文本、发行状态和下载限制都要覆盖两个语言。
 
-## 分阶段工作
+## 发布核对
 
-1. 选择静态构建方式（优先纯 HTML/CSS/少量 JS 或现有 UI 的静态子项目），避免复制 React 控制台和引入第二套产品真相。
-2. 首页首屏写一句话定位、真实 Dashboard/路由/Playground 图，第二屏写快速开始、Windows 下载、Docker 入口和当前限制。
-3. 所有下载链接从当前 Release 变量或明确的 Release URL 派生；显示“TypeSafe 已支持、OpenRouter 为上游转换 adapter、Windows 优先”等真实边界。
-4. 添加 GitHub Pages workflow：构建、预览、链接检查、移动视口检查；部署到仓库 Pages，必要时再更新 GitHub About Website。
+1. 静态相对路径适用于 `/SysTorch/` 子路径；图标、截图、CSS、Release JSON 和 sitemap 均从项目根相对路径读取。
+2. 本地预览检查桌面、紧凑笔记本、390px 与 360px 窄屏；确认无横向溢出、导航可用、焦点可见、语言/主题切换与减弱动效可读。
+3. 每个下载入口指向 Release API 当前确实存在的 Windows x64 Standalone 或 Android arm64 APK；UI 不推断用户设备上的 provider 可用性。
+4. Pages workflow 成功后访问官网及 `/releases/latest.json`，核对 version、prerelease、attachment count 和公开下载链接。
+5. 页面更新后同步 README、GitHub About 与发布说明的品牌口号和官网链接；不要让 Release 说明与当前网站互相冲突。
 
-## 完成证据
-
-- Pages 地址可访问，桌面/移动视口无溢出。
-- 首页文字、截图、版本和 Release 附件一致。
-- CI 能从干净 checkout 构建，页面不含 key、AppData 或本地运行数据。
-
-## 不做
-
-不在这项计划里实现域名、在线控制台、下载统计、营销动画或与仓库 README 分叉的功能说明。
-
-— GPT-6 Luna xhigh（OpenAI Codex），AI 辅助整理
+旧版页面结构、v0.2.0/v0.4.0 部署验收和此前“尚待部署”的记录只证明各自历史状态，不覆盖当前 Pages 流程。

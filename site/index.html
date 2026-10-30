@@ -2,206 +2,510 @@
 <html lang="zh-CN" data-theme="dark">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Turn questions into next steps with a traceable decision runtime | 用可追溯的决策运行时，把问题变成下一步">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="dark light">
-  <title>SysTorch — Turn questions into next steps</title>
+  <meta name="description" content="SysTorch 面向人、模型与 Agent 处理结构化决策：通过可检查的 DAG 路由 Jev / System One 请求，必要时持久交给人作答，再把结果交还原调用方。">
+  <meta name="theme-color" content="#0d1517">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="SysTorch">
+  <meta property="og:title" content="SysTorch — Turn questions into next steps">
+  <meta property="og:description" content="A decision runtime for people, models, and agents. Typed questions, inspectable routes, durable human answers.">
+  <meta property="og:url" content="https://arcj137442.github.io/SysTorch/">
+  <meta property="og:image" content="https://arcj137442.github.io/SysTorch/assets/systorch-og.png">
+  <meta property="og:image:alt" content="SysTorch — Turn questions into next steps">
+  <meta property="og:locale" content="zh_CN">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SysTorch — Turn questions into next steps">
+  <meta name="twitter:description" content="A structured decision runtime for people, models, and agents.">
+  <meta name="twitter:image" content="https://arcj137442.github.io/SysTorch/assets/systorch-og.png">
+  <link rel="canonical" href="https://arcj137442.github.io/SysTorch/">
   <link rel="icon" href="./assets/systorch.svg" type="image/svg+xml">
   <link rel="stylesheet" href="./styles.css">
+  <title>SysTorch — Turn questions into next steps</title>
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "SysTorch",
+      "url": "https://arcj137442.github.io/SysTorch/",
+      "description": "A structured decision runtime for people, models, and agents.",
+      "inLanguage": ["zh-CN", "en"]
+    }
+  </script>
   <script>
     (() => {
-      const saved = localStorage.getItem('systorch-site-theme');
-      document.documentElement.dataset.theme = saved === 'light' || saved === 'dark'
-        ? saved
-        : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      const read = (key) => { try { return localStorage.getItem(key); } catch { return null; } };
+      const theme = read('systorch-site-theme');
+      document.documentElement.dataset.theme = theme === 'light' || theme === 'dark'
+        ? theme
+        : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+      document.documentElement.lang = read('systorch-site-language') === 'en' ? 'en' : 'zh-CN';
     })();
   </script>
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="#top" aria-label="SysTorch">
-      <img src="./assets/systorch.svg" alt="">
-      <span>SysTorch</span>
-    </a>
-    <nav aria-label="Main navigation">
-      <a href="#workflow" data-i18n="nav.workflow">工作流</a>
-      <a href="#features" data-i18n="nav.features">能力</a>
-      <a href="#gallery" data-i18n="nav.gallery">界面预览</a>
-      <a href="#download" data-i18n="nav.download">下载</a>
-      <a href="https://github.com/ARCJ137442/SysTorch">GitHub</a>
-    </nav>
-    <div class="tools">
-      <button id="lang" class="tool" aria-label="Switch language">EN</button>
-      <button id="theme" class="tool" aria-label="Toggle theme" title="Toggle theme"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg></button>
+  <a class="skip-link" href="#main" data-i18n="skip">跳到主要内容</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="#top" aria-label="SysTorch">
+        <img src="./assets/systorch.svg" alt="">
+        <span>SysTorch</span>
+      </a>
+      <button id="menu-toggle" class="icon-button menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" data-i18n-aria="nav.open">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <nav id="site-nav" class="site-nav" aria-label="主导航" data-i18n-aria="nav.label">
+        <a href="#decision" data-i18n="nav.decision">决策请求</a>
+        <a href="#workflow" data-i18n="nav.workflow">运行路径</a>
+        <a href="#human" data-i18n="nav.human">人工作答</a>
+        <a href="#position" data-i18n="nav.position">产品定位</a>
+        <a href="#download" data-i18n="nav.download">下载</a>
+      </nav>
+      <div class="header-actions">
+        <a class="release-chip" href="https://github.com/ARCJ137442/SysTorch/releases" aria-label="当前 SysTorch 发行版" data-i18n-aria="release.label">
+          <span id="header-release-kind" class="release-dot is-preview"></span>
+          <span id="header-version">Release</span>
+        </a>
+        <button id="language-toggle" class="text-button" type="button" aria-label="切换到英文" data-i18n-aria="language.label">EN</button>
+        <button id="theme-toggle" class="icon-button" type="button" aria-label="切换主题" title="切换主题">
+          <svg class="theme-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.4 15.1A8.6 8.6 0 0 1 8.9 3.6 8.7 8.7 0 1 0 20.4 15.1Z"/></svg>
+        </button>
+      </div>
     </div>
   </header>
 
-  <main id="top">
-    <section class="hero section-wrap">
+  <main id="main">
+    <section id="top" class="hero page-shell">
       <div class="hero-copy">
-        <p class="eyebrow"><span class="live-dot"></span><span data-i18n="hero.eyebrow">结构化决策运行时</span></p>
-        <h1 data-i18n="hero.title">把眼前的问题，<br>变成下一步。</h1>
-        <p class="lede" data-i18n="hero.lede">SysTorch 把一个或多个结构化问题送入可检查的决策路径；人、模型与 Agent 可以调用它，需要时由人接手，再把答案交回原调用方。</p>
+        <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span><span data-i18n="hero.eyebrow">为 System One 决策而造</span></p>
+        <h1 data-i18n-html="hero.title">把眼前的问题，<br>变成下一步。</h1>
+        <p class="hero-lede" data-i18n="hero.lede">SysTorch 把结构化判断送入可检查的路由，在本地或托管决策服务间协调；需要时交给人作答，再把类型明确的结果交还原调用方。</p>
         <div class="hero-actions">
-          <a class="button button-primary" href="#download" data-i18n="hero.download">获取预发布版</a>
-          <a class="button button-secondary" href="https://github.com/ARCJ137442/SysTorch/blob/main/README.md" data-i18n="hero.readme">阅读产品说明</a>
+          <a class="button button-primary" href="#workflow" data-i18n="hero.primary">看看一次决策如何流转</a>
+          <a id="hero-download" class="button button-secondary" href="https://github.com/ARCJ137442/SysTorch/releases" data-i18n="hero.secondary">查看当前发行版</a>
         </div>
-        <p class="fineprint" data-i18n="hero.boundary">专注 System One / Jev 决策协议；产品品牌不绑定单一模型或供应商。</p>
+        <p class="hero-boundary"><span data-i18n="hero.focus">面向 Jev / System One typed decisions</span><span class="boundary-dot" aria-hidden="true"></span><span data-i18n="hero.notGateway">不是通用聊天模型网关</span></p>
       </div>
-      <aside class="release-panel" aria-label="Latest release">
-        <div class="release-panel-top">
-          <span class="eyebrow" data-i18n="release.eyebrow">当前发行</span>
-          <span id="release-kind" class="release-kind" data-release-type="pre">预发布</span>
+
+      <div class="hero-visual">
+        <div class="trace-stage" role="group" aria-labelledby="trace-title" aria-describedby="trace-description">
+          <div class="trace-stage-head">
+            <div>
+              <p class="trace-kicker" data-i18n="trace.kicker">一次结构化决策</p>
+              <h2 id="trace-title" data-i18n="trace.title">请求有来路，答案有去向。</h2>
+            </div>
+            <span class="synthetic-mark" data-i18n="trace.synthetic">合成示意</span>
+          </div>
+          <p id="trace-description" class="sr-only" data-i18n="trace.alt">示意图：调用方发送一个 Choice 问题；第一个上游返回限流错误，路由继续尝试第二个上游，成功得到类型化答案并交还调用方。</p>
+          <div class="trace-caller">
+            <span class="node-label" data-i18n="trace.caller">调用方 · App / Agent</span>
+            <strong data-i18n="trace.question">这条工单应该进入哪个队列？</strong>
+            <span class="request-shape"><i></i> state <i></i> Choice · 3 options</span>
+          </div>
+          <div class="trace-link trace-link-main" aria-hidden="true"><span></span></div>
+          <div class="trace-entry">
+            <span class="entry-symbol" aria-hidden="true">
+              <svg viewBox="0 0 32 32"><path d="M16 3 27 14 16 25 5 14 16 3Z"/><circle cx="16" cy="14" r="3"/><path d="M16 25v4"/></svg>
+            </span>
+            <span><small data-i18n="trace.entry">SysTorch entry</small><strong>support-triage</strong></span>
+            <span class="entry-caption" data-i18n="trace.policy">DAG · ordered fallback</span>
+          </div>
+          <div class="trace-attempts">
+            <div class="attempt attempt-failed">
+              <span class="attempt-number">01</span>
+              <span class="attempt-info"><strong data-i18n="trace.providerA">Provider A</strong><small data-i18n="trace.failed">HTTP 429 · next route</small></span>
+              <span class="attempt-state" data-i18n="trace.retry">重试</span>
+            </div>
+            <div class="attempt attempt-success">
+              <span class="attempt-number">02</span>
+              <span class="attempt-info"><strong data-i18n="trace.providerB">Provider B</strong><small data-i18n="trace.returned">Choice returned · 3 options</small></span>
+              <span class="attempt-state" data-i18n="trace.success">成功</span>
+            </div>
+          </div>
+          <div class="trace-link trace-link-return" aria-hidden="true"><span></span></div>
+          <div class="trace-answer">
+            <span class="answer-type">CHOICE</span>
+            <div><small data-i18n="trace.answerLabel">交还调用方</small><strong data-i18n="trace.answer">support-review</strong></div>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+          </div>
+          <div class="trace-stage-foot"><span><i class="good-dot"></i><span data-i18n="trace.live">路由轨迹在产品中对应真实请求事件</span></span><span>request → attempts → answer</span></div>
         </div>
-        <strong id="release-version">—</strong>
-        <p id="release-note" data-i18n="release.pending">正在读取发行信息</p>
-        <div class="route-signal" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-        <div class="signal-meta"><span>DAG</span><span>decision</span><span>trace</span></div>
-        <a class="release-link" href="https://github.com/ARCJ137442/SysTorch/releases"><span data-i18n="release.more">查看所有发行版</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
-      </aside>
-    </section>
-
-    <section id="workflow" class="section-wrap workflow-section">
-      <div class="section-heading">
-        <div><p class="eyebrow" data-i18n="workflow.eyebrow">从请求到可取回的答案</p><h2 data-i18n="workflow.title">一个问题，可以走过多条路径；来龙去脉仍留在同一处。</h2></div>
-        <p data-i18n="workflow.lede">不是把模型藏在一个黑盒按钮后面。SysTorch 保留调用入口、路由尝试、人工接手和最终回复之间的关系。</p>
-      </div>
-      <div class="flow">
-        <article><span class="flow-index">01</span><h3 data-i18n="flow.call">提交判断</h3><p data-i18n="flow.callText">人、Agent 或 Harness 带着结构化问题调用一个入口。</p></article>
-        <div class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></div>
-        <article><span class="flow-index">02</span><h3 data-i18n="flow.route">沿 DAG 协调</h3><p data-i18n="flow.routeText">可编辑路径连接决策服务；边上的辉光映出真实请求与响应。</p></article>
-        <div class="flow-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></div>
-        <article><span class="flow-index">03</span><h3 data-i18n="flow.human">必要时交给人</h3><p data-i18n="flow.humanText">任务持久等待；人明确作答后，原调用方回来取回结果。</p></article>
+        <p class="visual-note" data-i18n="trace.note">示意路径使用合成数据，不是实时流量或模型质量演示。</p>
       </div>
     </section>
 
-    <section id="features" class="section-wrap feature-section">
-      <div class="section-heading">
-        <div><p class="eyebrow" data-i18n="features.eyebrow">一个运行时，两种工作面</p><h2 data-i18n="features.title">日常决策与专业路由，共用同一套底层。</h2></div>
-        <p data-i18n="features.lede">面向普通用户的「开始」与面向维护者的图、配置、统计和调试工具相互连通，但各自保持清楚的工作节奏。</p>
+    <section id="decision" class="decision-section page-shell section-rule">
+      <div class="section-intro">
+        <p class="eyebrow" data-i18n="decision.eyebrow">先看清它处理什么</p>
+        <h2 data-i18n="decision.title">不是续写一段话，而是回答一个明确的问题。</h2>
+        <p data-i18n="decision.lede">请求携带情境与问题定义；决策服务返回可供软件检查和分支处理的类型化结果。</p>
       </div>
-      <div class="feature-grid">
-        <article class="feature feature-large"><span class="feature-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19 19 5M8 5h11v11"/></svg></span><h3 data-i18n="feature.start">开始与决策台</h3><p data-i18n="feature.startText">结构化问题、多题消息、加密会话，以及持久人工作答。调用者退出后，仍可使用同一身份取回答案。</p></article>
-        <article class="feature"><span class="feature-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 21 12 12 21 3 12 12 3Z"/><circle cx="12" cy="12" r="2"/></svg></span><h3 data-i18n="feature.graph">可追溯 DAG</h3><p data-i18n="feature.graphText">入口、内部路径和提供商出口清楚相连。失败重试和成功路径不再混成一个难以解释的结果。</p></article>
-        <article class="feature"><span class="feature-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><h3 data-i18n="feature.control">服务启停</h3><p data-i18n="feature.controlText">可控的本地服务可以定义启动、停止与状态探查；云端服务继续由提供商管理。</p></article>
-        <article class="feature"><span class="feature-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="9" y="14" width="6" height="6" rx="1"/><path d="M7 10v2h5m5-2v2h-3"/></svg></span><h3 data-i18n="feature.agent">Agent API</h3><p data-i18n="feature.agentText">调用方与人工操作共享明确的权限、原子写入和任务归属边界。</p></article>
+      <div class="decision-sample" aria-label="合成结构化决策请求示例" data-i18n-aria="decision.codeLabel">
+        <div class="sample-topline"><span data-i18n="decision.requestLabel">REQUEST SHAPE</span><span>POST /v1/systorch/systemone</span></div>
+        <pre aria-label="Synthetic structured decision example"><code>{
+  "state": { "ticket": "refund requested" },
+  "question_order": ["route"],
+  "questions": {
+    "route": {
+      "type": "choice",
+      "instructions": "Which team should handle this?",
+      "criteria": {
+        "billing": "Billing",
+        "support": "Support",
+        "review": "Manual review"
+      }
+    }
+  }
+}</code></pre>
+        <div class="answer-types" aria-label="Decision types">
+          <span><b>Noul</b><small data-i18n="decision.noul">是 / 否判断</small></span>
+          <span><b>Choice</b><small data-i18n="decision.choice">固定选项</small></span>
+          <span><b>Score</b><small data-i18n="decision.score">有序等级</small></span>
+          <span><b>Box</b><small data-i18n="decision.box">区域定位</small></span>
+        </div>
+        <p class="sample-note" data-i18n="decision.note">图片、音频、视频和文件可按 SysTorch assets 契约登记；目标服务的实际支持可能不同。无法无损转换时明确报错，不静默改写格式。</p>
       </div>
-      <p class="protocol-note" data-i18n="features.protocol">Jev / System One 是协议与模型系列；SysTorch 是独立产品。核心工作流不需要通用 LLM API。</p>
     </section>
 
-    <section id="gallery" class="section-wrap gallery-section">
-      <div class="section-heading">
-        <div><p class="eyebrow" data-i18n="gallery.eyebrow">界面预览</p><h2 data-i18n="gallery.title">先从一个可行动的空白页开始。</h2></div>
-        <a class="text-link" href="https://github.com/ARCJ137442/SysTorch/tree/main/docs/gallery"><span data-i18n="gallery.all">打开完整图册</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+    <section id="workflow" class="workflow-section page-shell section-rule">
+      <div class="section-intro section-intro-wide">
+        <p class="eyebrow" data-i18n="workflow.eyebrow">一个决策，完整的一段路</p>
+        <h2 data-i18n="workflow.title">从调用入口到最终答案，过程留在同一条线上。</h2>
+        <p data-i18n="workflow.lede">一个父请求可以包含多个上游尝试。成功回复作为主要结果；失败与重试成为它的可追踪来路。</p>
       </div>
-      <div class="gallery-grid">
-        <figure class="gallery-card gallery-card-wide">
-          <img src="./assets/start-desktop.png" alt="SysTorch Start interface preview">
-          <figcaption><strong data-i18n="gallery.desktop">开始 · 桌面</strong><span data-i18n="gallery.desktopCaption">聊天式输入与结构化决策问题。</span></figcaption>
+      <div class="workflow-rail">
+        <article class="workflow-step">
+          <span class="step-index">01 <i></i></span>
+          <div><h3 data-i18n="workflow.step1">提交结构化问题</h3><p data-i18n="workflow.step1Text">人、软件或 Agent 通过同一份契约提交情境与有序问题。</p></div>
+        </article>
+        <article class="workflow-step">
+          <span class="step-index">02 <i></i></span>
+          <div><h3 data-i18n="workflow.step2">沿 DAG 协调服务</h3><p data-i18n="workflow.step2Text">图组织入口、复用节点和提供商；真实调用让路径与连线辉光相呼应。</p></div>
+        </article>
+        <article class="workflow-step">
+          <span class="step-index">03 <i></i></span>
+          <div><h3 data-i18n="workflow.step3">返回类型化结果</h3><p data-i18n="workflow.step3Text">调用方收到 schema 可检查的答案，也能按需查看请求 ID、尝试顺序和最终赢家。</p></div>
+        </article>
+      </div>
+      <div class="workflow-promise"><span class="promise-line" aria-hidden="true"></span><p data-i18n="workflow.promise">模型可以判断，应用保留控制；结果不会替应用执行动作或授予权限。</p></div>
+      <p class="provider-note" data-i18n="workflow.providers">当前适配器：TypeSafe System One、Laya、Vercel、OpenRouter（上游转换）。每项能力仍取决于目标服务与模型。</p>
+    </section>
+
+    <section id="human" class="human-section section-rule">
+      <div class="page-shell human-grid">
+        <div class="human-copy">
+          <p class="eyebrow"><span class="human-mark" aria-hidden="true"></span><span data-i18n="human.eyebrow">需要人的时候，答案仍有归处</span></p>
+          <h2 data-i18n-html="human.title">调用方可以离开。<br>这项判断仍会回来。</h2>
+          <p data-i18n="human.lede">当任务明确需要人做决定，SysTorch 可把它保存为持久任务。人在决策台作答后，调用方可用原身份取回结构化结果。</p>
+          <a class="text-link" href="https://github.com/ARCJ137442/SysTorch/blob/main/docs/guides/SYSTORCH-EXTERNAL-CHOICE.md"><span data-i18n="human.guide">查看提交—作答—取回指南</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+        </div>
+        <div class="human-timeline" aria-label="Human decision handoff">
+          <div class="timeline-item"><span class="timeline-point">01</span><div><strong data-i18n="human.step1">调用方提交</strong><small data-i18n="human.step1Text">一条任务与稳定的题目 ID</small></div><span class="timeline-state" data-i18n="human.sent">已保存</span></div>
+          <div class="timeline-item"><span class="timeline-point timeline-warm">02</span><div><strong data-i18n="human.step2">任务等待人回答</strong><small data-i18n="human.step2Text">调用程序可以结束，任务继续持久存在</small></div><span class="timeline-state timeline-state-warm" data-i18n="human.pending">待作答</span></div>
+          <div class="timeline-item"><span class="timeline-point timeline-good">03</span><div><strong data-i18n="human.step3">人在决策台作答</strong><small data-i18n="human.step3Text">系统按题型验证答案并保存</small></div><span class="timeline-state timeline-state-good" data-i18n="human.answered">已回答</span></div>
+          <div class="timeline-item"><span class="timeline-point">04</span><div><strong data-i18n="human.step4">原调用方取回</strong><small data-i18n="human.step4Text">同一个任务身份与问题 ID</small></div><span class="timeline-state" data-i18n="human.returned">已返回</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="position" class="position-section page-shell section-rule">
+      <div class="section-intro section-intro-wide">
+        <p class="eyebrow" data-i18n="position.eyebrow">放在生态里看</p>
+        <h2 data-i18n="position.title">专注决策运行层，不重新造一个模型工作台。</h2>
+        <p data-i18n="position.lede">本地模型工作台、通用 Agent 网关、托管决策 API 都可以与 SysTorch 配合。SysTorch 的重点，是把 System One 请求、路由证据和人工作答连成可操作的生命周期。</p>
+      </div>
+      <div class="position-table" role="table" aria-label="SysTorch 在生态中的定位" data-i18n-aria="position.tableLabel">
+        <div class="position-row position-head" role="row"><span role="columnheader" data-i18n="position.col1">当你的主要任务是…</span><span role="columnheader" data-i18n="position.col2">常见的工作层</span><span role="columnheader" data-i18n="position.col3">SysTorch 的角色</span></div>
+        <div class="position-row" role="row"><span role="cell" data-i18n="position.row1a">运行或训练一个本地模型</span><span role="cell" data-i18n="position.row1b">模型下载、推理引擎、评估与训练</span><span role="cell" data-i18n="position.row1c">连接已有的 System One 兼容服务；不内置权重或推理引擎</span></div>
+        <div class="position-row" role="row"><span role="cell" data-i18n="position.row2a">为多个 Agent 路由通用聊天模型</span><span role="cell" data-i18n="position.row2b">兼容多种聊天 API、账号与模型供应商</span><span role="cell" data-i18n="position.row2c">把核心入口留给 typed decisions，不扩成通用聊天网关</span></div>
+        <div class="position-row position-row-focus" role="row"><span role="cell" data-i18n="position.row3a">把一个判断交给模型或人，再返回给调用方</span><span role="cell" data-i18n="position.row3b">这条工作流可能跨越决策 API、路由配置与人工作业队列</span><span role="cell" data-i18n="position.row3c">SysTorch 的中心：typed decision + DAG + human handoff</span></div>
+      </div>
+      <p class="position-footnote" data-i18n="position.note">System One 路由并非 SysTorch 独有能力；差异来自产品把哪一种工作流放在中心，而不是宣称邻近工具没有重叠功能。</p>
+    </section>
+
+    <section id="product" class="product-section page-shell section-rule">
+      <div class="section-intro section-intro-wide">
+        <p class="eyebrow" data-i18n="product.eyebrow">一套运行时，多个工作面</p>
+        <h2 data-i18n="product.title">直接开始，也能逐步深入控制。</h2>
+        <p data-i18n="product.lede">「开始」给人快速发起决策；专业控制台编辑 DAG、追踪历史并管理服务；标记为可控且经用户授权的本地 provider 可以运行登记的启停命令，推理引擎仍由外部服务提供。</p>
+      </div>
+      <div class="product-gallery">
+        <figure class="product-shot product-shot-main">
+          <img src="./assets/start-desktop-0.12.0.png" alt="SysTorch 0.12.0 开始页桌面预览，使用合成决策会话" data-i18n-alt="product.desktopAlt" loading="lazy">
+          <figcaption><span class="shot-index">01</span><span><strong data-i18n="product.start">开始 · 桌面</strong><small data-i18n="product.startText">结构化问题、会话和按需展开的路由依据</small></span></figcaption>
         </figure>
-        <figure class="gallery-card">
-          <img src="./assets/start-mobile.png" alt="SysTorch Start interface on a narrow touch screen">
-          <figcaption><strong data-i18n="gallery.mobile">开始 · 触屏</strong><span data-i18n="gallery.mobileCaption">窄屏会话、附件与抽屉式导航。</span></figcaption>
+        <figure class="product-shot product-shot-mobile">
+          <img src="./assets/start-mobile-0.12.0.png" alt="SysTorch 0.12.0 开始页触屏预览，使用合成会话列表" data-i18n-alt="product.mobileAlt" loading="lazy">
+          <figcaption><span class="shot-index">02</span><span><strong data-i18n="product.mobile">开始 · 触屏</strong><small data-i18n="product.mobileText">窄屏会话列表与输入布局</small></span></figcaption>
         </figure>
       </div>
-      <p class="gallery-note" data-i18n="gallery.note">界面预览采用合成数据，不代表模型输出质量；预发布版仍需人工验收。</p>
+      <p class="gallery-disclaimer" data-i18n="product.disclaimer">界面截图来自本地浏览器与合成数据，不是 Release 二进制的真机截图，也不代表上游模型输出或人工验收。</p>
     </section>
 
-    <section id="download" class="section-wrap download-section">
-      <div class="download-copy">
-        <p class="eyebrow"><span data-i18n="download.eyebrow">下载当前版本</span> · <span id="download-version">—</span></p>
-        <h2 data-i18n="download.title">现在开始试用 SysTorch。</h2>
-        <p data-i18n="download.lede">获取 Windows x64 Standalone 或 Android arm64 APK。每个发行页会列出该版本实际提供的附件和验收边界。</p>
-        <p class="fineprint" data-i18n="download.warning">Windows EXE 暂无 Authenticode 签名；Android 保留原安装身份以支持稳定签名覆盖升级。</p>
+    <section id="developers" class="developer-section section-rule">
+      <div class="page-shell developer-grid">
+        <div class="developer-copy">
+          <p class="eyebrow" data-i18n="developer.eyebrow">同一份决策契约</p>
+          <h2 data-i18n="developer.title">人可以点选，Agent 也能调用。</h2>
+          <p data-i18n="developer.lede">使用者、应用和 Harness 都通过 SysTorch API 提交 typed questions。请求顺序、入口身份和错误 ID 可核对；持久人工作答使用独立的权限与任务接口。</p>
+          <a class="text-link" href="https://github.com/ARCJ137442/SysTorch/blob/main/docs/contracts/05-HTTP%E5%A5%91%E7%BA%A6.md"><span data-i18n="developer.contract">阅读 HTTP 契约</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+        </div>
+        <div class="api-example">
+          <div class="code-topline"><span>POST /v1/systorch/systemone</span><button id="copy-request" class="copy-button" type="button" data-i18n="developer.copy">复制示例</button></div>
+          <pre><code id="request-example">{
+  "model": "typesafe-ai/jev",
+  "state": { "ticket": "refund requested" },
+  "question_order": ["route"],
+  "questions": {
+    "route": {
+      "type": "choice",
+      "instructions": "Which team should handle this?",
+      "criteria": {
+        "billing": "Billing",
+        "support": "Support",
+        "review": "Manual review"
+      }
+    }
+  }
+}</code></pre>
+          <p id="copy-status" class="copy-status" aria-live="polite" data-i18n="developer.sample">Synthetic request example · no API key included</p>
+        </div>
       </div>
-      <div class="download-grid">
-        <a class="download-card" data-platform="windows" href="https://github.com/ARCJ137442/SysTorch/releases">
-          <svg class="platform-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8m-4-3v3"/></svg><strong>Windows</strong><span data-i18n="download.windows">Standalone · x64</span><small data-i18n="download.windowsAction">下载单文件 EXE</small>
-        </a>
-        <a class="download-card" data-platform="android" href="https://github.com/ARCJ137442/SysTorch/releases">
-          <svg class="platform-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 5h4m-3 14h2"/></svg><strong>Android</strong><span data-i18n="download.android">arm64 · 稳定签名</span><small data-i18n="download.androidAction">下载 APK</small>
-        </a>
+    </section>
+
+    <section id="download" class="download-section page-shell section-rule">
+      <div class="download-head">
+        <p class="eyebrow"><span class="eyebrow-mark" aria-hidden="true"></span><span data-i18n="download.eyebrow">当前发行版</span></p>
+        <h2 data-i18n="download.title">先完成一次判断，再决定它如何融入你的工作。</h2>
+        <p data-i18n="download.lede">下载对应平台的当前版本，或先从 README 与外部调用指南了解它的工作方式。</p>
       </div>
-      <a class="all-releases" href="https://github.com/ARCJ137442/SysTorch/releases"><span data-i18n="download.all">在 GitHub 查看所有预发布与历史版本</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+      <div class="release-download">
+        <div class="release-summary">
+          <span class="release-status" role="status" aria-live="polite"><i id="release-status-dot" class="is-preview"></i><span id="release-status-text" data-i18n="download.loading">正在读取 GitHub Release</span></span>
+          <strong id="download-version">—</strong>
+          <p id="release-caution" data-i18n="download.caution">预发布版本的验收范围与限制，请以对应发行说明为准。</p>
+          <a id="all-releases" class="text-link" href="https://github.com/ARCJ137442/SysTorch/releases"><span data-i18n="download.all">查看所有版本</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+        </div>
+        <div class="release-assets">
+          <a id="windows-download" class="asset-link" href="https://github.com/ARCJ137442/SysTorch/releases">
+            <span class="asset-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8m-4-3v3"/></svg></span>
+            <span class="asset-copy"><strong>Windows</strong><small data-i18n="download.windows">Standalone · x64</small><span data-i18n="download.windowsAction">下载 EXE</span></span>
+            <svg class="asset-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+          </a>
+          <a id="android-download" class="asset-link" href="https://github.com/ARCJ137442/SysTorch/releases">
+            <span class="asset-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 5h4m-3 14h2"/></svg></span>
+            <span class="asset-copy"><strong>Android</strong><small data-i18n="download.android">arm64 · 稳定签名</small><span data-i18n="download.androidAction">下载 APK</span></span>
+            <svg class="asset-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+          </a>
+          <p class="platform-note" data-i18n="download.limits">Windows EXE 未作 Authenticode 签名；Android 保留稳定签名和安装身份以支持覆盖升级。具体限制以对应版本发行说明为准。</p>
+        </div>
+      </div>
+      <div class="download-footer">
+        <a class="button button-primary" id="release-page" href="https://github.com/ARCJ137442/SysTorch/releases" data-i18n="download.release">打开 GitHub 发行页</a>
+        <a class="button button-quiet" href="https://github.com/ARCJ137442/SysTorch/blob/main/README.md" data-i18n="download.readme">阅读快速开始</a>
+      </div>
     </section>
   </main>
 
-  <footer class="footer">
-    <a class="brand" href="#top"><img src="./assets/systorch.svg" alt=""><span>SysTorch</span></a>
-    <p data-i18n="footer.slogan">把眼前的问题，变成下一步。</p>
-    <a href="https://github.com/ARCJ137442/SysTorch">GitHub · ARCJ137442/SysTorch</a>
+  <footer class="site-footer">
+    <div class="page-shell footer-inner">
+      <a class="brand footer-brand" href="#top"><img src="./assets/systorch.svg" alt=""><span>SysTorch</span></a>
+      <p data-i18n="footer.slogan">把眼前的问题，变成下一步。</p>
+      <div class="footer-links">
+        <a href="https://github.com/ARCJ137442/SysTorch">GitHub</a>
+        <a href="https://github.com/ARCJ137442/SysTorch/blob/main/docs/README.md" data-i18n="footer.docs">文档</a>
+        <a href="https://github.com/ARCJ137442/SysTorch/releases" data-i18n="footer.releases">发行版</a>
+      </div>
+      <small>© <span id="year"></span> SysTorch · <span data-i18n="footer.scope">Jev / System One decision runtime</span></small>
+    </div>
   </footer>
 
   <script>
     const copy = {
       zh: {
-        'nav.workflow':'工作流','nav.features':'能力','nav.gallery':'界面预览','nav.download':'下载',
-        'hero.eyebrow':'结构化决策运行时','hero.title':'把眼前的问题，<br>变成下一步。','hero.lede':'SysTorch 把一个或多个结构化问题送入可检查的决策路径；人、模型与 Agent 可以调用它，需要时由人接手，再把答案交回原调用方。',
-        'hero.download':'下载 SysTorch','hero.readme':'阅读产品说明','hero.boundary':'专注 System One / Jev 决策协议；产品品牌不绑定单一模型或供应商。',
-        'release.eyebrow':'当前发行','release.pending':'正在读取发行信息','release.more':'查看所有发行版',
-        'workflow.eyebrow':'从请求到可取回的答案','workflow.title':'一个问题，可以走过多条路径；来龙去脉仍留在同一处。','workflow.lede':'不是把模型藏在一个黑盒按钮后面。SysTorch 保留调用入口、路由尝试、人工接手和最终回复之间的关系。',
-        'flow.call':'提交判断','flow.callText':'人、Agent 或 Harness 带着结构化问题调用一个入口。','flow.route':'沿 DAG 协调','flow.routeText':'可编辑路径连接决策服务；边上的辉光映出真实请求与响应。','flow.human':'必要时交给人','flow.humanText':'任务持久等待；人明确作答后，原调用方回来取回结果。',
-        'features.eyebrow':'一个运行时，两种工作面','features.title':'日常决策与专业路由，共用同一套底层。','features.lede':'面向普通用户的「开始」与面向维护者的图、配置、统计和调试工具相互连通，但各自保持清楚的工作节奏。',
-        'feature.start':'开始与决策台','feature.startText':'结构化问题、多题消息、加密会话，以及持久人工作答。调用者退出后，仍可使用同一身份取回答案。','feature.graph':'可追溯 DAG','feature.graphText':'入口、内部路径和提供商出口清楚相连。失败重试和成功路径不再混成一个难以解释的结果。','feature.control':'服务启停','feature.controlText':'可控的本地服务可以定义启动、停止与状态探查；云端服务继续由提供商管理。','feature.agent':'Agent API','feature.agentText':'调用方与人工操作共享明确的权限、原子写入和任务归属边界。','features.protocol':'Jev / System One 是协议与模型系列；SysTorch 是独立产品。核心工作流不需要通用 LLM API。',
-        'gallery.eyebrow':'界面预览','gallery.title':'先从一个可行动的空白页开始。','gallery.all':'打开完整图册','gallery.desktop':'开始 · 桌面','gallery.desktopCaption':'聊天式输入与结构化决策问题。','gallery.mobile':'开始 · 触屏','gallery.mobileCaption':'窄屏会话、附件与抽屉式导航。','gallery.note':'界面预览采用合成数据，不代表模型输出质量；预发布版仍需人工验收。',
-        'download.eyebrow':'下载当前版本','download.title':'现在开始试用 SysTorch。','download.lede':'获取 Windows x64 Standalone 或 Android arm64 APK。每个发行页会列出该版本实际提供的附件和验收边界。','download.warning':'Windows EXE 当前没有 Authenticode 签名；Android 保留原安装身份与稳定签名以支持覆盖升级。',
-        'download.windows':'Standalone · x64','download.windowsAction':'下载单文件 EXE','download.android':'arm64 · 稳定签名','download.androidAction':'下载 APK','download.all':'在 GitHub 查看所有预发布与历史版本','footer.slogan':'把眼前的问题，变成下一步。'
+        skip: '跳到主要内容',
+        'language.label': '切换到英文',
+        'nav.label': '主导航', 'release.label': '当前 SysTorch 发行版', 'decision.codeLabel': '合成结构化决策请求示例', 'position.tableLabel': 'SysTorch 在生态中的定位',
+        description: 'SysTorch 面向人、模型与 Agent 处理结构化决策：通过可检查的 DAG 路由 Jev / System One 请求，必要时持久交给人作答，再把结果交还原调用方。',
+        'nav.decision': '决策请求', 'nav.workflow': '运行路径', 'nav.human': '人工作答', 'nav.position': '产品定位', 'nav.download': '下载', 'nav.open': '打开导航菜单', 'nav.close': '关闭导航菜单',
+        'hero.eyebrow': '为 System One 决策而造', 'hero.title': '把眼前的问题，<br>变成下一步。',
+        'hero.lede': 'SysTorch 把结构化判断送入可检查的路由，在本地或托管决策服务间协调；需要时交给人作答，再把类型明确的结果交还原调用方。',
+        'hero.primary': '看看一次决策如何流转', 'hero.secondary': '查看当前发行版', 'hero.focus': '面向 Jev / System One typed decisions', 'hero.notGateway': '不是通用聊天模型网关',
+        'trace.kicker': '一次结构化决策', 'trace.title': '请求有来路，答案有去向。', 'trace.synthetic': '合成示意',
+        'trace.alt': '示意图：调用方发送一个 Choice 问题；第一个上游返回限流错误，路由继续尝试第二个上游，成功得到类型化答案并交还调用方。',
+        'trace.caller': '调用方 · App / Agent', 'trace.question': '这条工单应该进入哪个队列？', 'trace.entry': 'SysTorch entry', 'trace.policy': 'DAG · ordered fallback',
+        'trace.providerA': '上游 A', 'trace.failed': 'HTTP 429 · 转向下一条路径', 'trace.retry': '重试', 'trace.providerB': '上游 B', 'trace.returned': '返回 Choice 结果', 'trace.success': '成功', 'trace.answerLabel': '交还调用方', 'trace.answer': 'support-review', 'trace.live': '应用中的辉光对应真实请求事件', 'trace.note': '示意路径使用合成数据，不是实时流量或模型质量演示。',
+        'decision.eyebrow': '先看清它处理什么', 'decision.title': '不是续写一段话，而是回答一个明确的问题。', 'decision.lede': '请求携带情境与问题定义；决策服务返回可供软件检查和分支处理的类型化结果。', 'decision.requestLabel': '请求结构',
+        'decision.noul': '是 / 否判断', 'decision.choice': '固定选项', 'decision.score': '有序等级', 'decision.box': '区域定位', 'decision.note': '图片、音频、视频和文件可按 SysTorch assets 契约登记；目标服务的实际支持可能不同。无法无损转换时明确报错，不静默改写格式。',
+        'workflow.eyebrow': '一个决策，完整的一段路', 'workflow.title': '从调用入口到最终答案，过程留在同一条线上。', 'workflow.lede': '一个父请求可以包含多个上游尝试。成功回复作为主要结果；失败与重试成为它的可追踪来路。',
+        'workflow.step1': '提交结构化问题', 'workflow.step1Text': '人、软件或 Agent 通过同一份契约提交情境与有序问题。', 'workflow.step2': '沿 DAG 协调服务', 'workflow.step2Text': '图组织入口、复用节点和提供商；真实调用让路径与连线辉光相呼应。', 'workflow.step3': '返回类型化结果', 'workflow.step3Text': '调用方收到 schema 可检查的答案，也能按需查看请求 ID、尝试顺序和最终赢家。', 'workflow.promise': '模型可以判断，应用保留控制；结果不会替应用执行动作或授予权限。', 'workflow.providers': '当前适配器：TypeSafe System One、Laya、Vercel、OpenRouter（上游转换）。每项能力仍取决于目标服务与模型。',
+        'human.eyebrow': '需要人的时候，答案仍有归处', 'human.title': '调用方可以离开。<br>这项判断仍会回来。', 'human.lede': '当任务明确需要人做决定，SysTorch 可把它保存为持久任务。人在决策台作答后，调用方可用原身份取回结构化结果。', 'human.guide': '查看提交—作答—取回指南',
+        'human.step1': '调用方提交', 'human.step1Text': '一条任务与稳定的题目 ID', 'human.sent': '已保存', 'human.step2': '任务等待人回答', 'human.step2Text': '调用程序可以结束，任务继续持久存在', 'human.pending': '待作答', 'human.step3': '人在决策台作答', 'human.step3Text': '系统按题型验证答案并保存', 'human.answered': '已回答', 'human.step4': '原调用方取回', 'human.step4Text': '同一个任务身份与问题 ID', 'human.returned': '已返回',
+        'position.eyebrow': '放在生态里看', 'position.title': '专注决策运行层，不重新造一个模型工作台。', 'position.lede': '本地模型工作台、通用 Agent 网关、托管决策 API 都可以与 SysTorch 配合。SysTorch 的重点，是把 System One 请求、路由证据和人工作答连成可操作的生命周期。',
+        'position.col1': '当你的主要任务是…', 'position.col2': '常见的工作层', 'position.col3': 'SysTorch 的角色',
+        'position.row1a': '运行或训练本地模型', 'position.row1b': '模型下载、推理引擎、评估与训练', 'position.row1c': '连接已有的 System One 兼容服务；不内置权重或推理引擎',
+        'position.row2a': '为多个 Agent 路由通用聊天模型', 'position.row2b': '兼容多种聊天 API、账号与模型供应商', 'position.row2c': '把核心入口留给 typed decisions，不扩成通用聊天网关',
+        'position.row3a': '把一个判断交给模型或人，再返回给调用方', 'position.row3b': '这条工作流可能跨越决策 API、路由配置与人工作业队列', 'position.row3c': 'SysTorch 的中心：typed decision + DAG + human handoff',
+        'position.note': 'System One 路由并非 SysTorch 独有能力；差异来自产品把哪一种工作流放在中心，而不是宣称邻近工具没有重叠功能。',
+        'product.eyebrow': '一套运行时，多个工作面', 'product.title': '直接开始，也能逐步深入控制。', 'product.lede': '「开始」给人快速发起决策；专业控制台编辑 DAG、追踪历史并管理服务；标记为可控且经用户授权的本地 provider 可以运行登记的启停命令，推理引擎仍由外部服务提供。', 'product.start': '开始 · 桌面', 'product.startText': '结构化问题、会话和按需展开的路由依据', 'product.mobile': '开始 · 触屏', 'product.mobileText': '窄屏会话列表与输入布局', 'product.disclaimer': '界面截图来自本地浏览器与合成数据，不是 Release 二进制的真机截图，也不代表上游模型输出或人工验收。',
+        'product.desktopAlt': 'SysTorch 0.12.0 开始页桌面预览，使用合成决策会话', 'product.mobileAlt': 'SysTorch 0.12.0 开始页触屏预览，使用合成会话列表',
+        'developer.eyebrow': '同一份决策契约', 'developer.title': '人可以点选，Agent 也能调用。', 'developer.lede': '使用者、应用和 Harness 都通过 SysTorch API 提交 typed questions。请求顺序、入口身份和错误 ID 可核对；持久人工作答使用独立的权限与任务接口。', 'developer.contract': '阅读 HTTP 契约', 'developer.copy': '复制示例', 'developer.copied': '已复制', 'developer.copyFailed': '请手动选择代码复制', 'developer.sample': '合成请求示例 · 不含 API key',
+        'download.eyebrow': '当前发行版', 'download.title': '先完成一次判断，再决定它如何融入你的工作。', 'download.lede': '下载对应平台的当前版本，或先从 README 与外部调用指南了解它的工作方式。', 'download.loading': '正在读取 GitHub Release', 'download.caution': '请查看发行页中的验收范围与已知限制。', 'download.all': '查看所有版本', 'download.windows': 'Standalone · x64', 'download.windowsAction': '下载 EXE', 'download.android': 'arm64 · 稳定签名', 'download.androidAction': '下载 APK', 'download.limits': 'Windows EXE 未作 Authenticode 签名；Android 保留稳定签名和安装身份以支持覆盖升级。具体限制以对应版本发行说明为准。', 'download.release': '打开 GitHub 发行页', 'download.readme': '阅读快速开始',
+        'footer.slogan': '把眼前的问题，变成下一步。', 'footer.docs': '文档', 'footer.releases': '发行版', 'footer.scope': 'Jev / System One 决策运行时'
       },
       en: {
-        'nav.workflow':'Workflow','nav.features':'Capabilities','nav.gallery':'Preview','nav.download':'Download',
-        'hero.eyebrow':'STRUCTURED DECISION RUNTIME','hero.title':'Turn questions into<br>next steps.','hero.lede':'SysTorch sends one or more structured questions through an inspectable decision path. People, models, and agents can call it; a person can take over when needed, then return the answer to the original caller.',
-        'hero.download':'Download SysTorch','hero.readme':'Read the product guide','hero.boundary':'Focused on System One / Jev decision protocols; the product is not tied to one model or provider.',
-        'release.eyebrow':'LATEST RELEASE','release.pending':'Loading release information','release.more':'Browse all releases',
-        'workflow.eyebrow':'FROM REQUEST TO RETRIEVABLE ANSWER','workflow.title':'One question can take several paths while its story stays together.','workflow.lede':'SysTorch does not hide the model behind a black-box button. It keeps the caller, route attempts, human handoff, and final reply connected.',
-        'flow.call':'Submit a decision','flow.callText':'A person, agent, or harness sends structured questions to one entry.','flow.route':'Coordinate through a DAG','flow.routeText':'Editable paths connect decision services; edge glow reflects real requests and responses.','flow.human':'Hand off when needed','flow.humanText':'The task waits durably. Once a person answers, the original caller can retrieve the result.',
-        'features.eyebrow':'ONE RUNTIME, TWO WORKSPACES','features.title':'Everyday decisions and professional routing share one foundation.','features.lede':'The Start workspace for everyday use connects to graphs, configuration, statistics, and diagnostics for maintainers, while each keeps a clear working rhythm.',
-        'feature.start':'Start and decision desk','feature.startText':'Structured questions, multi-question messages, encrypted sessions, and durable human answers. Callers can leave and retrieve the result later with the same identity.','feature.graph':'Traceable DAG','feature.graphText':'Entries, internal paths, and provider exits stay connected. Failed attempts and successful paths remain distinguishable.','feature.control':'Service lifecycle','feature.controlText':'Controllable local services can define start, stop, and status checks; cloud services remain provider-managed.','feature.agent':'Agent API','feature.agentText':'Callers and human actions share clear authorization, atomic writes, and task ownership boundaries.','features.protocol':'Jev / System One is a protocol and model family; SysTorch is an independent product. Core workflows do not require a general-purpose LLM API.',
-        'gallery.eyebrow':'INTERFACE PREVIEW','gallery.title':'Start with a blank page that is ready for action.','gallery.all':'Open the full gallery','gallery.desktop':'Start · Desktop','gallery.desktopCaption':'Chat-style input for structured decision questions.','gallery.mobile':'Start · Touch','gallery.mobileCaption':'Narrow conversations, attachments, and drawer navigation.','gallery.note':'Previews use synthetic data and do not represent model quality. The pre-release still needs maintainer hands-on acceptance.',
-        'download.eyebrow':'DOWNLOAD CURRENT VERSION','download.title':'Try SysTorch now.','download.lede':'Get the Windows x64 Standalone or Android arm64 APK. Each release page lists the assets and acceptance boundaries actually provided for that version.','download.warning':'The Windows EXE currently has no Authenticode signature. Android keeps its installed identity and stable signer for in-place upgrades.',
-        'download.windows':'Standalone · x64','download.windowsAction':'Download the single-file EXE','download.android':'arm64 · stable signature','download.androidAction':'Download the APK','download.all':'Browse pre-releases and history on GitHub','footer.slogan':'Turn questions into next steps.'
+        skip: 'Skip to content',
+        'language.label': 'Switch to Chinese',
+        'nav.label': 'Main navigation', 'release.label': 'Current SysTorch release', 'decision.codeLabel': 'Synthetic structured decision request example', 'position.tableLabel': 'SysTorch position in the ecosystem',
+        description: 'SysTorch is a structured decision runtime for people, models, and agents. Route typed System One decisions, inspect each attempt, and return durable human answers to the original caller.',
+        'nav.decision': 'Decision contract', 'nav.workflow': 'How it flows', 'nav.human': 'Human answers', 'nav.position': 'Where it fits', 'nav.download': 'Download', 'nav.open': 'Open navigation', 'nav.close': 'Close navigation',
+        'hero.eyebrow': 'BUILT FOR SYSTEM ONE DECISIONS', 'hero.title': 'Turn questions<br>into next steps.',
+        'hero.lede': 'SysTorch routes structured decisions across local and hosted services you can inspect. When a task needs a person\'s judgment, it can wait and return a typed answer to the original caller.',
+        'hero.primary': 'See how a decision flows', 'hero.secondary': 'View the current release', 'hero.focus': 'Focused on Jev / System One typed decisions', 'hero.notGateway': 'Not a general chat-model gateway',
+        'trace.kicker': 'ONE STRUCTURED DECISION', 'trace.title': 'Requests have a path. Answers have a destination.', 'trace.synthetic': 'SYNTHETIC EXAMPLE',
+        'trace.alt': 'Illustration: a caller sends a Choice question; the first upstream is rate limited, routing tries a second provider, receives a typed answer, and returns it to the caller.',
+        'trace.caller': 'CALLER · APP / AGENT', 'trace.question': 'Which queue should handle this ticket?', 'trace.entry': 'SysTorch entry', 'trace.policy': 'DAG · ordered fallback',
+        'trace.providerA': 'Upstream A', 'trace.failed': 'HTTP 429 · next route', 'trace.retry': 'RETRY', 'trace.providerB': 'Upstream B', 'trace.returned': 'Choice returned', 'trace.success': 'SUCCESS', 'trace.answerLabel': 'RETURNED TO CALLER', 'trace.answer': 'support-review', 'trace.live': 'In the product, glow maps to real request events', 'trace.note': 'This route is a synthetic illustration, not live traffic or a model-quality claim.',
+        'decision.eyebrow': 'FIRST, THE OBJECT IT HANDLES', 'decision.title': 'Not another paragraph. A question with a defined answer.', 'decision.lede': 'A request carries its situation and question definitions; a decision service returns typed results that software can inspect and act on.', 'decision.requestLabel': 'REQUEST SHAPE',
+        'decision.noul': 'yes / no judgment', 'decision.choice': 'fixed options', 'decision.score': 'ordered scale', 'decision.box': 'region location', 'decision.note': 'Images, audio, video, and files can be registered as SysTorch assets; actual support depends on the target service. If a lossless conversion is unavailable, SysTorch reports a format error instead of silently changing the request.',
+        'workflow.eyebrow': 'ONE DECISION, ONE CONNECTED STORY', 'workflow.title': 'From caller to final answer, the path stays together.', 'workflow.lede': 'One parent request can contain multiple upstream attempts. The successful decision stays primary; failures and retries remain traceable context.',
+        'workflow.step1': 'Submit structured questions', 'workflow.step1Text': 'A person, application, or agent sends a situation and ordered questions under one contract.', 'workflow.step2': 'Coordinate through a DAG', 'workflow.step2Text': 'The graph connects entries, reusable nodes, and providers; route glow reflects real request and response events.', 'workflow.step3': 'Return a typed result', 'workflow.step3Text': 'The caller receives a schema-checkable answer and can inspect the request ID, attempts, and selected provider when needed.', 'workflow.promise': 'Models inform decisions. Applications keep control; a result does not execute an action or grant permission.', 'workflow.providers': 'Current adapters: TypeSafe System One, Laya, Vercel, and OpenRouter as an upstream translator. Capabilities still depend on each service and model.',
+        'human.eyebrow': 'WHEN A PERSON NEEDS TO DECIDE', 'human.title': 'The caller can leave.<br>The decision can still return.', 'human.lede': 'When a task needs human judgment, SysTorch can persist it. A person answers in the Decision Desk; the original caller retrieves the structured result under the same identity.', 'human.guide': 'Read the submit—answer—retrieve guide',
+        'human.step1': 'Caller submits', 'human.step1Text': 'One task with stable question IDs', 'human.sent': 'SAVED', 'human.step2': 'Task waits for a person', 'human.step2Text': 'The calling program can exit while the task persists', 'human.pending': 'WAITING', 'human.step3': 'Person answers in the Decision Desk', 'human.step3Text': 'The system validates and saves by question type', 'human.answered': 'ANSWERED', 'human.step4': 'Original caller retrieves', 'human.step4Text': 'The same task identity and question IDs', 'human.returned': 'RETURNED',
+        'position.eyebrow': 'A PLACE IN THE ECOSYSTEM', 'position.title': 'Focused on the decision runtime, not another model workbench.', 'position.lede': 'Local model studios, broad agent gateways, and hosted decision APIs can work alongside SysTorch. Its focus is connecting System One requests, route evidence, and human answers into an operable lifecycle.',
+        'position.col1': 'If your main task is…', 'position.col2': 'Common neighboring layer', 'position.col3': 'SysTorch’s role',
+        'position.row1a': 'Run or train a local model', 'position.row1b': 'Model downloads, inference engines, evaluation, and training', 'position.row1c': 'Connect existing System One compatible services; no weights or inference engine included',
+        'position.row2a': 'Route general chat models for agents', 'position.row2b': 'Multiple chat APIs, accounts, and model providers', 'position.row2c': 'Keep the core entrance on typed decisions, not a general chat gateway',
+        'position.row3a': 'Send a judgment to a model or person, then return it', 'position.row3b': 'This workflow may span a decision API, routing configuration, and a human work queue', 'position.row3c': 'SysTorch’s center: typed decisions + DAG + human handoff',
+        'position.note': 'System One routing is not unique to SysTorch. The difference is which workflow a product puts at its center—not a claim that neighboring tools have no overlap.',
+        'product.eyebrow': 'ONE RUNTIME, MULTIPLE WORKSPACES', 'product.title': 'Start with a decision. Go deeper when you need control.', 'product.lede': 'Start helps a person initiate a decision. The console edits the DAG, follows history, and manages services. A local provider marked controllable and authorized by its user can run registered lifecycle commands; inference engines remain external.', 'product.start': 'Start · desktop', 'product.startText': 'Structured questions, sessions, and on-demand route evidence', 'product.mobile': 'Start · touch', 'product.mobileText': 'Narrow session list and composer layout', 'product.disclaimer': 'Screenshots are local browser previews with synthetic data—not screenshots from the Release binaries, real upstream outputs, or hands-on acceptance.',
+        'product.desktopAlt': 'SysTorch 0.12.0 Start desktop preview with a synthetic decision session', 'product.mobileAlt': 'SysTorch 0.12.0 Start touch preview showing synthetic sessions',
+        'developer.eyebrow': 'ONE DECISION CONTRACT', 'developer.title': 'People can choose. Agents can call.', 'developer.lede': 'People, applications, and harnesses submit typed questions through the SysTorch API. Question order, caller identity, and error IDs are inspectable; durable human answers use a separate permissioned task interface.', 'developer.contract': 'Read the HTTP contract', 'developer.copy': 'Copy example', 'developer.copied': 'Copied', 'developer.copyFailed': 'Select the code to copy it', 'developer.sample': 'Synthetic request example · no API key included',
+        'download.eyebrow': 'CURRENT RELEASE', 'download.title': 'Complete one decision, then see where it fits your work.', 'download.lede': 'Download the current version for your platform, or read the README and external-caller guide first.', 'download.loading': 'Loading the GitHub release', 'download.caution': 'Check the release page for its acceptance scope and known limits.', 'download.all': 'Browse all versions', 'download.windows': 'Standalone · x64', 'download.windowsAction': 'Download EXE', 'download.android': 'arm64 · stable signature', 'download.androidAction': 'Download APK', 'download.limits': 'The Windows EXE is not Authenticode-signed. Android keeps its stable signature and installed identity for in-place upgrades. See each release for exact limits.', 'download.release': 'Open GitHub release', 'download.readme': 'Read the quick start',
+        'footer.slogan': 'Turn questions into next steps.', 'footer.docs': 'Documentation', 'footer.releases': 'Releases', 'footer.scope': 'Jev / System One decision runtime'
       }
     };
-    let language = localStorage.getItem('systorch-site-language') || (navigator.language.startsWith('zh') ? 'zh' : 'en');
-    function applyLanguage() {
+    let language = document.documentElement.lang === 'en' ? 'en' : 'zh';
+    let currentRelease = null;
+    const safeStorage = {
+      get(key) { try { return localStorage.getItem(key); } catch { return null; } },
+      set(key, value) { try { localStorage.setItem(key, value); } catch { /* Preference is optional. */ } }
+    };
+    const applyLanguage = () => {
+      const locale = copy[language];
       document.documentElement.lang = language === 'zh' ? 'zh-CN' : 'en';
+      document.title = language === 'zh' ? 'SysTorch — 把眼前的问题，变成下一步。' : 'SysTorch — Turn questions into next steps';
+      document.querySelector('meta[name="description"]').setAttribute('content', locale.description);
+      document.querySelector('meta[property="og:description"]').setAttribute('content', locale.description);
       document.querySelectorAll('[data-i18n]').forEach(node => {
-        const value = copy[language][node.dataset.i18n];
-        if (value) node.innerHTML = value;
+        const value = locale[node.dataset.i18n];
+        if (value !== undefined) node.textContent = value;
       });
-      const kind = document.querySelector('#release-kind');
-      kind.textContent = kind.dataset.releaseType === 'stable'
-        ? (language === 'zh' ? '正式版' : 'STABLE')
-        : (language === 'zh' ? '预发布' : 'PRE-RELEASE');
-      document.querySelector('#lang').textContent = language === 'zh' ? 'EN' : '中';
-    }
-    document.querySelector('#lang').addEventListener('click', () => {
+      document.querySelectorAll('[data-i18n-html]').forEach(node => {
+        const value = locale[node.dataset.i18nHtml];
+        if (value !== undefined) node.innerHTML = value;
+      });
+      document.querySelectorAll('[data-i18n-aria]').forEach(node => {
+        const value = locale[node.dataset.i18nAria];
+        if (value !== undefined) node.setAttribute('aria-label', value);
+      });
+      document.querySelectorAll('[data-i18n-alt]').forEach(node => {
+        const value = locale[node.dataset.i18nAlt];
+        if (value !== undefined) node.setAttribute('alt', value);
+      });
+      document.getElementById('language-toggle').textContent = language === 'zh' ? 'EN' : '中';
+      const menuOpen = menuToggle.getAttribute('aria-expanded') === 'true';
+      menuToggle.setAttribute('aria-label', locale[menuOpen ? 'nav.close' : 'nav.open']);
+      const copied = document.getElementById('copy-status');
+      if (!copied.dataset.copied) copied.textContent = locale['developer.sample'];
+      if (currentRelease) {
+        document.getElementById('release-status-text').textContent = currentRelease.prerelease
+          ? (language === 'zh' ? 'GitHub 预发布 · 查看验收范围' : 'GitHub pre-release · check acceptance scope')
+          : (language === 'zh' ? 'GitHub 正式发行版' : 'GitHub stable release');
+      }
+    };
+    const applyTheme = theme => {
+      const resolved = theme === 'light' || theme === 'dark' ? theme : 'dark';
+      document.documentElement.dataset.theme = resolved;
+      const button = document.getElementById('theme-toggle');
+      const label = language === 'zh' ? (resolved === 'dark' ? '切换到浅色主题' : '切换到深色主题') : (resolved === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+      button.setAttribute('aria-label', label);
+      button.title = label;
+    };
+    const menuToggle = document.getElementById('menu-toggle');
+    const siteNav = document.getElementById('site-nav');
+    menuToggle.addEventListener('click', () => {
+      const open = menuToggle.getAttribute('aria-expanded') !== 'true';
+      menuToggle.setAttribute('aria-expanded', String(open));
+      menuToggle.setAttribute('aria-label', copy[language][open ? 'nav.close' : 'nav.open']);
+      siteNav.classList.toggle('is-open', open);
+    });
+    siteNav.querySelectorAll('a').forEach(link => link.addEventListener('click', () => {
+      menuToggle.setAttribute('aria-expanded', 'false');
+      siteNav.classList.remove('is-open');
+    }));
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && menuToggle.getAttribute('aria-expanded') === 'true') {
+        menuToggle.setAttribute('aria-expanded', 'false');
+        menuToggle.setAttribute('aria-label', copy[language]['nav.open']);
+        siteNav.classList.remove('is-open');
+        menuToggle.focus();
+      }
+    });
+    document.getElementById('language-toggle').addEventListener('click', () => {
       language = language === 'zh' ? 'en' : 'zh';
-      localStorage.setItem('systorch-site-language', language);
+      safeStorage.set('systorch-site-language', language);
       applyLanguage();
+      applyTheme(document.documentElement.dataset.theme);
     });
-    document.querySelector('#theme').addEventListener('click', () => {
+    document.getElementById('theme-toggle').addEventListener('click', () => {
       const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
-      document.documentElement.dataset.theme = next;
-      localStorage.setItem('systorch-site-theme', next);
+      safeStorage.set('systorch-site-theme', next);
+      applyTheme(next);
     });
+    const example = document.getElementById('request-example').textContent;
+    document.getElementById('copy-request').addEventListener('click', async () => {
+      const status = document.getElementById('copy-status');
+      try {
+        await navigator.clipboard.writeText(example);
+        status.textContent = copy[language]['developer.copied'];
+        status.dataset.copied = 'true';
+        window.setTimeout(() => { delete status.dataset.copied; status.textContent = copy[language]['developer.sample']; }, 1800);
+      } catch {
+        status.textContent = copy[language]['developer.copyFailed'];
+      }
+    });
+    document.getElementById('year').textContent = String(new Date().getFullYear());
     applyLanguage();
-    fetch('./releases/latest.json')
+    applyTheme(safeStorage.get('systorch-site-theme') || document.documentElement.dataset.theme);
+    fetch('./releases/latest.json', { cache: 'no-store' })
       .then(response => response.ok ? response.json() : null)
       .then(release => {
-        if (!release) return;
-        document.querySelector('#release-version').textContent = release.tag_name || 'latest';
-        document.querySelector('#download-version').textContent = release.tag_name || 'latest';
-        document.querySelector('#release-kind').dataset.releaseType = release.prerelease ? 'pre' : 'stable';
-        applyLanguage();
-        document.querySelector('#release-note').textContent = [release.name, release.published_at?.slice(0, 10)].filter(Boolean).join(' · ');
-        const assets = (release.assets || []).map(asset => asset.name || '');
-        const windowsAsset = assets.find(name => /^SysTorch-.*-windows-x64\.exe$/i.test(name)) || assets.find(name => /standalone.*windows-x64\.exe/i.test(name));
-        const androidAsset = assets.find(name => /^SysTorch-.*-android-aarch64\.apk$/i.test(name)) || assets.find(name => /android.*aarch64.*\.apk$/i.test(name));
-        const base = 'https://github.com/ARCJ137442/SysTorch/releases/download/' + encodeURIComponent(release.tag_name || '');
-        if (windowsAsset) document.querySelector('[data-platform="windows"]').href = base + '/' + encodeURIComponent(windowsAsset);
-        if (androidAsset) document.querySelector('[data-platform="android"]').href = base + '/' + encodeURIComponent(androidAsset);
+        if (!release || !release.tag_name) return;
+        currentRelease = release;
+        const version = release.tag_name;
+        const releaseUrl = release.html_url || ('https://github.com/ARCJ137442/SysTorch/releases/tag/' + encodeURIComponent(version));
+        const assets = Array.isArray(release.assets) ? release.assets : [];
+        const windowsAsset = assets.find(asset => /^SysTorch-.*-windows-x64\.exe$/i.test(asset.name || ''));
+        const androidAsset = assets.find(asset => /^SysTorch-.*-android-aarch64\.apk$/i.test(asset.name || ''));
+        document.getElementById('header-version').textContent = version;
+        document.getElementById('download-version').textContent = version;
+        document.getElementById('hero-download').href = releaseUrl;
+        document.getElementById('release-page').href = releaseUrl;
+        document.getElementById('release-status-dot').classList.toggle('is-preview', !!release.prerelease);
+        document.getElementById('header-release-kind').classList.toggle('is-preview', !!release.prerelease);
+        document.getElementById('release-status-dot').classList.toggle('is-stable', !release.prerelease);
+        document.getElementById('header-release-kind').classList.toggle('is-stable', !release.prerelease);
+        document.getElementById('release-status-text').textContent = release.prerelease
+          ? (language === 'zh' ? 'GitHub 预发布 · 查看验收范围' : 'GitHub pre-release · check acceptance scope')
+          : (language === 'zh' ? 'GitHub 正式发行版' : 'GitHub stable release');
+        document.getElementById('windows-download').href = windowsAsset?.browser_download_url || releaseUrl;
+        document.getElementById('android-download').href = androidAsset?.browser_download_url || releaseUrl;
+        document.getElementById('all-releases').href = 'https://github.com/ARCJ137442/SysTorch/releases';
       })
-      .catch(() => {});
+      .catch(() => {
+        document.getElementById('release-status-text').textContent = language === 'zh' ? '发行信息暂不可用' : 'Release metadata unavailable';
+      });
   </script>
 </body>
 </html>

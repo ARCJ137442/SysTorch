@@ -1,6 +1,6 @@
 # SysTorch
 
-[简体中文](README.md) · [Releases and downloads](https://github.com/ARCJ137442/SysTorch/releases) · [Documentation index](docs/README.md)
+[简体中文](README.md) · [Website](https://arcj137442.github.io/SysTorch/) · [Releases and downloads](https://github.com/ARCJ137442/SysTorch/releases) · [Documentation index](docs/README.md)
 
 <p align="center">
   <img src="ui/src/brand/systorch.svg" width="112" alt="SysTorch torch mark">
@@ -12,7 +12,7 @@
 
 SysTorch is a **structured decision runtime for people, models, and agents**. It sends a decision request through an inspectable DAG, routes it among compatible decision services, and can persist a task for a human to answer before returning a strictly mapped result to the original caller.
 
-![SysTorch Start workspace and decision reply](docs/gallery/images/start-desktop.png)
+![SysTorch 0.12.0 Start preview with a synthetic successful decision and route trace](docs/gallery/images/start-desktop.png)
 
 > The gallery uses synthetic local previews; these are not screenshots of the 0.12.0 EXE or APK. See the [gallery notes](docs/gallery/README.md) for evidence boundaries.
 

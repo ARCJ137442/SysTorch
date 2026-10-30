@@ -1,6 +1,6 @@
 # SysTorch
 
-[English](README.en.md) · [发布与下载](https://github.com/ARCJ137442/SysTorch/releases) · [文档索引](docs/README.md)
+[English](README.en.md) · [官网](https://arcj137442.github.io/SysTorch/) · [发布与下载](https://github.com/ARCJ137442/SysTorch/releases) · [文档索引](docs/README.md)
 
 <p align="center">
   <img src="ui/src/brand/systorch.svg" width="112" alt="SysTorch 火炬标识">
@@ -12,7 +12,7 @@
 
 SysTorch 是面向人、模型与 Agent 的**结构化决策运行时**：把一个判断请求送进可检查的 DAG 路由，在合适的决策服务间流转；需要人工接手时，将任务持久交给指定的人，再把严格映射的结果交还原调用方。
 
-![SysTorch「开始」工作面和决策回复](docs/gallery/images/start-desktop.png)
+![SysTorch 0.12.0 开始页预览，含合成的成功决策与路由轨迹](docs/gallery/images/start-desktop.png)
 
 > 图册截图来自合成数据的本地界面预览，不是 0.12.0 EXE／APK 的版本截图；具体证据边界见[图册说明](docs/gallery/README.md)。
 

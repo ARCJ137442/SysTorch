@@ -17,7 +17,7 @@ Version 0.12.0 is the current SysTorch pre-release. It consolidates the canonica
 
 | 需要 / Need | 文档 / Document |
 |---|---|
-| 产品介绍、能力与快速开始 / Product overview and quick start | [README 中文](../README.md) · [README English](../README.en.md) |
+| 产品介绍、能力与快速开始 / Product overview and quick start | [官网](https://arcj137442.github.io/SysTorch/) · [README 中文](../README.md) · [README English](../README.en.md) |
 | 下载、升级和版本边界 / Download, upgrade, release boundaries | [0.12.0 发布说明](releases/0.12.0.md) · [发版手册](RELEASE.md) |
 | Agent 提交 Choice、离开后由人作答、再取回结果 / Agent submits a Choice, leaves, then retrieves a human answer | [外部调用指南](guides/SYSTORCH-EXTERNAL-CHOICE.md) |
 | SysTorch 请求、资产与多模态字段 / Request, asset, and multimodal fields | [契约索引](contracts/00-INDEX.md) · [HTTP 契约](contracts/05-HTTP契约.md) · [资产契约](contracts/09-SysTorch资产与多模态契约.md) |
@@ -25,6 +25,7 @@ Version 0.12.0 is the current SysTorch pre-release. It consolidates the canonica
 | 入口、节点、提供商及 DAG / Entries, nodes, providers, and DAG | [当前实施计划](design/SYSTORCH-IMPLEMENTATION-PLAN.md) · [入口网关对齐计划](design/ENDPOINT-GATEWAY-ALIGNMENT-PLAN.md) |
 | 本地模型启动、停止、状态探测 / Local model lifecycle commands | [生命周期计划](design/LOCAL-MODEL-LIFECYCLE-PLAN.md) · [脚本指南](design/LOCAL-MODEL-SERVICE-SCRIPTS.md) |
 | Android 构建与设备证据 / Android build and device evidence | [Android 计划](design/ROADMAP-PLAN-ANDROID-EXPERIMENTAL.md) |
+| 官网定位、生态位与设计合同 / Website positioning, niche, and design contract | [官网设计说明](research/SYSTORCH-OFFICIAL-WEBSITE-2026-10-30.md) |
 | 图标、界面与预览 / Logo, interface, and previews | [产品图册](gallery/README.md) · [图标源](../ui/src/brand/systorch.svg) |
 | 未来工作 / Future work | [路线图](../ROADMAP.md) · [执行计划索引](design/ROADMAP-EXECUTION-PLANS.md) |
 

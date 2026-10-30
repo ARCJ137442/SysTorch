@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">SysTorch — Turn questions into next steps</title>
+  <desc id="desc">A structured decision runtime for people, models, and agents. An inspectable route connects a caller to typed answers and human judgment.</desc>
+  <defs>
+    <pattern id="grid" width="34" height="34" patternUnits="userSpaceOnUse">
+      <path d="M34 0H0V34" fill="none" stroke="#30474b" stroke-opacity=".32" stroke-width="1"/>
+    </pattern>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#152326"/>
+      <stop offset="1" stop-color="#101a1d"/>
+    </linearGradient>
+    <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1200" height="630" rx="0" fill="#0d1517"/>
+  <rect width="1200" height="630" fill="url(#grid)" opacity=".54"/>
+  <path d="M0 116H1200" stroke="#263b3f" stroke-width="1"/>
+  <image href="systorch.svg" x="70" y="49" width="54" height="54"/>
+  <text x="139" y="84" fill="#eaf4f5" font-size="28" font-weight="700" font-family="Bahnschrift,Segoe UI,Arial,sans-serif">SysTorch</text>
+  <text x="71" y="228" fill="#79e2eb" font-size="14" font-weight="700" letter-spacing="3" font-family="Cascadia Code,Consolas,monospace">STRUCTURED DECISION RUNTIME</text>
+  <text x="68" y="315" fill="#eaf4f5" font-size="60" font-weight="700" letter-spacing="-2.4" font-family="Bahnschrift,Segoe UI,Arial,sans-serif">Turn questions into</text>
+  <text x="68" y="382" fill="#eaf4f5" font-size="60" font-weight="700" letter-spacing="-2.4" font-family="Bahnschrift,Segoe UI,Arial,sans-serif">next steps.</text>
+  <text x="72" y="451" fill="#9cb2b7" font-size="20" font-family="Segoe UI,Microsoft YaHei UI,sans-serif">把眼前的问题，变成下一步。</text>
+  <text x="72" y="545" fill="#9cb2b7" font-size="16" font-family="Segoe UI,Microsoft YaHei UI,sans-serif">Jev / System One · typed decisions · inspectable routes · human answers</text>
+
+  <rect x="789" y="165" width="337" height="356" rx="21" fill="url(#panel)" stroke="#3d5d62" stroke-width="1.5"/>
+  <text x="818" y="199" fill="#9cb2b7" font-size="11" letter-spacing="2" font-family="Cascadia Code,Consolas,monospace">ONE REQUEST · MULTIPLE ATTEMPTS</text>
+  <rect x="818" y="222" width="279" height="54" rx="10" fill="#1a2a2d" stroke="#365156"/>
+  <text x="834" y="245" fill="#9cb2b7" font-size="10" font-family="Cascadia Code,Consolas,monospace">CALLER</text>
+  <text x="834" y="264" fill="#eaf4f5" font-size="14" font-weight="600" font-family="Segoe UI,Microsoft YaHei UI,sans-serif">Structured question</text>
+  <path d="M957 277V315" stroke="#79e2eb" stroke-width="2" filter="url(#glow)"/>
+  <rect x="818" y="315" width="279" height="48" rx="9" fill="#172528" stroke="#44666b"/>
+  <path d="M839 339h16m-7-7 7 7-7 7" stroke="#79e2eb" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="867" y="344" fill="#eaf4f5" font-size="13" font-family="Cascadia Code,Consolas,monospace">DAG route</text>
+  <path d="M957 363v18m0 0H894v13m63-13h63v13" stroke="#79e2eb" stroke-opacity=".74" stroke-width="1.7" fill="none"/>
+  <rect x="829" y="394" width="126" height="48" rx="8" fill="#201c20" stroke="#6b4440"/>
+  <text x="843" y="414" fill="#ff9788" font-size="10" font-family="Cascadia Code,Consolas,monospace">01 · RETRY</text>
+  <text x="843" y="432" fill="#e4c2bd" font-size="11" font-family="Segoe UI,Microsoft YaHei UI,sans-serif">upstream error</text>
+  <rect x="959" y="394" width="126" height="48" rx="8" fill="#162522" stroke="#3d7158"/>
+  <text x="973" y="414" fill="#82ddb0" font-size="10" font-family="Cascadia Code,Consolas,monospace">02 · ANSWER</text>
+  <text x="973" y="432" fill="#d1e8dd" font-size="11" font-family="Segoe UI,Microsoft YaHei UI,sans-serif">typed result</text>
+  <path d="M1022 442v19H957" stroke="#82ddb0" stroke-width="1.7" fill="none"/>
+  <rect x="818" y="461" width="279" height="38" rx="8" fill="#162523" stroke="#3d7158"/>
+  <text x="838" y="485" fill="#82ddb0" font-size="12" font-family="Cascadia Code,Consolas,monospace">RESULT → ORIGINAL CALLER</text>
+</svg>
