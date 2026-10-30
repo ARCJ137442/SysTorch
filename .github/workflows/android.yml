@@ -159,10 +159,16 @@ jobs:
           $env:ANDROID_NDK_HOME = Join-Path $env:ANDROID_HOME 'ndk\27.2.12479018'
           $env:NDK_HOME = $env:ANDROID_NDK_HOME
           $env:TAURI_ANDROID_PROJECT_PATH = (Resolve-Path 'src-tauri/gen/android').Path
-          $env:WRY_ANDROID_PACKAGE = 'io.github.arcj137442.jevswitch'
+          # JNI Kotlin sources and BuildConfig live in the Android namespace,
+          # which is distinct from the stable installed applicationId.
+          $androidConfig = Get-Content src-tauri/tauri.android.conf.json -Raw | ConvertFrom-Json
+          $kotlinPackage = [string]$androidConfig.identifier
+          if ([string]::IsNullOrWhiteSpace($kotlinPackage)) { throw 'Android Kotlin namespace is missing from tauri.android.conf.json.' }
+          $env:WRY_ANDROID_PACKAGE = $kotlinPackage
           $env:WRY_ANDROID_PACKAGE_UNESCAPED = $env:WRY_ANDROID_PACKAGE
           $env:WRY_ANDROID_LIBRARY = 'systorch_shell'
-          $kotlinOut = 'src-tauri/gen/android/app/src/main/java/io/github/arcj137442/jevswitch/generated'
+          $packagePath = $kotlinPackage.Replace('.', [IO.Path]::DirectorySeparatorChar)
+          $kotlinOut = Join-Path 'src-tauri/gen/android/app/src/main/java' (Join-Path $packagePath 'generated')
           New-Item -ItemType Directory -Force $kotlinOut | Out-Null
           $env:WRY_ANDROID_KOTLIN_FILES_OUT_DIR = (Resolve-Path $kotlinOut).Path
           $ndkBin = Join-Path $env:ANDROID_NDK_HOME 'toolchains\llvm\prebuilt\windows-x86_64\bin'

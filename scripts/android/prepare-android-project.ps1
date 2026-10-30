@@ -62,6 +62,7 @@ $mainSourceRoot = Join-Path $androidRoot 'app/src/main'
 $buildFile = Join-Path $androidRoot 'app/build.gradle.kts'
 $propertiesFile = Join-Path $androidRoot 'app/tauri.properties'
 $taskIconPath = Join-Path $resRoot 'drawable-nodpi/ic_task.png'
+$androidConfig = Get-Content -LiteralPath (Join-Path $tauriRoot 'tauri.android.conf.json') -Raw | ConvertFrom-Json
 
 if (-not (Test-Path -LiteralPath $appIcon -PathType Leaf)) {
     throw "Canonical SysTorch icon is missing: $appIcon"
@@ -88,7 +89,10 @@ if ($gradleSource -match 'manifestPlaceholders\["usesCleartextTraffic"\] = "fals
     throw 'Android release cleartext setting is not enabled for the local HTTP gateway.'
 }
 
-$namespacePackage = 'io.github.arcj137442.systorch'
+$namespacePackage = [string]$androidConfig.identifier
+if ([string]::IsNullOrWhiteSpace($namespacePackage)) {
+    throw 'Android namespace is missing from tauri.android.conf.json.'
+}
 $gradleSource = [IO.File]::ReadAllText($buildFile)
 $gradleSource = $gradleSource.Replace('namespace = "io.github.arcj137442.jevswitch"', "namespace = `"$namespacePackage`"")
 # The installed identity and signing key deliberately stay stable. Changing
@@ -251,7 +255,6 @@ $strings.Save($stringsPath)
 
 $package = Get-Content -LiteralPath (Join-Path $ProjectRoot 'ui/package.json') -Raw | ConvertFrom-Json
 $tauriConfig = Get-Content -LiteralPath (Join-Path $tauriRoot 'tauri.conf.json') -Raw | ConvertFrom-Json
-$androidConfig = Get-Content -LiteralPath (Join-Path $tauriRoot 'tauri.android.conf.json') -Raw | ConvertFrom-Json
 $version = [string]$package.version
 if ($tauriConfig.version -ne $version -or $androidConfig.version -ne $version) {
     throw "Android, Tauri, and UI versions must agree. UI=$version, Tauri=$($tauriConfig.version), Android=$($androidConfig.version)."
